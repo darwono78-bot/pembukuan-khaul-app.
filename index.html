@@ -6,8 +6,521 @@
     <title>Aplikasi Pembukuan Dana Khaul</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
-        // TEMPATKAN SEMUA KODE JAVASCRIPT/FIREBASE DI BAGIAN BAWAH INI
-    </script>
+// TEMPATKAN SEMUA KODE JAVASCRIPT/FIREBASE DI BAGIAN 3 DI SINI (BERIKUTNYA)
+
+    // Import modul Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection, query, orderBy, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js";
+
+    // --- 1. KONFIGURASI DAN INISIALISASI APLIKASI ---
+    
+    // Variabel Global untuk Firebase dan user
+    let app, db, auth;
+    let userId = null;
+    let isAuthenticated = false;
+    let categories = [];
+    let allTransactions = []; // Menyimpan semua data transaksi untuk filter
+    const TRANSACTION_COLLECTION = 'jurnal_kas'; // Koleksi utama
+    const CATEGORY_COLLECTION = 'kategori';
+    
+    // Format mata uang Rupiah
+    const formatRupiah = (angka) => {
+        if (angka === undefined || angka === null) return 'Rp 0';
+        // Menggunakan Intl.NumberFormat yang lebih stabil
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+    };
+
+    // Fungsi untuk memformat tanggal (YYYY-MM-DD) menjadi (DD/MM/YYYY)
+    function formatDateForDisplay(isoDate) {
+        if (!isoDate || typeof isoDate !== 'string' || isoDate.length !== 10) return isoDate;
+        const parts = isoDate.split('-'); 
+        return `${parts[2]}/${parts[1]}/${parts[0]}`; 
+    }
+
+    // Fungsi untuk menampilkan pesan (Mirip Alert, tapi pakai UI)
+    const displayMessage = (message, type = 'info') => {
+        const container = document.getElementById('message-container');
+        const color = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
+                      type === 'error' ? 'bg-red-100 border-red-500 text-red-700' :
+                      'bg-blue-100 border-blue-500 text-blue-700';
+        
+        container.innerHTML = `
+            <div class="p-3 mb-4 rounded-lg border-l-4 ${color} transition duration-300 ease-in-out">
+                ${message}
+            </div>
+        `;
+        setTimeout(() => { container.innerHTML = ''; }, 5000);
+    };
+
+    // Fungsi Inisialisasi Firebase
+    const initializeFirebase = async () => {
+        try {
+            if (typeof __firebase_config === 'undefined') {
+                 throw new Error("Firebase config is missing.");
+            }
+            
+            const firebaseConfig = JSON.parse(__firebase_config);
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            // 2. Autentikasi dan Cek Status Admin
+            onAuthStateChanged(auth, async (user) => {
+                const loginStatusEl = document.getElementById('login-status');
+                const userIdDisplayEl = document.getElementById('user-id-display');
+                
+                if (user && user.uid !== 'anonymous') {
+                    userId = user.uid;
+                    isAuthenticated = true;
+                    loginStatusEl.textContent = 'Status Login: Admin Aktif';
+                    loginStatusEl.classList.remove('text-red-600');
+                    loginStatusEl.classList.add('text-green-600');
+                    userIdDisplayEl.textContent = `Admin ID: ${userId}`;
+                    
+                } else {
+                    // Coba sign in dengan token yang disediakan (jika ada)
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                           await signInWithCustomToken(auth, __initial_auth_token);
+                           userId = auth.currentUser.uid;
+                           isAuthenticated = true;
+                        } catch (e) {
+                           // Jika token gagal/expired, fallback ke anonim
+                           await signInAnonymously(auth);
+                           userId = auth.currentUser.uid;
+                           isAuthenticated = false;
+                        }
+                    } else {
+                        // Jika tidak ada token, sign in secara anonim (Publik)
+                        await signInAnonymously(auth);
+                        userId = auth.currentUser.uid;
+                        isAuthenticated = false;
+                    }
+
+                    if (!isAuthenticated) {
+                         loginStatusEl.textContent = 'Status Login: Publik (Tidak Dapat Menambah/Edit)';
+                         loginStatusEl.classList.add('text-red-600');
+                         userIdDisplayEl.textContent = `User ID (Publik): ${userId}`;
+                    }
+                }
+                
+                // Lanjut memuat data setelah menentukan status autentikasi
+                await loadCategories();
+                await loadTransactions();
+            });
+            
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            displayMessage("Gagal inisialisasi aplikasi. Cek koneksi internet dan konfigurasi.", 'error');
+        }
+    };
+    
+    // --- 3. FUNGSI LOAD DATA (KATEGORI & TRANSAKSI) ---
+
+    // Load Kategori
+    const loadCategories = async () => {
+        if (!db) return;
+        try {
+            const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${CATEGORY_COLLECTION}`;
+            const categoriesRef = collection(db, path);
+            
+            onSnapshot(categoriesRef, (snapshot) => {
+                categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateCategorySelects();
+            }, (error) => {
+                console.warn("Gagal memuat kategori. Menggunakan kategori default.", error);
+                categories = [
+                    { id: '1', nama: 'Donasi' },
+                    { id: '2', nama: 'Iuran' },
+                    { id: '3', nama: 'Konsumsi' },
+                    { id: '4', nama: 'Perlengkapan' },
+                    { id: '5', nama: 'Biaya Lain' }
+                ];
+                updateCategorySelects();
+            });
+        } catch (error) {
+            console.error("Error loading categories:", error);
+        }
+    };
+
+    // Update Dropdown Kategori
+    const updateCategorySelects = () => {
+        const selects = ['kategori-select', 'kategori-select-keluar', 'filter-kategori'];
+        selects.forEach(selectId => {
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) return;
+            const defaultValue = selectId.includes('filter') ? '' : '-- Pilih Kategori --';
+            selectEl.innerHTML = `<option value="">${defaultValue}</option>`;
+            
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.nama;
+                option.textContent = cat.nama;
+                selectEl.appendChild(option);
+            });
+        });
+    };
+
+    // Load Transaksi (Inti data Anda)
+    const loadTransactions = async () => {
+        if (!db) return;
+        const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}`;
+        const transactionRef = collection(db, path);
+        
+        onSnapshot(transactionRef, (snapshot) => {
+            allTransactions = snapshot.docs.map(doc => {
+                const data = doc.data();
+                // FIX: Menangani data.timestamp yang bisa berupa Firestore Timestamp object
+                let timestampValue;
+                if (data.timestamp && typeof data.timestamp.toMillis === 'function') {
+                    timestampValue = data.timestamp.toMillis();
+                } else {
+                    // Fallback jika timestamp tidak ada, dibuat dari tanggal string (YYYY-MM-DD)
+                    timestampValue = new Date(data.tanggal).getTime();
+                }
+
+                return {
+                    id: doc.id,
+                    tanggal: data.tanggal,
+                    timestamp: timestampValue,
+                    uraian: data.uraian,
+                    kategori: data.kategori,
+                    jenis: data.jenis,
+                    jumlah: Number(data.jumlah) || 0,
+                    userId: data.userId || 'unknown',
+                };
+            }).sort((a, b) => b.timestamp - a.timestamp); // Urutkan default: Terbaru
+            
+            renderTable(allTransactions);
+
+        }, (error) => {
+            console.error("Error loading transactions:", error);
+            displayMessage("Gagal memuat data transaksi. Periksa Indeks Firestore atau Rules.", 'error');
+            document.getElementById('laporan-table-body').innerHTML = `<tr><td colspan="8" class="py-4 text-center text-red-500">Gagal memuat data.</td></tr>`;
+        });
+    };
+
+    // --- 4. FUNGIONALITAS TRANSAKSI (TAMBAH, HAPUS, RENDER) ---
+
+    // Fungsi Tambah Transaksi
+    window.catatTransaksi = async (jenis) => {
+        if (!isAuthenticated) {
+            displayMessage("Anda harus login sebagai Admin untuk mencatat transaksi.", 'error');
+            return;
+        }
+
+        const tanggalInputEl = jenis === 'MASUK' ? document.getElementById('tanggal-input') : document.getElementById('tanggal-input-keluar');
+        const kategoriSelectEl = jenis === 'MASUK' ? document.getElementById('kategori-select') : document.getElementById('kategori-select-keluar');
+        const uraianInputEl = jenis === 'MASUK' ? document.getElementById('uraian-input') : document.getElementById('uraian-input-keluar');
+        const jumlahInputEl = jenis === 'MASUK' ? document.getElementById('jumlah-input') : document.getElementById('jumlah-input-keluar');
+
+        const tanggal = tanggalInputEl.value;
+        const kategori = kategoriSelectEl.value;
+        const uraian = uraianInputEl.value;
+        const jumlah = Number(jumlahInputEl.value);
+
+        if (!tanggal || !kategori || !uraian || jumlah <= 0) {
+            displayMessage("Semua kolom harus diisi dengan benar.", 'error');
+            return;
+        }
+
+        const newTransaction = {
+            // Tanggal disimpan dalam format YYYY-MM-DD (standar ISO)
+            tanggal: tanggal, 
+            timestamp: new Date(tanggal).getTime(),
+            uraian: uraian,
+            kategori: kategori,
+            jenis: jenis,
+            jumlah: jumlah,
+            userId: userId,
+            createdAt: new Date()
+        };
+
+        try {
+            const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}`;
+            await addDoc(collection(db, path), newTransaction);
+            displayMessage(`Transaksi ${jenis === 'MASUK' ? 'Pemasukan' : 'Pengeluaran'} berhasil dicatat!`, 'success');
+
+            // Reset form
+            tanggalInputEl.value = '';
+            kategoriSelectEl.value = '';
+            uraianInputEl.value = '';
+            jumlahInputEl.value = '';
+
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            displayMessage(`Gagal mencatat transaksi: ${e.message}`, 'error');
+        }
+    };
+    
+    // Fungsi Hapus Transaksi (Dipanggil dari tombol di tabel)
+    window.confirmDelete = (docId) => {
+        if (!isAuthenticated) {
+            displayMessage("Anda tidak memiliki izin Admin untuk menghapus.", 'error');
+            return;
+        }
+        
+        const modal = document.getElementById('confirm-modal');
+        const deleteBtn = document.getElementById('confirm-delete-btn');
+        
+        document.getElementById('modal-message').textContent = `Apakah Anda yakin ingin menghapus transaksi dengan ID ${docId}?`;
+        modal.style.display = 'flex';
+
+        deleteBtn.onclick = null; 
+        
+        deleteBtn.onclick = async () => {
+            modal.style.display = 'none'; 
+            try {
+                const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}/${docId}`;
+                const docRef = doc(db, path);
+                await deleteDoc(docRef);
+                displayMessage('Transaksi berhasil dihapus.', 'success');
+            } catch (e) {
+                console.error("Error removing document: ", e);
+                displayMessage(`Gagal menghapus transaksi: ${e.message}`, 'error');
+            }
+        };
+    };
+
+    // Fungsi Render Tabel (Termasuk Sortir dan Filter)
+    const renderTable = (dataToRender) => {
+        const tableBody = document.getElementById('laporan-table-body');
+        const sortBy = document.getElementById('sort-by').value;
+        const filterKategori = document.getElementById('filter-kategori').value;
+        const searchInput = document.getElementById('search-input').value.toLowerCase();
+        
+        let filteredData = dataToRender;
+
+        // 1. FILTER KATEGORI
+        if (filterKategori) {
+            filteredData = filteredData.filter(t => t.kategori === filterKategori);
+        }
+
+        // 2. SEARCH
+        if (searchInput) {
+            filteredData = filteredData.filter(t => 
+                t.uraian.toLowerCase().includes(searchInput) || 
+                t.kategori.toLowerCase().includes(searchInput)
+            );
+        }
+
+        // 3. SORTIR (Hanya berdasarkan Tanggal dan Masuk/Keluar)
+        switch (sortBy) {
+            case 'tanggal_asc':
+                filteredData.sort((a, b) => a.timestamp - b.timestamp);
+                break;
+            case 'masuk_desc':
+                filteredData.sort((a, b) => {
+                    const aMasuk = a.jenis === 'MASUK' ? a.jumlah : 0;
+                    const bMasuk = b.jenis === 'MASUK' ? b.jumlah : 0;
+                    return bMasuk - aMasuk;
+                });
+                break;
+            case 'masuk_asc':
+                filteredData.sort((a, b) => {
+                    const aMasuk = a.jenis === 'MASUK' ? a.jumlah : 0;
+                    const bMasuk = b.jenis === 'MASUK' ? b.jumlah : 0;
+                    return aMasuk - bMasuk;
+                });
+                break;
+            case 'tanggal_desc':
+            default:
+                filteredData.sort((a, b) => b.timestamp - a.timestamp);
+                break;
+        }
+
+        // 4. HITUNG SALDO BERJALAN (Membutuhkan data urut ASC)
+        let totalMasuk = 0;
+        let totalKeluar = 0;
+        
+        // Urutkan ASC untuk menghitung Saldo Berjalan yang benar dari awal
+        const sortedAsc = [...filteredData].sort((a, b) => a.timestamp - b.timestamp);
+        
+        let runningBalance = 0;
+        const rowsWithBalance = sortedAsc.map(t => {
+            if (t.jenis === 'MASUK') {
+                runningBalance += t.jumlah;
+                totalMasuk += t.jumlah;
+            } else {
+                runningBalance -= t.jumlah;
+                totalKeluar += t.jumlah;
+            }
+            return { ...t, saldo: runningBalance };
+        });
+        
+        // Balikkan lagi agar data terbaru di atas (DEFAULT VIEW)
+        const finalRows = rowsWithBalance.reverse();
+        
+        // 5. TAMPILKAN BARIS
+        tableBody.innerHTML = '';
+        if (finalRows.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-gray-500">Tidak ada data transaksi.</td></tr>`;
+            document.getElementById('total-masuk').textContent = formatRupiah(0);
+            document.getElementById('total-keluar').textContent = formatRupiah(0);
+            document.getElementById('saldo-akhir').textContent = formatRupiah(0);
+            return;
+        }
+
+        finalRows.forEach((t, index) => {
+            const row = tableBody.insertRow();
+            
+            row.className = index % 2 === 0 ? 'hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
+            
+            // Kolom 1: No
+            row.insertCell().textContent = finalRows.length - index;
+            // Kolom 2: Tanggal
+            row.insertCell().textContent = formatDateForDisplay(t.tanggal); // Menggunakan fungsi formatDateForDisplay
+            // Kolom 3: Uraian
+            row.insertCell().textContent = t.uraian;
+            // Kolom 4: Kategori
+            row.insertCell().textContent = t.kategori;
+            // Kolom 5: Dana Masuk
+            const masukCell = row.insertCell();
+            masukCell.textContent = t.jenis === 'MASUK' ? formatRupiah(t.jumlah) : 'Rp 0';
+            masukCell.className = 'py-3 px-6 text-right text-green-600';
+            // Kolom 6: Dana Keluar
+            const keluarCell = row.insertCell();
+            keluarCell.textContent = t.jenis === 'KELUAR' ? formatRupiah(t.jumlah) : 'Rp 0';
+            keluarCell.className = 'py-3 px-6 text-right text-red-600';
+            // Kolom 7: Saldo Berjalan
+            const saldoCell = row.insertCell();
+            saldoCell.textContent = formatRupiah(t.saldo);
+            saldoCell.className = 'py-3 px-6 text-right font-semibold';
+            // Kolom 8: Aksi
+            const actionCell = row.insertCell();
+            actionCell.className = 'py-3 px-6 text-center';
+            if (isAuthenticated) {
+                 actionCell.innerHTML = `<button onclick="window.confirmDelete('${t.id}')" class="text-red-500 hover:text-red-700 font-bold p-1 rounded-full hover:bg-red-50 transition duration-150">Hapus</button>`;
+            } else {
+                 actionCell.textContent = '-';
+            }
+        });
+
+        // 6. UPDATE TOTAL DI FOOTER
+        const finalSaldo = finalRows.length > 0 ? finalRows[0].saldo : 0; // Saldo Akhir adalah Saldo baris pertama
+        document.getElementById('total-masuk').textContent = formatRupiah(totalMasuk);
+        document.getElementById('total-keluar').textContent = formatRupiah(totalKeluar);
+        document.getElementById('saldo-akhir').textContent = formatRupiah(finalSaldo);
+    };
+
+    // Panggil renderTable setiap kali ada perubahan pada filter/sortir
+    const setupEventListeners = () => {
+        document.getElementById('search-input').addEventListener('input', () => renderTable(allTransactions));
+        document.getElementById('filter-kategori').addEventListener('change', () => renderTable(allTransactions));
+        document.getElementById('sort-by').addEventListener('change', () => renderTable(allTransactions));
+    };
+
+    // --- 5. FUNGSI EKSPOR PDF ---
+    // (Tidak ada perubahan signifikan di sini, karena sudah menggunakan data dari tabel yang di-render)
+
+    window.generatePDF = (type) => {
+        const doc = new jsPDF('p', 'mm', 'a4'); 
+        const currentDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        const title = type === 'detail' ? 'LAPORAN KAS JURNAL KHAUL DETAIL' : 'LAPORAN KAS JURNAL KHAUL RINGKASAN';
+        
+        doc.setFontSize(16);
+        doc.text(title, 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Dicetak pada: ${currentDate}`, 14, 26);
+        doc.text(`Total Saldo Akhir: ${document.getElementById('saldo-akhir').textContent}`, 14, 32);
+
+        if (type === 'detail') {
+            const rows = [];
+            const tableBody = document.getElementById('laporan-table-body').getElementsByTagName('tr');
+            
+            Array.from(tableBody).forEach(row => {
+                const cells = row.getElementsByTagName('td');
+                if (cells.length === 8) { 
+                    rows.push([
+                        cells[0].textContent, 
+                        cells[1].textContent, 
+                        cells[2].textContent, 
+                        cells[3].textContent, 
+                        cells[4].textContent, 
+                        cells[5].textContent, 
+                        cells[6].textContent  
+                    ]);
+                }
+            });
+
+            doc.autoTable({
+                head: [['No', 'Tanggal', 'Uraian', 'Kategori', 'Masuk', 'Keluar', 'Saldo Berjalan']],
+                body: rows,
+                startY: 40,
+                theme: 'striped',
+                headStyles: { fillColor: [30, 130, 76] }, 
+                columnStyles: {
+                    0: { cellWidth: 10 },
+                    4: { halign: 'right' },
+                    5: { halign: 'right' },
+                    6: { halign: 'right', fontStyle: 'bold' }
+                },
+                styles: { fontSize: 8 },
+            });
+            doc.save(`Laporan_Detail_Kas_Khaul_${currentDate}.pdf`);
+
+        } else if (type === 'ringkasan') {
+            const summary = allTransactions.reduce((acc, t) => {
+                if (!acc[t.kategori]) {
+                    acc[t.kategori] = { masuk: 0, keluar: 0 };
+                }
+                if (t.jenis === 'MASUK') {
+                    acc[t.kategori].masuk += t.jumlah;
+                } else {
+                    acc[t.kategori].keluar += t.jumlah;
+                }
+                return acc;
+            }, {});
+
+            const summaryRows = Object.keys(summary).map(kategori => {
+                const data = summary[kategori];
+                return [
+                    kategori,
+                    formatRupiah(data.masuk),
+                    formatRupiah(data.keluar),
+                    formatRupiah(data.masuk - data.keluar)
+                ];
+            });
+
+            const totalRow = [
+                'TOTAL KESELURUHAN',
+                document.getElementById('total-masuk').textContent,
+                document.getElementById('total-keluar').textContent,
+                document.getElementById('saldo-akhir').textContent
+            ];
+
+            doc.autoTable({
+                head: [['Kategori', 'Total Dana Masuk', 'Total Dana Keluar', 'Saldo Kategori']],
+                body: summaryRows,
+                foot: [totalRow],
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [243, 156, 18] }, 
+                footStyles: { fillColor: [46, 204, 113], fontStyle: 'bold' }, 
+                columnStyles: {
+                    1: { halign: 'right' },
+                    2: { halign: 'right' },
+                    3: { halign: 'right' }
+                },
+                styles: { fontSize: 9 },
+            });
+            doc.save(`Laporan_Ringkasan_Kas_Khaul_${currentDate}.pdf`);
+        }
+    };
+    
+    // Panggil inisialisasi saat window load
+    window.onload = () => {
+        initializeFirebase();
+        setupEventListeners();
+    };
+    
+    // Export fungsi ke scope global agar bisa dipanggil dari tombol HTML
+    window.catatTransaksi = window.catatTransaksi;
+    window.confirmDelete = window.confirmDelete;
+</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
@@ -188,3 +701,4 @@
     
 </body>
 </html>
+
