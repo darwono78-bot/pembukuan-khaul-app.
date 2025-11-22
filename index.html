@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Pembukuan Dana Khaul</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script type="module">
-        // TEMPATKAN SEMUA KODE JAVASCRIPT/FIREBASE DI BAGIAN BAWAH INI
         
         // Import modul Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection, query, orderBy, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // FIX: Menggunakan default import (tanpa kurung kurawal) untuk mengatasi Uncaught SyntaxError
+        // !!! FIX: Menggunakan default import (tanpa kurung kurawal) untuk mengatasi Uncaught SyntaxError
         import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
         import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js";
 
@@ -23,17 +23,17 @@
         let userId = null;
         let isAuthenticated = false;
         let categories = [];
-        let allTransactions = []; // Menyimpan semua data Donasi & Pengeluaran
+        let allTransactions = []; 
         
-        // KOLEKSI BARU SESUAI PERMINTAAN USER:
+        // KOLEKSI SESUAI PERMINTAAN USER:
         const DONATION_COLLECTION = 'donatur_khaul';
-        const TRANSACTION_COLLECTION = 'jurnal_kas'; // Digunakan untuk Pengeluaran Umum
+        const TRANSACTION_COLLECTION = 'jurnal_kas'; 
         const CATEGORY_COLLECTION = 'kategori_pengeluaran'; 
         
         // Format mata uang Rupiah
         const formatRupiah = (angka) => {
             if (angka === undefined || angka === null) return 'Rp 0';
-            // Format yang lebih ringkas dan standar
+            // Format standar IDR
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
         };
         
@@ -161,7 +161,7 @@
                     updateCategorySelects();
                 }, (error) => {
                     console.warn("Gagal memuat kategori. Menggunakan kategori default.", error);
-                    // Kategori default Pengeluaran sesuai dokumen alur
+                    // Kategori default Pengeluaran sesuai dokumen alur [cite: 74]
                     categories = [
                         { id: '1', nama: 'Ongkos Kiai' },
                         { id: '2', nama: 'Bayar Kataman' },
@@ -223,17 +223,17 @@
                     return {
                         id: doc.id,
                         isDonation: true, // Marker untuk Hapus dan Filter PDF
-                        tanggal: data.tanggal,
+                        tanggal: data.tanggal, // Kolom 2 [cite: 47, 65]
                         timestamp: data.timestamp && typeof data.timestamp.toMillis === 'function' ? data.timestamp.toMillis() : new Date(data.tanggal).getTime(),
                         uraian: `Donasi dari ${data.namaDonatur} (${data.alamat})`,
-                        kategori: 'Donasi Jariyah', // Kategori default untuk Pemasukan [cite: 31]
+                        kategori: 'Donasi Jariyah', // Kategori default untuk Pemasukan [cite: 74]
                         jenis: 'MASUK',
-                        jumlah: Number(data.totalJariyah) || 0,
+                        jumlah: Number(data.totalJariyah) || 0, // Kolom 6 [cite: 51, 68]
                         // Detail Donatur untuk PDF List Donatur
-                        namaDonatur: data.namaDonatur,
-                        alamat: data.alamat,
-                        jariyah: data.keterangan || 'Jariyah Umum', // Menggunakan 'keterangan' sebagai Jariyah [cite: 7]
-                        prosentase: { // breakdown 15-15-70
+                        namaDonatur: data.namaDonatur, // Kolom 3 [cite: 48, 66]
+                        alamat: data.alamat, // Kolom 4 [cite: 49]
+                        jariyah: data.keterangan || 'Jariyah Umum', // Kolom 5 [cite: 50, 67]
+                        prosentase: { // breakdown 15-15-70 [cite: 52, 53, 54, 55, 69]
                             makam: data.perawatanMakam || 0,
                             panitia: data.ongkosPanitia || 0,
                             khoul: data.biayaKhoul || 0
@@ -247,12 +247,12 @@
                     return {
                         id: doc.id,
                         isDonation: false, // Marker untuk Hapus
-                        tanggal: data.tanggal,
+                        tanggal: data.tanggal, // Kolom 10 (Tanggal) [cite: 57, 72]
                         timestamp: data.timestamp && typeof data.timestamp.toMillis === 'function' ? data.timestamp.toMillis() : new Date(data.tanggal).getTime(),
-                        uraian: data.uraian,
-                        kategori: data.kategori || 'Lain-lain',
+                        uraian: data.uraian, // Kolom 11 (Uraian) [cite: 58, 73]
+                        kategori: data.kategori || 'Lain-lain', // Kolom 12 (Kategori) [cite: 59, 74]
                         jenis: 'KELUAR',
-                        jumlah: Number(data.jumlah) || 0,
+                        jumlah: Number(data.jumlah) || 0, // Kolom 14 (Dana Keluar) [cite: 61, 76]
                         namaDonatur: null, 
                         alamat: null,
                         jariyah: null,
@@ -293,20 +293,20 @@
                 return;
             }
 
-            // --- LOGIKA KRITIS: PERHITUNGAN PROSENTASE (15% - 15% - 70%) --- [cite: 10, 11, 12]
+            // --- LOGIKA KRITIS: PERHITUNGAN PROSENTASE (15% - 15% - 70%) --- [cite: 52, 53, 54, 55, 69]
             const perawatanMakam = Math.round(totalJariyah * 0.15); // 15%
             const ongkosPanitia = Math.round(totalJariyah * 0.15);  // 15%
-            const biayaKhoul = totalJariyah - perawatanMakam - ongkosPanitia; // Sisanya 70% [cite: 27]
+            const biayaKhoul = totalJariyah - perawatanMakam - ongkosPanitia; // Sisanya 70%
             // --------------------------------------------------------
 
             const newDonation = {
                 tanggal: tanggal,
                 timestamp: new Date(tanggal).getTime(),
-                namaDonatur: namaDonatur, // Kolom 3 [cite: 5]
-                alamat: alamat,           // Kolom 4 [cite: 6]
-                keterangan: keterangan,   // Kolom 5 (Jariyah) [cite: 7]
-                totalJariyah: totalJariyah, // Kolom 6 [cite: 8]
-                // Prosentase (Admin Only) [cite: 9]
+                namaDonatur: namaDonatur, 
+                alamat: alamat,           
+                keterangan: keterangan,   
+                totalJariyah: totalJariyah, 
+                // Prosentase (Admin Only)
                 perawatanMakam: perawatanMakam,
                 ongkosPanitia: ongkosPanitia,
                 biayaKhoul: biayaKhoul,
@@ -379,7 +379,7 @@
             }
         };
         
-        // Fungsi Hapus Transaksi (Mendukung Donasi dan Pengeluaran) [cite: 35]
+        // Fungsi Hapus Transaksi (Mendukung Donasi dan Pengeluaran)
         window.confirmDelete = (docId, isDonation) => {
             if (!isAuthenticated) {
                 displayMessage("Anda tidak memiliki izin Admin untuk menghapus.", 'error');
@@ -482,29 +482,29 @@
                 const row = document.createElement('tr');
                 row.className = index % 2 === 0 ? 'hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
                 
-                // Kolom 1: No
+                // Kolom 1: No [cite: 46, 56, 64, 71]
                 row.insertCell().textContent = finalRows.length - index;
-                // Kolom 2: Tanggal (Format DD/MM/YYYY)
+                // Kolom 2: Tanggal (Format DD/MM/YYYY) [cite: 47, 57, 65, 72]
                 row.insertCell().textContent = formatDateForDisplay(t.tanggal);
-                // Kolom 3: Uraian/Donatur
+                // Kolom 3: Uraian/Donatur [cite: 48, 58, 66, 73]
                 row.insertCell().textContent = t.uraian;
-                // Kolom 4: Kategori (Admin Only)
+                // Kolom 4: Kategori (Admin Only) [cite: 59, 69, 74]
                 const kategoriCell = row.insertCell();
                 kategoriCell.textContent = t.kategori;
                 kategoriCell.className = 'py-3 px-3 text-left admin-only-col';
-                // Kolom 5: Dana Masuk
+                // Kolom 5: Dana Masuk [cite: 60, 75]
                 const masukCell = row.insertCell();
                 masukCell.textContent = t.jenis === 'MASUK' ? formatRupiah(t.jumlah) : 'Rp 0';
                 masukCell.className = 'py-3 px-3 text-right text-green-600';
-                // Kolom 6: Dana Keluar
+                // Kolom 6: Dana Keluar [cite: 61, 76]
                 const keluarCell = row.insertCell();
                 keluarCell.textContent = t.jenis === 'KELUAR' ? formatRupiah(t.jumlah) : 'Rp 0';
                 keluarCell.className = 'py-3 px-3 text-right text-red-600';
-                // Kolom 7: Saldo Berjalan
+                // Kolom 7: Saldo Berjalan [cite: 62, 77]
                 const saldoCell = row.insertCell();
                 saldoCell.textContent = formatRupiah(t.saldo);
                 saldoCell.className = 'py-3 px-3 text-right font-semibold';
-                // Kolom 8: Aksi (Admin Only)
+                // Kolom 8: Aksi (Admin Only) [cite: 78]
                 const actionCell = row.insertCell();
                 actionCell.className = 'py-3 px-3 text-center admin-only-col';
                 
@@ -535,7 +535,7 @@
             document.getElementById('sort-by').addEventListener('change', () => renderTable(allTransactions));
         };
 
-        // --- 6. FUNGSI EKSPOR PDF (3 JENIS LAPORAN BARU) --- [cite: 37, 38, 39]
+        // --- 6. FUNGSI EKSPOR PDF (3 JENIS LAPORAN BARU) ---
 
         window.generatePDF = (type) => {
             const doc = new jsPDF('p', 'mm', 'a4'); 
@@ -550,21 +550,21 @@
             let dataFilter = [];
 
             if (type === 'donatur') {
-                // Laporan 1: List Donatur (Kolom 1 sampai 6 + Prosentase) [cite: 37]
+                // Laporan 1: List Donatur (Kolom 1 sampai 6 + Prosentase) [cite: 80]
                 headerText = 'LAPORAN LIST DONATUR JARIYAH';
                 head = [['No', 'Tanggal', 'Nama Donatur', 'Alamat', 'Jariyah (Keterangan)', 'Total Jariyah', 'Makam (15%)', 'Panitia (15%)', 'Khoul (70%)']];
                 dataFilter = allTransactions.filter(t => t.isDonation);
                 
                 body = dataFilter.map((t, index) => [
                     index + 1,
-                    formatDateForDisplay(t.tanggal),
-                    t.namaDonatur,
-                    t.alamat,
-                    t.jariyah,
-                    formatRupiah(t.jumlah),
-                    formatRupiah(t.prosentase.makam),
-                    formatRupiah(t.prosentase.panitia),
-                    formatRupiah(t.prosentase.khoul)
+                    formatDateForDisplay(t.tanggal), // Kolom 2 [cite: 47]
+                    t.namaDonatur, // Kolom 3 [cite: 48]
+                    t.alamat, // Kolom 4 [cite: 49]
+                    t.jariyah, // Kolom 5 [cite: 50]
+                    formatRupiah(t.jumlah), // Kolom 6 [cite: 51]
+                    formatRupiah(t.prosentase.makam), // 15% [cite: 53]
+                    formatRupiah(t.prosentase.panitia), // 15% [cite: 54]
+                    formatRupiah(t.prosentase.khoul) // 70% [cite: 55]
                 ]);
                 
                 // Tambahkan Total Jariyah di footer
@@ -596,17 +596,18 @@
                 doc.save(`Laporan_List_Donatur_${currentDate}.pdf`);
 
             } else if (type === 'pengeluaran') {
-                // Laporan 2: Pengeluaran Detail (hanya transaksi KELUAR) [cite: 38]
+                // Laporan 2: Pengeluaran Detail (hanya transaksi KELUAR, Kolom 13 Kategori tidak ikut) [cite: 81]
                 headerText = 'LAPORAN TRANSAKSI PENGELUARAN DETAIL';
-                // Kolom No, Tanggal, Uraian, Dana Keluar [cite: 13, 14, 15, 18]
+                // Kolom No, Tanggal, Uraian, Dana Keluar
                 head = [['No', 'Tanggal', 'Uraian', 'Dana Keluar']]; 
+                // Filter data KELUAR
                 dataFilter = allTransactions.filter(t => t.jenis === 'KELUAR');
                 
                 body = dataFilter.map((t, index) => [
                     index + 1,
-                    formatDateForDisplay(t.tanggal),
-                    t.uraian,
-                    formatRupiah(t.jumlah)
+                    formatDateForDisplay(t.tanggal), // Kolom 10 (Tanggal) [cite: 57]
+                    t.uraian, // Kolom 11 (Uraian) [cite: 58]
+                    formatRupiah(t.jumlah) // Kolom 14 (Dana Keluar) [cite: 61]
                 ]);
                 
                 // Total Pengeluaran
@@ -632,7 +633,7 @@
                 doc.save(`Laporan_Pengeluaran_Detail_${currentDate}.pdf`);
 
             } else if (type === 'lpj') {
-                // Laporan 3: LPJ (Laporan Pertanggung Jawaban - Ringkasan Kategori) [cite: 39]
+                // Laporan 3: LPJ (Laporan Pertanggung Jawaban - Ringkasan Kategori) [cite: 82, 86]
                 headerText = 'LAPORAN PERTANGGUNG JAWABAN (LPJ) KHAUL';
                 
                 const summary = allTransactions.reduce((acc, t) => {
@@ -713,6 +714,7 @@
         window.generatePDF = window.generatePDF;
         
     </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
@@ -755,7 +757,7 @@
             width: 90%;
             max-width: 400px;
         }
-        /* Tambahan: Prosentase hanya terlihat saat Admin Login */
+        /* Tambahan: Prosentase dan Aksi hanya terlihat saat Admin Login */
         .admin-only-col {
             display: none;
         }
@@ -785,9 +787,9 @@
             
             <input type="text" id="donatur-alamat" placeholder="Alamat (Kolom 4)" class="input-field">
 
-            <input type="text" id="tanggal-input-masuk" placeholder="Tanggal Transaksi (Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+            <input type="text" id="tanggal-input-masuk" placeholder="Tanggal Transaksi (Kolom 2 - Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
             
-            <input type="text" id="keterangan-donasi" placeholder="Keterangan Donasi (Kolom 5 - Jariyah)" class="input-field">
+            <input type="text" id="keterangan-donasi" placeholder="Jariyah (Kolom 5 - Keterangan Donasi)" class="input-field">
             
             <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
@@ -803,17 +805,17 @@
             2. Catat Dana Keluar (Transaksi Umum)
         </div>
         <div class="space-y-4">
-            <input type="text" id="tanggal-input-keluar" placeholder="Tanggal Transaksi (Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+            <input type="text" id="tanggal-input-keluar" placeholder="Tanggal Transaksi (Kolom 10 - Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
             
             <select id="kategori-select-keluar" class="input-field">
                  <option value="">-- Pilih Kategori --</option>
                 </select>
             
-            <input type="text" id="uraian-input-keluar" placeholder="Uraian Pengeluaran" class="input-field">
+            <input type="text" id="uraian-input-keluar" placeholder="Uraian Pengeluaran (Kolom 11)" class="input-field">
             
             <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
-                <input type="number" id="jumlah-input-keluar" placeholder="Jumlah Dana Keluar (Angka saja)" class="input-field pl-10">
+                <input type="number" id="jumlah-input-keluar" placeholder="Jumlah Dana Keluar (Kolom 14 - Angka saja)" class="input-field pl-10">
             </div>
             
             <button onclick="window.catatPengeluaran()" class="btn-primary bg-red-600 hover:bg-red-700">
@@ -870,13 +872,13 @@
         
         <div class="mt-6 flex flex-wrap gap-4 justify-center">
             <button onclick="window.generatePDF('donatur')" class="btn-primary bg-blue-600 hover:bg-blue-700 w-full sm:w-auto flex-1">
-                Unduh List Donatur (PDF) [cite: 37]
+                Unduh List Donatur (PDF)
             </button>
             <button onclick="window.generatePDF('pengeluaran')" class="btn-primary bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto flex-1">
-                Unduh Pengeluaran Detail (PDF) [cite: 38]
+                Unduh Pengeluaran Detail (PDF)
             </button>
             <button onclick="window.generatePDF('lpj')" class="btn-primary bg-green-600 hover:bg-green-700 w-full sm:w-auto flex-1">
-                Unduh Laporan Pertanggung Jawaban (LPJ - PDF) [cite: 39, 41]
+                Unduh Laporan Pertanggung Jawaban (LPJ - PDF)
             </button>
         </div>
 
