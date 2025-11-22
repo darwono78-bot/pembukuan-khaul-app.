@@ -30,80 +30,99 @@
 </head>
 <body>
 <div class="container">
-    <h1>📝 Aplikasi Pembukuan Dana Khaul</h1>
+    <p id="authStatus"></p>
     
-    <h2>1. Masukkan Donasi (Dana Masuk)</h2>
-    <form id="formDonasi">
-        <label for="donasiTanggal">Tanggal Donasi (K-2):</label>
-        <input type="date" id="donasiTanggal" required>
-        <label for="namaDonatur">Nama Donatur (K-3):</label>
-        <input type="text" id="namaDonatur" required>
-        <label for="alamatDonatur">Alamat (K-4):</label>
-        <input type="text" id="alamatDonatur">
-        <label for="jumlahJariyah">Jumlah Jariyah/Donasi (Rp) (K-5/6):</label>
-        <input type="number" id="jumlahJariyah" min="1" required>
-        <button type="submit">Catat Donasi</button>
-    </form>
-    
-    <hr>
+    <div id="loginContainer" style="display: none;">
+        <h2>🔐 Login Administrator</h2>
+        <form id="loginForm">
+            <label for="loginEmail">Email:</label>
+            <input type="email" id="loginEmail" required>
+            <label for="loginPassword">Password:</label>
+            <input type="password" id="loginPassword" required>
+            <button type="submit">Login</button>
+        </form>
+        <hr>
+    </div>
 
-    <h2>2. Masukkan Pengeluaran</h2>
-    <form id="formPengeluaran">
-        <label for="pengeluaranTanggal">Tanggal Transaksi (K-9):</label>
-        <input type="date" id="pengeluaranTanggal" required>
+    <div id="appContainer" style="display: none;">
         
-        <label for="kategori">Kategori Biaya (LPJ) (K-11):</label>
-        <select id="kategori" required>
-            <option value="">-- Pilih Kategori --</option>
-        </select>
+        <h1>📝 Aplikasi Pembukuan Dana Khaul</h1>
         
-        <label for="uraian">Uraian / Deskripsi Pengeluaran (K-10):</label>
-        <textarea id="uraian" rows="3" required></textarea>
+        <h2>1. Masukkan Donasi (Dana Masuk)</h2>
+        <form id="formDonasi">
+            <label for="donasiTanggal">Tanggal Donasi (K-2):</label>
+            <input type="date" id="donasiTanggal" required>
+            <label for="namaDonatur">Nama Donatur (K-3):</label>
+            <input type="text" id="namaDonatur" required>
+            <label for="alamatDonatur">Alamat (K-4):</label>
+            <input type="text" id="alamatDonatur">
+            <label for="jumlahJariyah">Jumlah Jariyah/Donasi (Rp) (K-5/6):</label>
+            <input type="number" id="jumlahJariyah" min="1" required>
+            <button type="submit">Catat Donasi</button>
+        </form>
         
-        <label for="jumlah">Jumlah Dana Keluar (Rp) (K-12):</label>
-        <input type="number" id="jumlah" min="1" required>
-        
-        <button type="submit">Catat Pengeluaran</button>
-    </form>
+        <hr>
 
-    <hr>
-    
-    <h2>3. 📊 Dashboard Laporan Kas Berjalan</h2>
-    <table id="tabelJurnalKas">
-        <thead>
-            <tr>
-                <th>No (K-8)</th> 
-                <th>Tanggal (K-9)</th>
-                <th>Uraian (K-10)</th>
-                <th class="admin-only">Kategori (K-11)</th> 
-                <th>Dana Masuk</th>
-                <th>Dana Keluar (K-12)</th>
-                <th>Saldo Berjalan (K-13)</th>
-                <th class="admin-only">Aksi (K-14)</th>
-            </tr>
-        </thead>
-        <tbody id="jurnalBody">
-            </tbody>
-        <tfoot>
-            <tr>
-                <td colspan="6" style="text-align: right; font-weight: bold;">TOTAL SALDO AKHIR:</td>
-                <td colspan="2" id="finalSaldo" style="text-align: right;"></td>
-            </tr>
-        </tfoot>
-    </table>
-    
-    <button id="downloadLaporanLPJ" style="background-color: green;">Unduh Laporan Pertanggung Jawaban (LPJ) PDF (K-18)</button>
-    <button id="downloadListDonatur">Unduh List Donatur PDF (K-16)</button>
-    <button id="downloadPengeluaranDetail">Unduh Pengeluaran Detail PDF (K-17)</button>
-    
-    <button onclick="alert('Fungsi Reset Data (K-15) memerlukan otorisasi Cloud Function. Hati-hati menggunakan ini!')" style="background-color: red;">Reset Semua Data</button>
+        <h2>2. Masukkan Pengeluaran</h2>
+        <form id="formPengeluaran">
+            <label for="pengeluaranTanggal">Tanggal Transaksi (K-9):</label>
+            <input type="date" id="pengeluaranTanggal" required>
+            
+            <label for="kategori">Kategori Biaya (LPJ) (K-11):</label>
+            <select id="kategori" required>
+                <option value="">-- Pilih Kategori --</option>
+            </select>
+            
+            <label for="uraian">Uraian / Deskripsi Pengeluaran (K-10):</label>
+            <textarea id="uraian" rows="3" required></textarea>
+            
+            <label for="jumlah">Jumlah Dana Keluar (Rp) (K-12):</label>
+            <input type="number" id="jumlah" min="1" required>
+            
+            <button type="submit">Catat Pengeluaran</button>
+        </form>
 
+        <hr>
+        
+        <h2>3. 📊 Dashboard Laporan Kas Berjalan</h2>
+        <table id="tabelJurnalKas">
+            <thead>
+                <tr>
+                    <th>No (K-8)</th> 
+                    <th>Tanggal (K-9)</th>
+                    <th>Uraian (K-10)</th>
+                    <th class="admin-only">Kategori (K-11)</th> 
+                    <th>Dana Masuk</th>
+                    <th>Dana Keluar (K-12)</th>
+                    <th>Saldo Berjalan (K-13)</th>
+                    <th class="admin-only">Aksi (K-14)</th>
+                </tr>
+            </thead>
+            <tbody id="jurnalBody">
+                </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="6" style="text-align: right; font-weight: bold;">TOTAL SALDO AKHIR:</td>
+                    <td colspan="2" id="finalSaldo" style="text-align: right;"></td>
+                </tr>
+            </tfoot>
+        </table>
+        
+        <button id="downloadLaporanLPJ" style="background-color: green;">Unduh Laporan Pertanggung Jawaban (LPJ) PDF (K-18)</button>
+        <button id="downloadListDonatur">Unduh List Donatur PDF (K-16)</button>
+        <button id="downloadPengeluaranDetail">Unduh Pengeluaran Detail PDF (K-17)</button>
+        
+        <button onclick="resetAllData()" style="background-color: red;">Reset Semua Data (K-15)</button>
+
+    </div>
 </div>
 
 <script type="module">
     // Import semua fungsi yang diperlukan
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, runTransaction, query, orderBy, getDocs, updateDoc, deleteDoc, Timestamp, where } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, runTransaction, query, orderBy, getDocs, updateDoc, deleteDoc, Timestamp, where, writeBatch } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
 
     // Your web app's Firebase configuration (WAJIB GANTI DENGAN KUNCI ASLI ANDA)
     const firebaseConfig = {
@@ -118,6 +137,7 @@
     // Inisialisasi Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app); // Inisialisasi Auth
 
     // =================================================================
     // UTILITY FUNCTIONS & NOMOR URUT AMAN
@@ -133,9 +153,7 @@
 
     const cleanRupiah = (str) => {
         if (!str) return 0;
-        // Hapus semua non-digit kecuali tanda koma/titik untuk desimal
         let cleaned = str.replace(/[^\d,\.]/g, ''); 
-        // Konversi koma ke titik (jika format desimal Indonesia)
         cleaned = cleaned.replace(/\./g, '').replace(/,/g, ''); 
         return parseInt(cleaned) || 0;
     };
@@ -159,20 +177,53 @@
     };
 
     // =================================================================
-    // CRUD ACTIONS (Edit & Delete)
+    // 4. CRUD ACTIONS (Edit & Delete)
     // =================================================================
-    window.editTransaksi = async (docId) => {
-        alert(`[K-14] Fungsi Edit untuk ID: ${docId} Belum diaktifkan. Anda harus membuat Form Pop-up untuk mengisi ulang data!`);
+    
+    window.editTransaksi = async (docId, currentUraian, currentJumlah) => {
+        if (!auth.currentUser) {
+            alert("Anda harus Login untuk mengedit data.");
+            return;
+        }
+
+        const newUraian = prompt("Masukkan Uraian Transaksi Baru:", currentUraian);
+        if (newUraian === null) return; 
+        
+        let newJumlah = prompt("Masukkan Jumlah Transaksi Baru (Hanya Angka):", currentJumlah);
+        newJumlah = parseInt(newJumlah);
+        
+        if (isNaN(newJumlah) || newJumlah <= 0) {
+            alert("Jumlah tidak valid.");
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "jurnal_kas", docId);
+            await updateDoc(docRef, {
+                uraian: newUraian,
+                jumlah: newJumlah
+            });
+            
+            alert("Transaksi berhasil diubah!");
+            displayJurnalKas();
+            
+        } catch (e) {
+            alert("Gagal mengedit transaksi. Pastikan Anda sudah Login dan Rules Firebase benar.");
+        }
     };
 
     window.deleteTransaksi = async (docId, noTransaksi, isDonasi = false) => {
+        if (!auth.currentUser) {
+            alert("Anda harus Login untuk menghapus data.");
+            return;
+        }
+
         if (!confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) return;
         
         try {
             await deleteDoc(doc(db, "jurnal_kas", docId));
             
             if (isDonasi) {
-                // Hapus entri yang sesuai di donatur_khaul
                 const q = query(collection(db, 'donatur_khaul'), where('no', '==', noTransaksi));
                 const snapshot = await getDocs(q);
                 snapshot.forEach(async (doc) => {
@@ -187,8 +238,221 @@
         }
     };
 
+
     // =================================================================
-    // DATA EXCEL LAMA ANDA (UNTUK IMPORT SATU KALI)
+    // 5. RESET DATA (K-15)
+    // =================================================================
+
+    window.resetAllData = async () => {
+        if (!auth.currentUser) {
+            alert("Anda harus Login untuk melakukan Reset Data.");
+            return;
+        }
+        
+        if (!confirm("PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SEMUA DATA JURNAL DAN DONATUR?")) return;
+        if (!confirm("KONFIRMASI TERAKHIR: Tindakan ini TIDAK BISA DIBATALKAN. Tekan OK untuk HAPUS SEMUA.")) return;
+
+        try {
+            const journalSnapshot = await getDocs(collection(db, "jurnal_kas"));
+            const donaturSnapshot = await getDocs(collection(db, "donatur_khaul"));
+            
+            const batch = writeBatch(db); 
+
+            journalSnapshot.forEach((docEntry) => {
+                batch.delete(doc(db, "jurnal_kas", docEntry.id));
+            });
+            
+            donaturSnapshot.forEach((docEntry) => {
+                batch.delete(doc(db, "donatur_khaul", docEntry.id));
+            });
+            
+            batch.set(doc(db, "metadata", "global_counter"), { last_no: 0 });
+
+            await batch.commit();
+
+            alert("Semua data berhasil direset dan dihapus!");
+            displayJurnalKas(); 
+
+        } catch (e) {
+            console.error("Gagal mereset data: ", e);
+            alert("Gagal mereset data. Pastikan Anda Login dan Rules Firebase benar.");
+        }
+    };
+
+    // =================================================================
+    // 1. INPUT DONASI (PEMASUKAN)
+    // =================================================================
+
+    document.getElementById('formDonasi').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!auth.currentUser) { alert("Anda harus Login untuk mencatat data."); return; }
+        
+        const donasiTanggal = document.getElementById('donasiTanggal').value;
+        const namaDonatur = document.getElementById('namaDonatur').value;
+        const alamatDonatur = document.getElementById('alamatDonatur').value;
+        const jumlahJariyah = parseInt(document.getElementById('jumlahJariyah').value);
+
+        // ... (Lanjutan kode Donasi sama seperti sebelumnya) ...
+        try {
+            const nextNo = await getNextNoTransaksi();
+            const transactionDate = new Date(donasiTanggal);
+
+            await addDoc(collection(db, "donatur_khaul"), {
+                no: nextNo, 
+                tanggal: transactionDate, 
+                nama_donatur: namaDonatur, 
+                alamat: alamatDonatur, 
+                jariyah: jumlahJariyah, 
+                total_jariyah: jumlahJariyah, 
+            });
+
+            await addDoc(collection(db, "jurnal_kas"), {
+                no: nextNo, 
+                tanggal: transactionDate, 
+                uraian: `Donasi dari ${namaDonatur} (${alamatDonatur || 'Tanpa Alamat'})`, 
+                kategori: "Dana Masuk (Donasi)", 
+                jenis_transaksi: "MASUK",
+                jumlah: jumlahJariyah, 
+            });
+
+            alert("Donasi berhasil dicatat!");
+            document.getElementById('formDonasi').reset();
+            displayJurnalKas();
+        } catch (e) {
+            alert("Gagal mencatat data donasi: " + e.message);
+        }
+    });
+
+
+    // =================================================================
+    // 2. INPUT PENGELUARAN
+    // =================================================================
+
+    function loadKategori() {
+        const kategoriSelect = document.getElementById('kategori');
+        const q = query(collection(db, "kategori_lpj"), orderBy("nama_kategori", "asc")); 
+        
+        getDocs(q).then(snapshot => {
+            snapshot.forEach(doc => {
+                const kategori = doc.data().nama_kategori;
+                const option = document.createElement('option');
+                option.value = kategori;
+                option.textContent = kategori;
+                kategoriSelect.appendChild(option);
+            });
+        }).catch(error => {
+            console.error("Gagal memuat kategori: ", error);
+        });
+    }
+
+    document.getElementById('formPengeluaran').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!auth.currentUser) { alert("Anda harus Login untuk mencatat data."); return; }
+
+        const tanggalInput = document.getElementById('pengeluaranTanggal').value;
+        const kategoriInput = document.getElementById('kategori').value;
+        const uraianInput = document.getElementById('uraian').value;
+        const jumlahInput = parseInt(document.getElementById('jumlah').value);
+
+        // ... (Lanjutan kode Pengeluaran sama seperti sebelumnya) ...
+        try {
+            const nextNo = await getNextNoTransaksi();
+            
+            const dataTransaksi = {
+                no: nextNo, 
+                tanggal: new Date(tanggalInput), 
+                uraian: uraianInput, 
+                kategori: kategoriInput, 
+                jenis_transaksi: "KELUAR",
+                jumlah: jumlahInput 
+            };
+
+            await addDoc(collection(db, 'jurnal_kas'), dataTransaksi);
+            
+            alert("Pengeluaran berhasil dicatat!");
+            document.getElementById('formPengeluaran').reset();
+            displayJurnalKas();
+        } catch (error) {
+             alert("Gagal mencatat pengeluaran: " + error.message);
+        }
+    });
+
+
+    // =================================================================
+    // 3. TAMPILAN SALDO BERJALAN (DASHBOARD)
+    // =================================================================
+
+    async function displayJurnalKas() {
+        if (!auth.currentUser) return; // Hanya tampilkan jika sudah login
+        
+        const jurnalBody = document.getElementById('jurnalBody');
+        const finalSaldoCell = document.getElementById('finalSaldo');
+        
+        jurnalBody.innerHTML = '';
+        let saldoBerjalan = 0;
+        
+        const q = query(collection(db, 'jurnal_kas'), orderBy('tanggal', 'asc'), orderBy('no', 'asc'));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            let danaMasuk = 0;
+            let danaKeluar = 0;
+            let isDonasi = data.kategori === 'Dana Masuk (Donasi)'; 
+            
+            if (data.jenis_transaksi === 'MASUK') {
+                danaMasuk = data.jumlah;
+                saldoBerjalan += data.jumlah; 
+            } else if (data.jenis_transaksi === 'KELUAR') {
+                danaKeluar = data.jumlah;
+                saldoBerjalan -= data.jumlah; 
+            }
+
+            const row = jurnalBody.insertRow();
+            row.insertCell().textContent = data.no; 
+            row.insertCell().textContent = formatDate(data.tanggal);
+            row.insertCell().textContent = data.uraian;
+            
+            const kategoriCell = row.insertCell();
+            kategoriCell.textContent = data.kategori;
+            kategoriCell.classList.add('admin-only');
+            
+            row.insertCell().textContent = danaMasuk > 0 ? formatRupiah(danaMasuk) : '-';
+            row.insertCell().textContent = danaKeluar > 0 ? formatRupiah(danaKeluar) : '-';
+            
+            const saldoCell = row.insertCell();
+            saldoCell.textContent = formatRupiah(saldoBerjalan);
+
+            // Kolom Aksi (Edit/Hapus)
+            const aksiCell = row.insertCell();
+            aksiCell.innerHTML = `
+                <button class="aksi-btn edit" onclick="editTransaksi(
+                    '${doc.id}', 
+                    '${data.uraian.replace(/'/g, "\\'")}', 
+                    ${data.jumlah}
+                )">Edit</button> 
+                <button class="aksi-btn delete" onclick="deleteTransaksi('${doc.id}', ${data.no}, ${isDonasi})">Hapus</button>
+            `;
+            aksiCell.classList.add('admin-only');
+        });
+
+        finalSaldoCell.textContent = formatRupiah(saldoBerjalan);
+    }
+
+    // =================================================================
+    // PDF GENERATION (K-16, K-17, K-18)
+    // =================================================================
+
+    // ... (Fungsi PDF Generation sama seperti sebelumnya) ...
+    const createDataArrayFromSnapshot = (snapshot, type) => { /* ... */ };
+    document.getElementById('downloadLaporanLPJ').addEventListener('click', async () => { /* ... */ });
+    document.getElementById('downloadListDonatur').addEventListener('click', async () => { /* ... */ });
+    document.getElementById('downloadPengeluaranDetail').addEventListener('click', async () => { /* ... */ });
+
+
+    // =================================================================
+    // KODE IMPORT DATA LAMA (HANYA JALAN SEKALI)
     // =================================================================
     const dataToImport = [
         {
@@ -197,6 +461,7 @@
             "No__1": 1, "Tanggal__1": "21-11-2025", "Uraian": "ongkos kiai ceramah", 
             "Kategori": "bayar kiai", "Dana masuk": "10,000,000", "Dana Keluar": "1,000,000"
         },
+        // ... (Lanjutkan sisa 5 objek data Excel Anda) ...
         {
             "No": 2, "Tanggal": "21-11-2025", "Nama donatur": "ngadiyo", "Alamat": "Gowangkong 1/10 Ngablak", 
             "Jariyah": "2,000,000", "Total Jariyah": "4,000,000", 
@@ -233,91 +498,95 @@
         let currentNo = 0; 
         const totalDonasi = cleanRupiah(dataToImport[4]["Total Jariyah"]); 
         
-        // 1. IMPOR DONASI TOTAL (SATU TRANSAKSI JURNAL)
         if (totalDonasi > 0) {
             currentNo = await getNextNoTransaksi(); 
             await addDoc(collection(db, "jurnal_kas"), {
-                no: currentNo,
-                tanggal: new Date("2025-11-21"), 
-                uraian: "Transfer Saldo Awal/Total Donasi Massal",
-                kategori: "Dana Masuk (Donasi)",
-                jenis_transaksi: "MASUK",
-                jumlah: totalDonasi
+                no: currentNo, tanggal: new Date("2025-11-21"), 
+                uraian: "Transfer Saldo Awal/Total Donasi Massal", kategori: "Dana Masuk (Donasi)",
+                jenis_transaksi: "MASUK", jumlah: totalDonasi
             });
-            console.log(`[IMPOR JURNAL] Berhasil mencatat Saldo Awal No: ${currentNo}`);
         }
-
-
-        // 2. IMPOR PENGELUARAN (ENAM TRANSAKSI JURNAL)
+        
         for (let i = 0; i < dataToImport.length; i++) {
             const item = dataToImport[i];
-            
             const danaKeluar = cleanRupiah(item["Dana Keluar"]);
             if (danaKeluar > 0) {
                 currentNo = await getNextNoTransaksi(); 
-                
                 await addDoc(collection(db, "jurnal_kas"), {
-                    no: currentNo,
-                    tanggal: new Date(`2025-11-21`), 
-                    uraian: item["Uraian"],
-                    kategori: item["Kategori"],
-                    jenis_transaksi: "KELUAR",
-                    jumlah: danaKeluar
+                    no: currentNo, tanggal: new Date(`2025-11-21`), 
+                    uraian: item["Uraian"], kategori: item["Kategori"], 
+                    jenis_transaksi: "KELUAR", jumlah: danaKeluar
                 });
-                console.log(`[IMPOR JURNAL] Berhasil mencatat Pengeluaran No: ${currentNo} (${item["Uraian"]})`);
             }
         }
         
-        // 3. IMPOR DETAIL DONATUR (LIMA TRANSAKSI DONATUR_KHAUL)
         for (let i = 0; i < 5; i++) {
             const item = dataToImport[i];
-            
             await addDoc(collection(db, "donatur_khaul"), {
-                no: item["No"], 
-                tanggal: new Date(`2025-11-21`),
-                nama_donatur: item["Nama donatur"],
-                alamat: item["Alamat"],
-                jariyah: cleanRupiah(item["Jariyah"]),
-                total_jariyah: cleanRupiah(item["Jariyah"]),
+                no: item["No"], tanggal: new Date(`2025-11-21`),
+                nama_donatur: item["Nama donatur"], alamat: item["Alamat"],
+                jariyah: cleanRupiah(item["Jariyah"]), total_jariyah: cleanRupiah(item["Jariyah"]),
             });
-            console.log(`[IMPOR DONATUR] Berhasil mencatat Donatur: ${item["Nama donatur"]}`);
         }
 
-        console.log("Proses impor data lama selesai!");
-        alert("SEMUA DATA LAMA BERHASIL DIIMPOR KE FIREBASE! Silakan cek Dashboard.");
+        alert("SEMUA DATA LAMA BERHASIL DIIMPOR! (Lakukan langkah pengamanan 3 dan 4)");
     }
-    
-    // =================================================================
-    // 1. INPUT DONASI (PEMASUKAN) - Kode sama seperti sebelumnya
-    // =================================================================
-    document.getElementById('formDonasi').addEventListener('submit', async (e) => { /* ... kode donasi ... */ });
 
     // =================================================================
-    // 2. INPUT PENGELUARAN - Kode sama seperti sebelumnya
+    // AUTHENTICATION LOGIC (LOGIN/LOGOUT)
     // =================================================================
-    function loadKategori() { /* ... kode load kategori ... */ }
-    document.getElementById('formPengeluaran').addEventListener('submit', async (e) => { /* ... kode pengeluaran ... */ });
 
-    // =================================================================
-    // 3. TAMPILAN SALDO BERJALAN & PDF - Kode sama seperti sebelumnya
-    // =================================================================
-    async function displayJurnalKas() { /* ... kode display jurnal kas ... */ }
-    document.getElementById('downloadLaporanLPJ').addEventListener('click', async () => { /* ... kode PDF LPJ ... */ });
-    document.getElementById('downloadListDonatur').addEventListener('click', async () => { /* ... kode PDF Donatur ... */ });
-    document.getElementById('downloadPengeluaranDetail').addEventListener('click', async () => { /* ... kode PDF Detail ... */ });
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+        } catch (error) {
+            alert("Gagal Login. Periksa Email dan Password.");
+        }
+    });
 
-    // =================================================================
-    // INITIATION CALLS
-    // =================================================================
+    window.logout = async () => {
+        await signOut(auth);
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+        const loginContainer = document.getElementById('loginContainer');
+        const appContainer = document.getElementById('appContainer');
+        const authStatus = document.getElementById('authStatus');
+
+        if (user) {
+            loginContainer.style.display = 'none';
+            appContainer.style.display = 'block';
+            authStatus.innerHTML = `Selamat datang, Admin! (<a href='#' onclick='logout()'>Logout</a>)`;
+            loadKategori(); // Muat kategori
+            displayJurnalKas(); // Muat data
+            
+            // --- PENTING: LANGKAH 3 (Hanya Jalankan Satu Kali di Awal!) ---
+            // UNCOMMENT baris di bawah ini dan jalankan website Anda SATU KALI 
+            // untuk membuat akun admin pertama (admin@khaul.com | passwordadmin).
+            // Setelah berhasil, segera COMMENT OUT lagi!
+            // await createUserWithEmailAndPassword(auth, "admin@khaul.com", "passwordadmin"); 
+            // --- PENTING ---
+
+            // --- PENTING: LANGKAH 4 (Hanya Jalankan Satu Kali di Awal!) ---
+            // UNCOMMENT baris di bawah ini dan jalankan website Anda SATU KALI 
+            // untuk mengimpor data Excel lama Anda.
+            // Setelah berhasil, segera COMMENT OUT lagi!
+            // importOldData(); 
+            // --- PENTING ---
+            
+        } else {
+            loginContainer.style.display = 'block';
+            appContainer.style.display = 'none';
+            authStatus.textContent = "Anda harus Login untuk mengakses aplikasi.";
+        }
+    });
+
     window.onload = () => {
-         loadKategori();
-         displayJurnalKas();
-         
-         // PENTING: Panggil importOldData() HANYA SEKALI!
-         // Hapus tanda '//' untuk menjalankan impor saat file dibuka pertama kali.
-         // importOldData();
+         // onAuthStateChanged akan menangani semua pemuatan data
     };
 </script>
 </body>
-
 </html>
