@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pembukuan Dana Khaul - Donatur Prosentase</title>
+    <title>Aplikasi Pembukuan Dana Khaul - Donatur Prosentase & PDF</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -13,7 +13,7 @@
             background-color: #f4f7f9;
         }
         .container-app {
-            max-width: 1200px; /* Lebar diperluas untuk menampung kolom baru */
+            max-width: 1200px;
         }
         .input-field {
             @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150;
@@ -31,22 +31,24 @@
 
     <script type="module">
         
+        // --- IMPORT JS PDF ---
+        import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+        import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js";
+        
         // --- VARIABEL GLOBAL & UTILITY ---
         const STORAGE_KEY = 'khaul_donations_simple';
         let allDonations = []; 
         
         const formatRupiah = (angka) => {
             if (angka === undefined || angka === null) return 'Rp 0';
-            // Pembulatan ke angka terdekat
             const num = Math.round(angka); 
             return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         };
 
-        // KONSTANTA PROSENTASE (Sesuai Permintaan)
         const PROSENTASE = {
-            PERAWATAN_MAKAM: 0.15, // 15%
-            ONGKOS_PANITIA: 0.15,  // 15%
-            BIAYA_KHAUL: 0.70      // 70%
+            PERAWATAN_MAKAM: 0.15, 
+            ONGKOS_PANITIA: 0.15,  
+            BIAYA_KHAUL: 0.70      
         };
         
         // --- DATA HANDLING (localStorage) ---
@@ -55,6 +57,17 @@
             try {
                 const data = localStorage.getItem(STORAGE_KEY);
                 allDonations = data ? JSON.parse(data) : [];
+                
+                // --- PERBAIKAN KRITIS: Memastikan semua nilai uang adalah Number ---
+                allDonations = allDonations.map(d => ({
+                    ...d,
+                    totalJariyah: Number(d.totalJariyah),
+                    perawatanMakam: Number(d.perawatanMakam),
+                    ongkosPanitia: Number(d.ongkosPanitia),
+                    biayaKhaul: Number(d.biayaKhaul),
+                }));
+                // -------------------------------------------------------------------
+
             } catch (error) {
                 console.error("Gagal memuat data dari localStorage:", error);
                 allDonations = [];
@@ -84,10 +97,8 @@
             const perawatanMakam = Math.round(totalJariyah * PROSENTASE.PERAWATAN_MAKAM);
             const ongkosPanitia = Math.round(totalJariyah * PROSENTASE.ONGKOS_PANITIA);
             const biayaKhaul = Math.round(totalJariyah * PROSENTASE.BIAYA_KHAUL);
-            // Cek selisih karena pembulatan (untuk memastikan totalProsentase sama dengan TotalJariyah)
-            const selisih = totalJariyah - (perawatanMakam + ongkosPanitia + biayaKhaul);
             
-            // Tambahkan selisih ke komponen terbesar (Biaya Khaul)
+            const selisih = totalJariyah - (perawatanMakam + ongkosPanitia + biayaKhaul);
             const biayaKhaulFinal = biayaKhaul + selisih; 
 
             const newDonation = {
@@ -100,7 +111,7 @@
                 totalJariyah: totalJariyah,
                 perawatanMakam: perawatanMakam,
                 ongkosPanitia: ongkosPanitia,
-                biayaKhaul: biayaKhaulFinal // Sudah dikoreksi
+                biayaKhaul: biayaKhaulFinal
             };
 
             allDonations.push(newDonation);
@@ -144,7 +155,6 @@
                 return;
             }
             
-            // Urutkan data terbaru di atas (DESC)
             const finalRows = [...dataToRender].sort((a, b) => b.timestamp - a.timestamp); 
             
             finalRows.forEach((d, index) => {
@@ -155,8 +165,6 @@
                 totalKhaul += d.biayaKhaul;
 
                 const row = tableBody.insertRow();
-
-                // Format Tanggal
                 const date = new Date(d.tanggal);
                 const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 
@@ -178,8 +186,6 @@
                 totalJariyahCell.textContent = formatRupiah(d.totalJariyah);
                 totalJariyahCell.className = 'py-3 px-3 text-right font-bold text-green-700 bg-green-50';
 
-                // --- KOLOM PROSENTASE (7, 8, 9) ---
-                
                 // Kolom 7: Perawatan Makam (15%)
                 const makamCell = row.insertCell();
                 makamCell.textContent = formatRupiah(d.perawatanMakam);
@@ -208,10 +214,63 @@
             document.getElementById('total-khaul').textContent = formatRupiah(totalKhaul);
         };
         
+        // --- FUNGSI EKSPOR PDF LIST DONATUR ---
+        const generateDonaturPDF = () => {
+            const doc = new jsPDF('p', 'mm', 'a4'); 
+            const currentDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+            
+            const title = 'LAPORAN DAFTAR DONATUR JARIYAH KHAUL';
+            
+            // Header
+            doc.setFontSize(16);
+            doc.text(title, 14, 20);
+            doc.setFontSize(10);
+            doc.text(`Dicetak pada: ${currentDate}`, 14, 26);
+            
+            // Siapkan data untuk PDF (Hanya 6 kolom)
+            const donasiUntukPDF = allDonations
+                .sort((a, b) => a.timestamp - b.timestamp) 
+                .map((d, index) => {
+                    const date = new Date(d.tanggal);
+                    const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                    return [
+                        index + 1, // No Urut (1)
+                        formattedDate, // Tanggal (2)
+                        d.namaDonatur, // Nama Donatur (3)
+                        d.alamat, // Alamat (4)
+                        d.nilaiJariyah, // Jariyah (5)
+                        formatRupiah(d.totalJariyah) // Total Jariyah (6)
+                    ];
+                });
+
+            // Footer (Total)
+            const totalDonasi = document.getElementById('total-semua-donasi').textContent;
+
+            doc.autoTable({
+                head: [['No', 'Tanggal', 'Nama Donatur', 'Alamat', 'Jariyah', 'Total Jariyah']],
+                body: donasiUntukPDF,
+                foot: [['', '', '', '', 'TOTAL DONASI:', totalDonasi]],
+                startY: 35,
+                theme: 'grid',
+                headStyles: { fillColor: [30, 130, 76] }, 
+                footStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 20, halign: 'center' },
+                    5: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } 
+                },
+                styles: { fontSize: 9 },
+            });
+
+            doc.save(`List_Donatur_Khaul_${currentDate}.pdf`);
+        };
+
+
         // --- SETUP DAN INISIALISASI ---
 
         const setupEventListeners = () => {
             document.getElementById('btn-catat-donasi').addEventListener('click', handleCatatDonasi);
+            document.getElementById('btn-pdf-donatur-list').addEventListener('click', generateDonaturPDF);
         };
 
         window.onload = () => {
@@ -287,6 +346,12 @@
             <p class="text-xs text-gray-600 p-2 mt-2">
                 *Prosentase (15% - 15% - 70%) dihitung otomatis dari Total Jariyah.
             </p>
+        </div>
+        
+        <div class="mt-6 flex justify-center">
+            <button id="btn-pdf-donatur-list" class="btn-action bg-yellow-600 hover:bg-yellow-700 w-full sm:w-1/2 text-white">
+                Unduh List Donatur (PDF)
+            </button>
         </div>
         
     </div> 
