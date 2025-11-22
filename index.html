@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pembukuan Dana Khaul - Donatur Prosentase & PDF</title>
+    <title>Pencatatan Donatur Khaul - Saldo Berjalan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
@@ -13,10 +13,10 @@
             background-color: #f4f7f9;
         }
         .container-app {
-            max-width: 1200px;
+            max-width: 900px; 
         }
         .input-field {
-            @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150;
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-150;
         }
         .header-title {
             @apply text-3xl font-bold text-center text-white mb-6 p-4 rounded-lg shadow-inner;
@@ -27,16 +27,34 @@
         .btn-action {
             @apply font-bold py-3 px-6 rounded-lg transition duration-150 shadow-md hover:shadow-lg w-full;
         }
+        /* Style input sesuai web Yapin (seperti yang terlihat dari layout sebelumnya) */
+        #form-catat-donasi {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        #tanggal-input, #nama-donatur-input, #alamat-input, #nilai-jariyah-input, #jumlah-jariyah-input, #btn-catat-donasi {
+            grid-column: span 1;
+        }
+        /* Biar tombol memanjang ke samping */
+        #btn-catat-donasi {
+            grid-column: span 2;
+        }
+        /* Perbaikan untuk tampilan mobile */
+        @media (max-width: 640px) {
+             #form-catat-donasi {
+                grid-template-columns: 1fr;
+            }
+            #tanggal-input, #nama-donatur-input, #alamat-input, #nilai-jariyah-input, #jumlah-jariyah-input, #btn-catat-donasi {
+                grid-column: span 1;
+            }
+        }
     </style>
 
     <script type="module">
         
-        // --- IMPORT JS PDF ---
-        import jsPDF from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-        import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js";
-        
         // --- VARIABEL GLOBAL & UTILITY ---
-        const STORAGE_KEY = 'khaul_donations_simple';
+        const STORAGE_KEY = 'khaul_donations_running_balance';
         let allDonations = []; 
         
         const formatRupiah = (angka) => {
@@ -45,12 +63,6 @@
             return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         };
 
-        const PROSENTASE = {
-            PERAWATAN_MAKAM: 0.15, 
-            ONGKOS_PANITIA: 0.15,  
-            BIAYA_KHAUL: 0.70      
-        };
-        
         // --- DATA HANDLING (localStorage) ---
 
         const loadDonations = () => {
@@ -58,15 +70,12 @@
                 const data = localStorage.getItem(STORAGE_KEY);
                 allDonations = data ? JSON.parse(data) : [];
                 
-                // --- PERBAIKAN KRITIS: Memastikan semua nilai uang adalah Number ---
+                // --- Memastikan nilai uang adalah Number saat dimuat ---
                 allDonations = allDonations.map(d => ({
                     ...d,
                     totalJariyah: Number(d.totalJariyah),
-                    perawatanMakam: Number(d.perawatanMakam),
-                    ongkosPanitia: Number(d.ongkosPanitia),
-                    biayaKhaul: Number(d.biayaKhaul),
+                    timestamp: Number(d.timestamp)
                 }));
-                // -------------------------------------------------------------------
 
             } catch (error) {
                 console.error("Gagal memuat data dari localStorage:", error);
@@ -86,274 +95,6 @@
             const namaDonatur = document.getElementById('nama-donatur-input').value;
             const alamat = document.getElementById('alamat-input').value;
             const nilaiJariyah = document.getElementById('nilai-jariyah-input').value || 'Jariyah Umum';
-            const totalJariyah = Number(document.getElementById('jumlah-jariyah-input').value);
+            const jumlahJariyah = Number(document.getElementById('jumlah-jariyah-input').value); // Ini adalah nilai per baris
 
-            if (!tanggal || !namaDonatur || !alamat || totalJariyah <= 0) {
-                alert("Tanggal, Nama Donatur, Alamat, dan Jumlah Jariyah wajib diisi.");
-                return;
-            }
-            
-            // Hitung Prosentase
-            const perawatanMakam = Math.round(totalJariyah * PROSENTASE.PERAWATAN_MAKAM);
-            const ongkosPanitia = Math.round(totalJariyah * PROSENTASE.ONGKOS_PANITIA);
-            const biayaKhaul = Math.round(totalJariyah * PROSENTASE.BIAYA_KHAUL);
-            
-            const selisih = totalJariyah - (perawatanMakam + ongkosPanitia + biayaKhaul);
-            const biayaKhaulFinal = biayaKhaul + selisih; 
-
-            const newDonation = {
-                id: Date.now(),
-                tanggal: tanggal,
-                timestamp: new Date(tanggal).getTime(),
-                namaDonatur: namaDonatur,
-                alamat: alamat,
-                nilaiJariyah: nilaiJariyah,
-                totalJariyah: totalJariyah,
-                perawatanMakam: perawatanMakam,
-                ongkosPanitia: ongkosPanitia,
-                biayaKhaul: biayaKhaulFinal
-            };
-
-            allDonations.push(newDonation);
-            allDonations.sort((a, b) => b.timestamp - a.timestamp); 
-            saveDonations();
-            renderTable(allDonations);
-            alert(`Donasi dari ${namaDonatur} sejumlah ${formatRupiah(totalJariyah)} berhasil dicatat!`);
-
-            // Reset form
-            document.getElementById('form-catat-donasi').reset();
-        };
-        
-        const handleDeleteDonation = (id) => {
-            if (confirm("Apakah Anda yakin ingin menghapus donasi ini?")) {
-                allDonations = allDonations.filter(d => d.id !== id);
-                saveDonations();
-                renderTable(allDonations);
-                alert("Donasi berhasil dihapus.");
-            }
-        };
-        window.handleDeleteDonation = handleDeleteDonation; 
-
-        // --- RENDER TABLE FUNCTION ---
-
-        const renderTable = (dataToRender) => {
-            const tableBody = document.getElementById('donatur-table-body');
-            
-            let totalSemuaDonasi = 0;
-            let totalMakam = 0;
-            let totalPanitia = 0;
-            let totalKhaul = 0;
-            
-            tableBody.innerHTML = '';
-            
-            if (dataToRender.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="10" class="py-4 text-center text-gray-500">Belum ada data donatur yang dicatat.</td></tr>`;
-                document.getElementById('total-semua-donasi').textContent = formatRupiah(0);
-                document.getElementById('total-makam').textContent = formatRupiah(0);
-                document.getElementById('total-panitia').textContent = formatRupiah(0);
-                document.getElementById('total-khaul').textContent = formatRupiah(0);
-                return;
-            }
-            
-            const finalRows = [...dataToRender].sort((a, b) => b.timestamp - a.timestamp); 
-            
-            finalRows.forEach((d, index) => {
-                // Kalkulasi total untuk footer
-                totalSemuaDonasi += d.totalJariyah;
-                totalMakam += d.perawatanMakam;
-                totalPanitia += d.ongkosPanitia;
-                totalKhaul += d.biayaKhaul;
-
-                const row = tableBody.insertRow();
-                const date = new Date(d.tanggal);
-                const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                
-                row.className = index % 2 === 0 ? 'hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
-                
-                // Kolom 1: No
-                row.insertCell().textContent = finalRows.length - index;
-                // Kolom 2: Tanggal
-                row.insertCell().textContent = formattedDate;
-                // Kolom 3: Nama Donatur
-                row.insertCell().textContent = d.namaDonatur;
-                // Kolom 4: Alamat
-                row.insertCell().textContent = d.alamat;
-                // Kolom 5: Nilai Jariyah (Keterangan)
-                row.insertCell().textContent = d.nilaiJariyah;
-                
-                // Kolom 6: Total Jariyah
-                const totalJariyahCell = row.insertCell();
-                totalJariyahCell.textContent = formatRupiah(d.totalJariyah);
-                totalJariyahCell.className = 'py-3 px-3 text-right font-bold text-green-700 bg-green-50';
-
-                // Kolom 7: Perawatan Makam (15%)
-                const makamCell = row.insertCell();
-                makamCell.textContent = formatRupiah(d.perawatanMakam);
-                makamCell.className = 'py-3 px-3 text-right';
-
-                // Kolom 8: Ongkos Panitia (15%)
-                const panitiaCell = row.insertCell();
-                panitiaCell.textContent = formatRupiah(d.ongkosPanitia);
-                panitiaCell.className = 'py-3 px-3 text-right';
-
-                // Kolom 9: Biaya Khaul (70%)
-                const khaulCell = row.insertCell();
-                khaulCell.textContent = formatRupiah(d.biayaKhaul);
-                khaulCell.className = 'py-3 px-3 text-right';
-
-                // Kolom 10: Aksi (Hapus)
-                const actionCell = row.insertCell();
-                actionCell.className = 'py-3 px-3 text-center';
-                actionCell.innerHTML = `<button onclick="window.handleDeleteDonation(${d.id})" class="text-red-500 hover:text-red-700 font-bold p-1 rounded-full hover:bg-red-50 transition duration-150 text-xs">Hapus</button>`;
-            });
-
-            // Update Total di Footer
-            document.getElementById('total-semua-donasi').textContent = formatRupiah(totalSemuaDonasi);
-            document.getElementById('total-makam').textContent = formatRupiah(totalMakam);
-            document.getElementById('total-panitia').textContent = formatRupiah(totalPanitia);
-            document.getElementById('total-khaul').textContent = formatRupiah(totalKhaul);
-        };
-        
-        // --- FUNGSI EKSPOR PDF LIST DONATUR ---
-        const generateDonaturPDF = () => {
-            const doc = new jsPDF('p', 'mm', 'a4'); 
-            const currentDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-            
-            const title = 'LAPORAN DAFTAR DONATUR JARIYAH KHAUL';
-            
-            // Header
-            doc.setFontSize(16);
-            doc.text(title, 14, 20);
-            doc.setFontSize(10);
-            doc.text(`Dicetak pada: ${currentDate}`, 14, 26);
-            
-            // Siapkan data untuk PDF (Hanya 6 kolom)
-            const donasiUntukPDF = allDonations
-                .sort((a, b) => a.timestamp - b.timestamp) 
-                .map((d, index) => {
-                    const date = new Date(d.tanggal);
-                    const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-                    return [
-                        index + 1, // No Urut (1)
-                        formattedDate, // Tanggal (2)
-                        d.namaDonatur, // Nama Donatur (3)
-                        d.alamat, // Alamat (4)
-                        d.nilaiJariyah, // Jariyah (5)
-                        formatRupiah(d.totalJariyah) // Total Jariyah (6)
-                    ];
-                });
-
-            // Footer (Total)
-            const totalDonasi = document.getElementById('total-semua-donasi').textContent;
-
-            doc.autoTable({
-                head: [['No', 'Tanggal', 'Nama Donatur', 'Alamat', 'Jariyah', 'Total Jariyah']],
-                body: donasiUntukPDF,
-                foot: [['', '', '', '', 'TOTAL DONASI:', totalDonasi]],
-                startY: 35,
-                theme: 'grid',
-                headStyles: { fillColor: [30, 130, 76] }, 
-                footStyles: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: [0, 0, 0] },
-                columnStyles: {
-                    0: { cellWidth: 10, halign: 'center' },
-                    1: { cellWidth: 20, halign: 'center' },
-                    5: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } 
-                },
-                styles: { fontSize: 9 },
-            });
-
-            doc.save(`List_Donatur_Khaul_${currentDate}.pdf`);
-        };
-
-
-        // --- SETUP DAN INISIALISASI ---
-
-        const setupEventListeners = () => {
-            document.getElementById('btn-catat-donasi').addEventListener('click', handleCatatDonasi);
-            document.getElementById('btn-pdf-donatur-list').addEventListener('click', generateDonaturPDF);
-        };
-
-        window.onload = () => {
-            loadDonations(); 
-            setupEventListeners();
-        };
-
-    </script>
-</head>
-<body class="p-4 sm:p-8">
-    <div class="container-app mx-auto bg-white p-6 sm:p-10 rounded-xl shadow-2xl">
-        
-        <h1 class="header-title bg-green-600">
-            Aplikasi Pembukuan Dana Khaul - Data Donatur
-        </h1>
-        
-        <div class="section-title border-green-500">
-            1. Catat Donasi Jariyah
-        </div>
-        <form id="form-catat-donasi" class="space-y-4">
-            
-            <input type="text" id="tanggal-input" placeholder="Tanggal Donasi (Klik untuk pilih)" class="input-field" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
-            <input type="text" id="nama-donatur-input" placeholder="Nama Donatur" class="input-field">
-            <input type="text" id="alamat-input" placeholder="Alamat" class="input-field">
-            <input type="text" id="nilai-jariyah-input" placeholder="Jariyah (Keterangan Donasi)" class="input-field">
-            
-            <div class="relative">
-                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
-                <input type="number" id="jumlah-jariyah-input" placeholder="Jumlah Jariyah (Angka saja)" class="input-field pl-10">
-            </div>
-            
-            <button type="button" id="btn-catat-donasi" class="btn-action bg-green-600 hover:bg-green-700 text-white">
-                Catat Donasi Jariyah
-            </button>
-        </form>
-
-        <div class="section-title border-blue-500">
-            2. Laporan List Donatur Jariyah (Pembagian Prosentase)
-        </div>
-        
-        <div class="overflow-x-auto rounded-lg shadow-lg">
-            <table class="min-w-full bg-white border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-600 uppercase text-xs leading-normal">
-                        <th class="py-3 px-3 text-center w-[3%]">No</th>
-                        <th class="py-3 px-3 text-center w-[8%]">Tanggal</th>
-                        <th class="py-3 px-3 text-left w-[15%]">Nama Donatur</th>
-                        <th class="py-3 px-3 text-left w-[12%]">Alamat</th>
-                        <th class="py-3 px-3 text-left w-[12%]">Jariyah</th>
-                        <th class="py-3 px-3 text-right w-[15%] bg-green-200">Total Jariyah</th>
-                        <th class="py-3 px-3 text-right w-[10%]">Makam (15%)</th>
-                        <th class="py-3 px-3 text-right w-[10%]">Panitia (15%)</th>
-                        <th class="py-3 px-3 text-right w-[10%]">Khaul (70%)</th>
-                        <th class="py-3 px-3 text-center w-[5%]">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="donatur-table-body" class="text-gray-600 text-sm font-light divide-y divide-gray-200">
-                    <tr>
-                        <td colspan="10" class="py-4 text-center text-gray-500">Memuat data...</td>
-                    </tr>
-                </tbody>
-                <tfoot>
-                    <tr class="bg-green-50 font-bold text-gray-800">
-                        <td colspan="5" class="py-3 px-6 text-right">TOTAL KESELURUHAN:</td>
-                        <td id="total-semua-donasi" class="py-3 px-6 text-right text-lg text-green-700 bg-green-100">Rp 0</td>
-                        <td id="total-makam" class="py-3 px-6 text-right">Rp 0</td>
-                        <td id="total-panitia" class="py-3 px-6 text-right">Rp 0</td>
-                        <td id="total-khaul" class="py-3 px-6 text-right">Rp 0</td>
-                        <td class="py-3 px-6 text-center"></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <p class="text-xs text-gray-600 p-2 mt-2">
-                *Prosentase (15% - 15% - 70%) dihitung otomatis dari Total Jariyah.
-            </p>
-        </div>
-        
-        <div class="mt-6 flex justify-center">
-            <button id="btn-pdf-donatur-list" class="btn-action bg-yellow-600 hover:bg-yellow-700 w-full sm:w-1/2 text-white">
-                Unduh List Donatur (PDF)
-            </button>
-        </div>
-        
-    </div> 
-</body>
-</html>
+            if (!tanggal || !
