@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Pembukuan Dana Khaul</title>
-    <!-- Memuat Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Konfigurasi Firebase dan modul (LOGIKA AKAN ADA DI BAGIAN 3) -->
     <script type="module">
-        // TEMPATKAN SEMUA KODE JAVASCRIPT/FIREBASE DI BAGIAN 3 DI SINI (BERIKUTNYA)
+        // TEMPATKAN SEMUA KODE JAVASCRIPT/FIREBASE DI BAGIAN BAWAH INI
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -17,7 +15,7 @@
             background-color: #f4f7f9;
         }
         .container-app {
-            max-width: 900px;
+            max-width: 1100px; /* Lebar lebih besar untuk tabel 8 kolom */
         }
         .input-field {
             @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150;
@@ -52,6 +50,10 @@
             width: 90%;
             max-width: 400px;
         }
+        /* Tambahan: Prosentase hanya terlihat saat Admin Login */
+        .admin-only-col {
+            display: none;
+        }
     </style>
 </head>
 <body class="p-4 sm:p-8">
@@ -61,83 +63,71 @@
             Aplikasi Pembukuan Dana Khaul
         </h1>
         
-        <!-- Status & Info Pengguna -->
         <div class="mt-4 p-3 bg-gray-100 rounded-lg text-sm border-l-4 border-blue-500">
             <p id="login-status" class="font-semibold text-gray-700">Memuat status autentikasi...</p>
             <p id="user-id-display" class="text-gray-500 break-all">Admin ID:</p>
-            <p class="text-xs text-red-500 mt-1">Status ini hanya terlihat oleh Admin yang Login.</p>
         </div>
 
         <div id="message-container" class="mt-4">
-            <!-- Pesan akan muncul di sini -->
-        </div>
+            </div>
 
-        <!-- 1. Form Pencatatan Dana Masuk -->
         <div class="section-title border-green-500">
-            1. Catat Dana Masuk
+            1. Catat Dana Masuk (Donasi Jariyah)
         </div>
         <div class="space-y-4">
-            <input type="text" id="tanggal-input" placeholder="Tanggal Transaksi (Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
             
-            <select id="kategori-select" class="input-field">
-                <option value="">-- Pilih Kategori --</option>
-                <!-- Opsi kategori akan dimuat dari Firestore -->
-            </select>
+            <input type="text" id="donatur-nama" placeholder="Nama Donatur (Kolom 3)" class="input-field">
             
-            <input type="text" id="uraian-input" placeholder="Uraian / Deskripsi Pemasukan" class="input-field">
+            <input type="text" id="donatur-alamat" placeholder="Alamat (Kolom 4)" class="input-field">
+
+            <input type="text" id="tanggal-input-masuk" placeholder="Tanggal Transaksi (Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+            
+            <input type="text" id="keterangan-donasi" placeholder="Keterangan Donasi (Kolom 5 - Jariyah)" class="input-field">
             
             <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
-                <input type="number" id="jumlah-input" placeholder="Jumlah Dana Masuk (Angka saja)" class="input-field pl-10">
+                <input type="number" id="jumlah-input-masuk" placeholder="Total Jariyah (Kolom 6 - Angka saja)" class="input-field pl-10">
             </div>
             
-            <button onclick="window.catatTransaksi('MASUK')" class="btn-primary bg-green-600 hover:bg-green-700">
-                Catat Pemasukan
+            <button onclick="window.catatDonasi()" class="btn-primary bg-green-600 hover:bg-green-700">
+                Catat Donasi Jariyah
             </button>
         </div>
 
-        <!-- 2. Form Pencatatan Dana Keluar -->
         <div class="section-title border-red-500">
-            2. Catat Dana Keluar
+            2. Catat Dana Keluar (Transaksi Umum)
         </div>
         <div class="space-y-4">
             <input type="text" id="tanggal-input-keluar" placeholder="Tanggal Transaksi (Klik untuk pilih)" class="input-field" value="" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
             
             <select id="kategori-select-keluar" class="input-field">
                  <option value="">-- Pilih Kategori --</option>
-                <!-- Opsi kategori yang sama akan dimuat -->
-            </select>
+                </select>
             
-            <input type="text" id="uraian-input-keluar" placeholder="Uraian / Deskripsi Pengeluaran" class="input-field">
+            <input type="text" id="uraian-input-keluar" placeholder="Uraian Pengeluaran" class="input-field">
             
             <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
                 <input type="number" id="jumlah-input-keluar" placeholder="Jumlah Dana Keluar (Angka saja)" class="input-field pl-10">
             </div>
             
-            <button onclick="window.catatTransaksi('KELUAR')" class="btn-primary bg-red-600 hover:bg-red-700">
+            <button onclick="window.catatPengeluaran()" class="btn-primary bg-red-600 hover:bg-red-700">
                 Catat Pengeluaran
             </button>
         </div>
         
-        <!-- SELESAI BAGIAN 1. JANGAN DIHAPUS. LANJUT KE BAGIAN 2 DI BALASAN BERIKUTNYA -->
-        <!-- 3. Dashboard Laporan Kas Berjalan -->
         <div class="section-title border-blue-500">
-            3. Dashboard Laporan Kas Berjalan
+            3. Dashboard Laporan Kas Berjalan (Jurnal Umum)
         </div>
         
-        <!-- Filter dan Search -->
         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 mb-4">
             <input type="text" id="search-input" placeholder="Cari Uraian atau Kategori..." class="input-field sm:w-1/2">
             <select id="filter-kategori" class="input-field sm:w-1/4">
                 <option value="">Filter Kategori...</option>
-                <!-- Opsi kategori akan diisi otomatis -->
-            </select>
+                </select>
             <select id="sort-by" class="input-field sm:w-1/4">
                 <option value="tanggal_desc">Urutkan: Terbaru</option>
                 <option value="tanggal_asc">Urutkan: Terlama</option>
-                <option value="masuk_desc">Urutkan: Dana Masuk Terbesar</option>
-                <option name="masuk_asc">Urutkan: Dana Masuk Terkecil</option>
             </select>
         </div>
 
@@ -145,48 +135,47 @@
             <table class="min-w-full bg-white border border-gray-200">
                 <thead>
                     <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
-                        <th class="py-3 px-6 text-left">No</th>
-                        <th class="py-3 px-6 text-left">Tanggal</th>
-                        <th class="py-3 px-6 text-left">Uraian</th>
-                        <th class="py-3 px-6 text-left">Kategori</th>
-                        <th class="py-3 px-6 text-right">Dana Masuk</th>
-                        <th class="py-3 px-6 text-right">Dana Keluar</th>
-                        <th class="py-3 px-6 text-right">Saldo Berjalan</th>
-                        <th class="py-3 px-6 text-center">Aksi</th>
+                        <th class="py-3 px-3 text-center">No</th>
+                        <th class="py-3 px-3 text-center">Tanggal</th>
+                        <th class="py-3 px-3 text-left">Uraian / Donatur</th>
+                        <th class="py-3 px-3 text-left admin-only-col" id="header-kategori">Kategori</th>
+                        <th class="py-3 px-3 text-right">Dana Masuk</th>
+                        <th class="py-3 px-3 text-right">Dana Keluar</th>
+                        <th class="py-3 px-3 text-right">Saldo</th>
+                        <th class="py-3 px-3 text-center admin-only-col" id="header-aksi">Aksi</th>
                     </tr>
                 </thead>
                 <tbody id="laporan-table-body" class="text-gray-600 text-sm font-light divide-y divide-gray-200">
-                    <!-- Data transaksi akan dimuat di sini -->
                     <tr>
                         <td colspan="8" class="py-4 text-center text-gray-500">Memuat data...</td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr class="bg-green-50 font-bold text-gray-800">
-                        <td colspan="4" class="py-3 px-6 text-right">TOTAL SALDO AKHIR:</td>
+                        <td colspan="4" class="py-3 px-6 text-right admin-only-col"></td>
+                        <td colspan="3" class="py-3 px-6 text-right">TOTAL SALDO AKHIR:</td>
                         <td id="total-masuk" class="py-3 px-6 text-right">Rp 0</td>
                         <td id="total-keluar" class="py-3 px-6 text-right">Rp 0</td>
                         <td id="saldo-akhir" class="py-3 px-6 text-right text-lg text-green-700">Rp 0</td>
-                        <td class="py-3 px-6 text-center"></td>
+                        <td class="py-3 px-6 text-center admin-only-col"></td>
                     </tr>
                 </tfoot>
             </table>
         </div>
         
-        <!-- Tombol Laporan (PDF) -->
         <div class="mt-6 flex flex-wrap gap-4 justify-center">
-            <button onclick="window.generatePDF('detail')" class="btn-primary bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto flex-1">
-                Unduh Laporan Detail (PDF)
+            <button onclick="window.generatePDF('donatur')" class="btn-primary bg-blue-600 hover:bg-blue-700 w-full sm:w-auto flex-1">
+                Unduh List Donatur (PDF)
             </button>
-            <button onclick="window.generatePDF('ringkasan')" class="btn-primary bg-yellow-800 hover:bg-yellow-900 w-full sm:w-auto flex-1">
-                Unduh Laporan Ringkasan (PDF)
+            <button onclick="window.generatePDF('pengeluaran')" class="btn-primary bg-yellow-600 hover:bg-yellow-700 w-full sm:w-auto flex-1">
+                Unduh Pengeluaran Detail (PDF)
+            </button>
+            <button onclick="window.generatePDF('lpj')" class="btn-primary bg-green-600 hover:bg-green-700 w-full sm:w-auto flex-1">
+                Unduh Laporan Pertanggung Jawaban (LPJ - PDF)
             </button>
         </div>
 
-    </div> <!-- Akhir container-app -->
-    
-    <!-- Modal Konfirmasi Hapus (Custom Alert) -->
-    <div id="confirm-modal" class="modal-overlay">
+    </div> <div id="confirm-modal" class="modal-overlay">
         <div class="modal-content">
             <h3 class="text-lg font-bold text-red-600 mb-4">Konfirmasi Hapus</h3>
             <p id="modal-message" class="text-gray-700 mb-6">Apakah Anda yakin ingin menghapus transaksi ini?</p>
@@ -199,529 +188,3 @@
     
 </body>
 </html>
-
-<!-- SELESAI BAGIAN 2. JANGAN DIHAPUS. LANJUT KE BAGIAN 3 (LOGIKA JAVASCRIPT) DI BALASAN BERIKUTNYA -->
-<script type="module">
-    // Import modul Firebase
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection, query, orderBy, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-    import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-    import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js";
-
-    // --- 1. KONFIGURASI DAN INISIALISASI APLIKASI ---
-    
-    // Variabel Global untuk Firebase dan user
-    let app, db, auth;
-    let userId = null;
-    let isAuthenticated = false;
-    let categories = [];
-    let allTransactions = []; // Menyimpan semua data transaksi untuk filter
-    const TRANSACTION_COLLECTION = 'jurnal_kas'; // !!! FIX: Menggunakan koleksi yang benar
-    const CATEGORY_COLLECTION = 'kategori';
-    
-    // Format mata uang Rupiah
-    const formatRupiah = (angka) => {
-        if (angka === undefined || angka === null) return 'Rp 0';
-        const numberString = angka.toString().replace(/[^,\d]/g, '').toString();
-        const split = numberString.split(',');
-        const sisa = split[0].length % 3;
-        let rupiah = split[0].substr(0, sisa);
-        const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-        
-        if (ribuan) {
-            const separator = sisa ? '.' : '';
-            rupiah += separator + ribuan.join('.');
-        }
-        
-        rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
-        return 'Rp ' + rupiah;
-    };
-
-    // Fungsi untuk menampilkan pesan (Mirip Alert, tapi pakai UI)
-    const displayMessage = (message, type = 'info') => {
-        const container = document.getElementById('message-container');
-        const color = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' :
-                      type === 'error' ? 'bg-red-100 border-red-500 text-red-700' :
-                      'bg-blue-100 border-blue-500 text-blue-700';
-        
-        container.innerHTML = `
-            <div class="p-3 mb-4 rounded-lg border-l-4 ${color} transition duration-300 ease-in-out">
-                ${message}
-            </div>
-        `;
-        setTimeout(() => { container.innerHTML = ''; }, 5000);
-    };
-
-    // Fungsi Inisialisasi Firebase
-    const initializeFirebase = async () => {
-        try {
-            // Cek ketersediaan variabel global (dari Canvas)
-            if (typeof __firebase_config === 'undefined') {
-                 throw new Error("Firebase config is missing.");
-            }
-            
-            const firebaseConfig = JSON.parse(__firebase_config);
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            // 2. Autentikasi dan Cek Status Admin
-            onAuthStateChanged(auth, async (user) => {
-                const loginStatusEl = document.getElementById('login-status');
-                const userIdDisplayEl = document.getElementById('user-id-display');
-                
-                if (user) {
-                    userId = user.uid;
-                    isAuthenticated = true;
-                    loginStatusEl.textContent = 'Status Login: Admin Aktif';
-                    loginStatusEl.classList.remove('text-red-600');
-                    loginStatusEl.classList.add('text-green-600');
-                    userIdDisplayEl.textContent = `Admin ID: ${userId}`;
-                    
-                    // Lanjut memuat data hanya setelah autentikasi sukses
-                    await loadCategories();
-                    await loadTransactions();
-                } else {
-                    // Coba sign in dengan token yang disediakan (jika ada)
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        // Jika tidak ada token (misalnya di lingkungan lokal), sign in secara anonim
-                        await signInAnonymously(auth);
-                        userId = auth.currentUser ? auth.currentUser.uid : 'anonymous';
-                        isAuthenticated = false;
-                        loginStatusEl.textContent = 'Status Login: Publik (Tidak Dapat Menambah/Edit)';
-                        loginStatusEl.classList.add('text-red-600');
-                        userIdDisplayEl.textContent = `User ID (Publik): ${userId}`;
-                        // Tetap muat data untuk tampilan publik
-                        await loadCategories();
-                        await loadTransactions();
-                    }
-                }
-            });
-            
-        } catch (error) {
-            console.error("Error initializing Firebase:", error);
-            displayMessage("Gagal inisialisasi aplikasi. Cek koneksi internet dan konfigurasi.", 'error');
-        }
-    };
-    
-    // --- 3. FUNGSI LOAD DATA (KATEGORI & TRANSAKSI) ---
-
-    // Load Kategori
-    const loadCategories = async () => {
-        if (!db) return;
-        try {
-            const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${CATEGORY_COLLECTION}`;
-            const categoriesRef = collection(db, path);
-            
-            // Menggunakan onSnapshot untuk real-time update
-            onSnapshot(categoriesRef, (snapshot) => {
-                categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                updateCategorySelects();
-                console.log("Kategori berhasil dimuat.");
-            }, (error) => {
-                console.warn("Gagal memuat kategori. Menggunakan kategori default.", error);
-                // Kategori default jika gagal load (Untuk situs lama yang mungkin hanya punya koleksi transaksi)
-                categories = [
-                    { id: '1', nama: 'Iuran Warga' },
-                    { id: '2', nama: 'Sumbangan' },
-                    { id: '3', nama: 'Konsumsi' },
-                    { id: '4', nama: 'Perlengkapan' },
-                    { id: '5', nama: 'Biaya Lain' }
-                ];
-                updateCategorySelects();
-            });
-        } catch (error) {
-            console.error("Error loading categories:", error);
-        }
-    };
-
-    // Update Dropdown Kategori
-    const updateCategorySelects = () => {
-        const selects = ['kategori-select', 'kategori-select-keluar', 'filter-kategori'];
-        selects.forEach(selectId => {
-            const selectEl = document.getElementById(selectId);
-            if (!selectEl) return;
-            // Bersihkan opsi lama kecuali opsi default/filter
-            const defaultValue = selectId.includes('filter') ? '' : '-- Pilih Kategori --';
-            selectEl.innerHTML = `<option value="">${defaultValue}</option>`;
-            
-            categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.nama;
-                option.textContent = cat.nama;
-                selectEl.appendChild(option);
-            });
-        });
-    };
-
-    // Load Transaksi (Inti data Anda)
-    const loadTransactions = async () => {
-        if (!db) return;
-        const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}`;
-        const transactionRef = collection(db, path);
-        
-        // Menggunakan onSnapshot untuk real-time update
-        onSnapshot(transactionRef, (snapshot) => {
-            // Peta untuk menyimpan data transaksi
-            allTransactions = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    tanggal: data.tanggal,
-                    timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.tanggal).getTime(),
-                    uraian: data.uraian,
-                    kategori: data.kategori,
-                    jenis: data.jenis,
-                    jumlah: Number(data.jumlah) || 0,
-                    userId: data.userId || 'unknown',
-                };
-            }).sort((a, b) => b.timestamp - a.timestamp); // Urutkan default: Terbaru
-            
-            // Render data yang sudah diurutkan/difilter
-            renderTable(allTransactions);
-
-        }, (error) => {
-            console.error("Error loading transactions:", error);
-            displayMessage("Gagal memuat data transaksi. Periksa Indeks Firestore atau Rules.", 'error');
-            document.getElementById('laporan-table-body').innerHTML = `<tr><td colspan="8" class="py-4 text-center text-red-500">Gagal memuat data.</td></tr>`;
-        });
-    };
-
-    // --- 4. FUNGIONALITAS TRANSAKSI (TAMBAH, HAPUS, RENDER) ---
-
-    // Fungsi Tambah Transaksi
-    window.catatTransaksi = async (jenis) => {
-        if (!isAuthenticated) {
-            displayMessage("Anda harus login sebagai Admin untuk mencatat transaksi.", 'error');
-            return;
-        }
-
-        const tanggalInputEl = jenis === 'MASUK' ? document.getElementById('tanggal-input') : document.getElementById('tanggal-input-keluar');
-        const kategoriSelectEl = jenis === 'MASUK' ? document.getElementById('kategori-select') : document.getElementById('kategori-select-keluar');
-        const uraianInputEl = jenis === 'MASUK' ? document.getElementById('uraian-input') : document.getElementById('uraian-input-keluar');
-        const jumlahInputEl = jenis === 'MASUK' ? document.getElementById('jumlah-input') : document.getElementById('jumlah-input-keluar');
-
-        const tanggal = tanggalInputEl.value;
-        const kategori = kategoriSelectEl.value;
-        const uraian = uraianInputEl.value;
-        const jumlah = Number(jumlahInputEl.value);
-
-        if (!tanggal || !kategori || !uraian || jumlah <= 0) {
-            displayMessage("Semua kolom harus diisi dengan benar.", 'error');
-            return;
-        }
-
-        const newTransaction = {
-            tanggal: tanggal,
-            timestamp: new Date(tanggal).getTime(),
-            uraian: uraian,
-            kategori: kategori,
-            jenis: jenis,
-            jumlah: jumlah,
-            userId: userId,
-            createdAt: new Date()
-        };
-
-        try {
-            const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}`;
-            await addDoc(collection(db, path), newTransaction);
-            displayMessage(`Transaksi ${jenis === 'MASUK' ? 'Pemasukan' : 'Pengeluaran'} berhasil dicatat!`, 'success');
-
-            // Reset form
-            tanggalInputEl.value = '';
-            kategoriSelectEl.value = '';
-            uraianInputEl.value = '';
-            jumlahInputEl.value = '';
-
-        } catch (e) {
-            console.error("Error adding document: ", e);
-            displayMessage(`Gagal mencatat transaksi: ${e.message}`, 'error');
-        }
-    };
-    
-    // Fungsi Hapus Transaksi (Dipanggil dari tombol di tabel)
-    window.confirmDelete = (docId) => {
-        if (!isAuthenticated) {
-            displayMessage("Anda tidak memiliki izin Admin untuk menghapus.", 'error');
-            return;
-        }
-        
-        const modal = document.getElementById('confirm-modal');
-        const deleteBtn = document.getElementById('confirm-delete-btn');
-        
-        // Atur pesan modal
-        document.getElementById('modal-message').textContent = `Apakah Anda yakin ingin menghapus transaksi dengan ID ${docId}?`;
-        
-        // Tampilkan modal
-        modal.style.display = 'flex';
-
-        // Hapus event listener lama agar tidak double
-        deleteBtn.onclick = null; 
-        
-        // Atur event listener baru
-        deleteBtn.onclick = async () => {
-            modal.style.display = 'none'; // Sembunyikan modal
-            try {
-                const path = `/artifacts/${typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'}/users/${userId}/${TRANSACTION_COLLECTION}/${docId}`;
-                const docRef = doc(db, path);
-                await deleteDoc(docRef);
-                displayMessage('Transaksi berhasil dihapus.', 'success');
-            } catch (e) {
-                console.error("Error removing document: ", e);
-                displayMessage(`Gagal menghapus transaksi: ${e.message}`, 'error');
-            }
-        };
-    };
-
-    // Fungsi Render Tabel (Termasuk Sortir dan Filter)
-    const renderTable = (dataToRender) => {
-        const tableBody = document.getElementById('laporan-table-body');
-        const sortBy = document.getElementById('sort-by').value;
-        const filterKategori = document.getElementById('filter-kategori').value;
-        const searchInput = document.getElementById('search-input').value.toLowerCase();
-        
-        let filteredData = dataToRender;
-
-        // 1. FILTER KATEGORI
-        if (filterKategori) {
-            filteredData = filteredData.filter(t => t.kategori === filterKategori);
-        }
-
-        // 2. SEARCH
-        if (searchInput) {
-            filteredData = filteredData.filter(t => 
-                t.uraian.toLowerCase().includes(searchInput) || 
-                t.kategori.toLowerCase().includes(searchInput)
-            );
-        }
-
-        // 3. SORTIR
-        switch (sortBy) {
-            case 'tanggal_asc':
-                filteredData.sort((a, b) => a.timestamp - b.timestamp);
-                break;
-            case 'masuk_desc':
-                filteredData.sort((a, b) => {
-                    const aMasuk = a.jenis === 'MASUK' ? a.jumlah : 0;
-                    const bMasuk = b.jenis === 'MASUK' ? b.jumlah : 0;
-                    return bMasuk - aMasuk;
-                });
-                break;
-            case 'masuk_asc':
-                filteredData.sort((a, b) => {
-                    const aMasuk = a.jenis === 'MASUK' ? a.jumlah : 0;
-                    const bMasuk = b.jenis === 'MASUK' ? b.jumlah : 0;
-                    return aMasuk - bMasuk;
-                });
-                break;
-            case 'tanggal_desc':
-            default:
-                filteredData.sort((a, b) => b.timestamp - a.timestamp);
-                break;
-        }
-
-        // 4. GENERATE BARIS
-        tableBody.innerHTML = '';
-        if (filteredData.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-gray-500">Tidak ada data transaksi.</td></tr>`;
-            document.getElementById('total-masuk').textContent = formatRupiah(0);
-            document.getElementById('total-keluar').textContent = formatRupiah(0);
-            document.getElementById('saldo-akhir').textContent = formatRupiah(0);
-            return;
-        }
-        
-        let saldoBerjalan = 0;
-        let totalMasuk = 0;
-        let totalKeluar = 0;
-        
-        // Karena kita mengurutkan berdasarkan tanggal DESC (terbaru ke terlama), 
-        // kita perlu menghitung mundur saldo dari total akhir.
-        // Cara yang lebih baik adalah mengurutkan ASC untuk perhitungan, lalu balik arraynya untuk tampilan.
-        
-        // Urutkan ASC untuk menghitung Saldo Berjalan yang benar
-        const sortedAsc = [...filteredData].sort((a, b) => a.timestamp - b.timestamp);
-        
-        // Hitung Saldo Berjalan untuk setiap baris
-        let runningBalance = 0;
-        const rowsWithBalance = sortedAsc.map(t => {
-            if (t.jenis === 'MASUK') {
-                runningBalance += t.jumlah;
-                totalMasuk += t.jumlah;
-            } else {
-                runningBalance -= t.jumlah;
-                totalKeluar += t.jumlah;
-            }
-            return { ...t, saldo: runningBalance };
-        });
-        
-        // Balikkan lagi agar data terbaru di atas
-        const finalRows = rowsWithBalance.reverse();
-        
-        // Tampilkan data ke tabel
-        finalRows.forEach((t, index) => {
-            const row = tableBody.insertRow();
-            const date = new Date(t.tanggal);
-            const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            
-            row.className = index % 2 === 0 ? 'hover:bg-gray-50' : 'bg-gray-50 hover:bg-gray-100';
-            
-            // Kolom 1: No
-            row.insertCell().textContent = finalRows.length - index;
-            // Kolom 2: Tanggal
-            row.insertCell().textContent = formattedDate;
-            // Kolom 3: Uraian
-            row.insertCell().textContent = t.uraian;
-            // Kolom 4: Kategori
-            row.insertCell().textContent = t.kategori;
-            // Kolom 5: Dana Masuk
-            const masukCell = row.insertCell();
-            masukCell.textContent = t.jenis === 'MASUK' ? formatRupiah(t.jumlah) : 'Rp 0';
-            masukCell.className = 'py-3 px-6 text-right text-green-600';
-            // Kolom 6: Dana Keluar
-            const keluarCell = row.insertCell();
-            keluarCell.textContent = t.jenis === 'KELUAR' ? formatRupiah(t.jumlah) : 'Rp 0';
-            keluarCell.className = 'py-3 px-6 text-right text-red-600';
-            // Kolom 7: Saldo Berjalan
-            const saldoCell = row.insertCell();
-            saldoCell.textContent = formatRupiah(t.saldo);
-            saldoCell.className = 'py-3 px-6 text-right font-semibold';
-            // Kolom 8: Aksi
-            const actionCell = row.insertCell();
-            actionCell.className = 'py-3 px-6 text-center';
-            if (isAuthenticated) {
-                 actionCell.innerHTML = `<button onclick="window.confirmDelete('${t.id}')" class="text-red-500 hover:text-red-700 font-bold p-1 rounded-full hover:bg-red-50 transition duration-150">Hapus</button>`;
-            } else {
-                 actionCell.textContent = '-';
-            }
-        });
-
-        // 5. UPDATE TOTAL DI FOOTER
-        document.getElementById('total-masuk').textContent = formatRupiah(totalMasuk);
-        document.getElementById('total-keluar').textContent = formatRupiah(totalKeluar);
-        document.getElementById('saldo-akhir').textContent = formatRupiah(runningBalance);
-    };
-
-    // Panggil renderTable setiap kali ada perubahan pada filter/sortir
-    const setupEventListeners = () => {
-        document.getElementById('search-input').addEventListener('input', () => renderTable(allTransactions));
-        document.getElementById('filter-kategori').addEventListener('change', () => renderTable(allTransactions));
-        document.getElementById('sort-by').addEventListener('change', () => renderTable(allTransactions));
-    };
-
-    // --- 5. FUNGSI EKSPOR PDF ---
-
-    window.generatePDF = (type) => {
-        const doc = new jsPDF('p', 'mm', 'a4'); // Potrait, mm, A4
-        const currentDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-        const title = type === 'detail' ? 'LAPORAN KAS JURNAL KHAUL DETAIL' : 'LAPORAN KAS JURNAL KHAUL RINGKASAN';
-        
-        // Header
-        doc.setFontSize(16);
-        doc.text(title, 14, 20);
-        doc.setFontSize(10);
-        doc.text(`Dicetak pada: ${currentDate}`, 14, 26);
-        doc.text(`Total Saldo Akhir: ${document.getElementById('saldo-akhir').textContent}`, 14, 32);
-
-        if (type === 'detail') {
-            // Laporan Detail
-            const rows = [];
-            const tableBody = document.getElementById('laporan-table-body').getElementsByTagName('tr');
-            
-            // Loop melalui baris yang sudah di render di tabel
-            Array.from(tableBody).forEach(row => {
-                const cells = row.getElementsByTagName('td');
-                if (cells.length === 8) { // Pastikan bukan baris 'Memuat data...'
-                    rows.push([
-                        cells[0].textContent, // No
-                        cells[1].textContent, // Tanggal
-                        cells[2].textContent, // Uraian
-                        cells[3].textContent, // Kategori
-                        cells[4].textContent, // Dana Masuk
-                        cells[5].textContent, // Dana Keluar
-                        cells[6].textContent  // Saldo Berjalan
-                    ]);
-                }
-            });
-
-            doc.autoTable({
-                head: [['No', 'Tanggal', 'Uraian', 'Kategori', 'Masuk', 'Keluar', 'Saldo Berjalan']],
-                body: rows,
-                startY: 40,
-                theme: 'striped',
-                headStyles: { fillColor: [30, 130, 76] }, // Hijau tua
-                columnStyles: {
-                    0: { cellWidth: 10 },
-                    4: { halign: 'right' },
-                    5: { halign: 'right' },
-                    6: { halign: 'right', fontStyle: 'bold' }
-                },
-                styles: { fontSize: 8 },
-            });
-            doc.save(`Laporan_Detail_Kas_Khaul_${currentDate}.pdf`);
-
-        } else if (type === 'ringkasan') {
-            // Laporan Ringkasan (Total per Kategori)
-            const summary = allTransactions.reduce((acc, t) => {
-                if (!acc[t.kategori]) {
-                    acc[t.kategori] = { masuk: 0, keluar: 0 };
-                }
-                if (t.jenis === 'MASUK') {
-                    acc[t.kategori].masuk += t.jumlah;
-                } else {
-                    acc[t.kategori].keluar += t.jumlah;
-                }
-                return acc;
-            }, {});
-
-            const summaryRows = Object.keys(summary).map(kategori => {
-                const data = summary[kategori];
-                return [
-                    kategori,
-                    formatRupiah(data.masuk),
-                    formatRupiah(data.keluar),
-                    formatRupiah(data.masuk - data.keluar)
-                ];
-            });
-
-            // Tambahkan baris total
-            const totalRow = [
-                'TOTAL KESELURUHAN',
-                document.getElementById('total-masuk').textContent,
-                document.getElementById('total-keluar').textContent,
-                document.getElementById('saldo-akhir').textContent
-            ];
-
-            doc.autoTable({
-                head: [['Kategori', 'Total Dana Masuk', 'Total Dana Keluar', 'Saldo Kategori']],
-                body: summaryRows,
-                foot: [totalRow],
-                startY: 40,
-                theme: 'grid',
-                headStyles: { fillColor: [243, 156, 18] }, // Orange
-                footStyles: { fillColor: [46, 204, 113], fontStyle: 'bold' }, // Hijau muda
-                columnStyles: {
-                    1: { halign: 'right' },
-                    2: { halign: 'right' },
-                    3: { halign: 'right' }
-                },
-                styles: { fontSize: 9 },
-            });
-            doc.save(`Laporan_Ringkasan_Kas_Khaul_${currentDate}.pdf`);
-        }
-    };
-    
-    // Panggil inisialisasi saat window load
-    window.onload = () => {
-        initializeFirebase();
-        setupEventListeners();
-    };
-    
-    // Export fungsi ke scope global agar bisa dipanggil dari tombol HTML
-    window.catatTransaksi = window.catatTransaksi;
-    window.confirmDelete = window.confirmDelete;
-
-</script>
-<!-- SELESAI BAGIAN 3. INI ADALAH AKHIR DARI KODE -->
