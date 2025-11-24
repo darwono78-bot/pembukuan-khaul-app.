@@ -18,6 +18,7 @@
                         'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
+                        'green-rupiah': '#85e096' // Warna hijau khusus untuk rupiah
                     }
                 }
             }
@@ -122,10 +123,22 @@
             width: 100px; 
             min-width: 100px;
         }
+        
+        /* --- STYLE KHUSUS UNTUK ANGKAT RUPIAH --- */
+        .rupiah-text {
+            font-size: 0.8rem; /* Lebih kecil sedikit */
+            color: #a0a0a0; /* Abu-abu terang atau bisa 'green-rupiah' yang baru */
+        }
+
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
             font-weight: bold;
             font-size: 1.125rem; /* text-lg */
+        }
+        /* Override untuk angka rupiah di footer, biar lebih besar sedikit tapi tetap berwarna */
+        #donatur-table tfoot .rupiah-text {
+            font-size: 1.125rem; /* sama dengan text-lg footer */
+            color: #ffeb3b; /* Kembali ke kuning untuk total keseluruhan */
         }
     </style>
 </head>
@@ -165,10 +178,10 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td>
-                            <td id="total-donasi-input" class="px-4 py-3 text-right text-yellow-accent">0</td> 
-                            <td id="total-perawatan-makam" class="px-4 py-3 text-right text-yellow-accent">0</td> 
-                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right text-yellow-accent">0</td> 
-                            <td id="total-biaya-haul" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                            <td id="total-donasi-input" class="px-4 py-3 text-right rupiah-text">0</td> 
+                            <td id="total-perawatan-makam" class="px-4 py-3 text-right rupiah-text">0</td> 
+                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right rupiah-text">0</td> 
+                            <td id="total-biaya-haul" class="px-4 py-3 text-right rupiah-text">0</td> 
                         </tr>
                     </tfoot>
                 </table>
@@ -260,14 +273,15 @@
         // 2. HELPER FUNCTIONS
         // --------------------------------------------------------------------------------
 
-        const formatRupiah = (angka) => {
+        const formatRupiah = (angka, isFooterTotal = false) => {
             // Pastikan angka adalah tipe number dan bukan NaN
             if (typeof angka !== 'number' || isNaN(angka)) return '0'; 
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            return sign + rupiah;
+            // Untuk footer total, tidak perlu ditambahkan prefix 'Rp' karena sudah ada di label
+            return (isFooterTotal ? '' : '') + sign + rupiah;
         };
         
         // Fungsi untuk menghitung alokasi dana dari nilai donasi
@@ -288,7 +302,8 @@
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
-                element.textContent = formatRupiah(value);
+                // Gunakan true untuk isFooterTotal agar tidak ada 'Rp' prefix di footer
+                element.textContent = formatRupiah(value, true); 
             }
         };
         
@@ -401,7 +416,8 @@
                     // --- PERBAIKAN KRITIS: Hitung ulang alokasi jika data lama atau tidak lengkap ---
                     if (!alokasiData || 
                         alokasiData.perawatan_makam === undefined || 
-                        alokasiData.bisyaroh_panitia === undefined) 
+                        alokasiData.bisyaroh_panitia === undefined ||
+                        alokasiData.biaya_haul === undefined) // Tambah pengecekan biaya_haul juga
                     {
                         alokasiData = calculateAlokasi(nilaiDonasi);
                     }
@@ -519,10 +535,10 @@
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
                     <td class="px-4 py-3 kolom-nama">${d.nama}</td>
                     <td class="px-4 py-3 kolom-alamat">${d.alamat}</td>
-                    <td class="px-4 py-3 text-yellow-accent">${formatRupiah(nilaiDonasi)}</td>
-                    <td class="px-4 py-3">${formatRupiah(pm)}</td>
-                    <td class="px-4 py-3">${formatRupiah(bp)}</td>
-                    <td class="px-4 py-3">${formatRupiah(bh)}</td>
+                    <td class="px-4 py-3 text-yellow-accent rupiah-text">${formatRupiah(nilaiDonasi)}</td>
+                    <td class="px-4 py-3 rupiah-text">${formatRupiah(pm)}</td>
+                    <td class="px-4 py-3 rupiah-text">${formatRupiah(bp)}</td>
+                    <td class="px-4 py-3 rupiah-text">${formatRupiah(bh)}</td>
                 `;
             });
 
@@ -535,7 +551,7 @@
             // Pengecekan konsistensi
             const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
             if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
-                console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi})`);
+                console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi}). Selisih Pembulatan: ${totalDonasiInput - totalAkumulasiAlokasi}`);
                 // Memberi tahu admin jika ada perbedaan
                 if (isAdminLoggedIn) {
                      alert(`Peringatan: Total Donasi (${formatRupiah(totalDonasiInput)}) tidak sama dengan Total Alokasi (${formatRupiah(totalAkumulasiAlokasi)}). Selisih Pembulatan: ${formatRupiah(totalDonasiInput - totalAkumulasiAlokasi)}`);
