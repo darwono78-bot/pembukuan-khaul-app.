@@ -74,9 +74,184 @@
         </div>
     </div>
 
-    <script type="module">
-        // TEMPELKAN KODE JAVASCRIPT FIREBASE YANG SUDAH DIKOREKSI DI SINI
-        // (Lihat kode di bawah)
-    </script>
+    // --------------------------------------------------------------------------------
+        // 1. FIREBASE SETUP DAN KONFIGURASI
+        // --------------------------------------------------------------------------------
+        
+        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        
+        // !!! HARAP GANTI INI DENGAN KONFIGURASI FIREBASE ASLI ANDA !!!
+        // Jika ini salah, penyimpanan PASTI GAGAL
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
+            authDomain: "catatan-keuangan-haul.firebaseapp.com",
+            projectId: "catatan-keuangan-haul",
+            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+            messagingSenderId: "955355049778",
+            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Definisikan Collection
+        const donaturCol = collection(db, "donatur_simple"); 
+        
+        let allDonatur = []; 
+
+        // --------------------------------------------------------------------------------
+        // 2. HELPER FUNCTIONS
+        // --------------------------------------------------------------------------------
+
+        const formatRupiah = (angka) => {
+            if (typeof angka !== 'number') return 'Rp 0';
+            const numberString = Math.floor(angka).toString();
+            const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return 'Rp ' + rupiah;
+        };
+
+        const updateFooter = (id, value) => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = formatRupiah(value);
+            }
+        };
+
+        // --------------------------------------------------------------------------------
+        // 3. FIREBASE CRUD (CREATE & READ)
+        // --------------------------------------------------------------------------------
+
+        const loadAndRenderDonatur = async () => {
+            allDonatur = [];
+            const tableBody = document.getElementById('donatur-table-body');
+            tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data...</td></tr>`;
+
+            try {
+                const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
+                const donaturSnapshot = await getDocs(donaturQuery);
+
+                donaturSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    allDonatur.push({
+                        id: doc.id, 
+                        date: data.date,
+                        name: data.name,
+                        address: data.address || '-',
+                        amount: data.amount,
+                        timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(), 
+                    });
+                });
+                
+                allDonatur.sort((a, b) => a.timestamp - b.timestamp);
+                renderDonaturTable();
+                
+            } catch (error) {
+                console.error("Gagal memuat data dari Firestore:", error);
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="py-4 text-center text-red-600">
+                            🔴 GAGAL KONEKSI/MEMUAT DATA. Periksa Konfigurasi Firebase Anda.
+                        </td>
+                    </tr>`;
+            }
+        };
+        
+        window.addDonatur = async () => {
+            console.log("--- Memulai proses addDonatur (Langkah 1) ---"); 
+
+            const date = document.getElementById('donatur-date-input').value;
+            const name = document.getElementById('donatur-name-input').value;
+            const address = document.getElementById('donatur-address-input').value;
+            let amountInput = document.getElementById('donatur-amount-input').value;
+            
+            // Konversi nilai menjadi angka
+            let amount = parseInt(amountInput);
+            
+            console.log("Input values (Langkah 2):", { date, name, address, amount, amountInputType: typeof amountInput }); 
+
+            if (!date || !name || isNaN(amount) || amount <= 0) {
+                console.error("Validasi gagal (Langkah 3): Ada input yang kosong atau jumlah tidak valid."); 
+                alert('Mohon isi Tanggal, Nama, dan Nilai Donasi dengan benar (Angka Positif).');
+                return;
+            }
+            
+            const newDonatur = {
+                date: date,
+                name: name,
+                address: address || '',
+                amount: amount,
+                timestamp: serverTimestamp() 
+            };
+
+            try {
+                console.log("Mencoba menambahkan dokumen ke Firestore (Langkah 4)..."); 
+                // !!! PENYIMPANAN DATA !!!
+                await addDoc(donaturCol, newDonatur);
+                
+                // Reset form
+                document.getElementById('donatur-date-input').value = '';
+                document.getElementById('donatur-name-input').value = '';
+                document.getElementById('donatur-address-input').value = '';
+                document.getElementById('donatur-amount-input').value = '';
+                
+                console.log("Donasi berhasil ditambahkan (Langkah 5)!");
+                alert('Donasi berhasil ditambahkan ke Firebase!');
+                await loadAndRenderDonatur(); 
+            } catch (error) {
+                console.error("🛑 FATAL ERROR saat menyimpan ke Firebase (Langkah 4 GAGAL):", error); 
+                alert("Gagal menyimpan donasi. Cek console log (baris merah) untuk detail error Firebase.");
+            }
+        };
+
+        // --------------------------------------------------------------------------------
+        // 4. RENDER DATA
+        // --------------------------------------------------------------------------------
+
+        const renderDonaturTable = () => {
+            // ... (Kode render tabel sama seperti sebelumnya)
+            const tableBody = document.getElementById('donatur-table-body');
+            tableBody.innerHTML = '';
+            
+            let totalNilaiDonasi = 0;
+            let kumulatif = 0;
+            
+            if (allDonatur.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>`;
+                updateFooter('total-donasi-nilai', 0);
+                updateFooter('total-donasi-jumlah', 0);
+                return;
+            }
+
+            allDonatur.forEach((t, index) => {
+                totalNilaiDonasi += t.amount;
+                kumulatif += t.amount; 
+
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td class="px-4 py-2 border-b text-center">${index + 1}</td>
+                    <td class="px-4 py-2 border-b">${t.date}</td>
+                    <td class="px-4 py-2 border-b">${t.name}</td>
+                    <td class="px-4 py-2 border-b">${t.address}</td>
+                    <td class="px-4 py-2 border-b text-right">${formatRupiah(t.amount)}</td>
+                    <td class="px-4 py-2 border-b text-right font-semibold text-blue-500">${formatRupiah(kumulatif)}</td>
+                `;
+            });
+
+            updateFooter('total-donasi-nilai', totalNilaiDonasi);
+            updateFooter('total-donasi-jumlah', kumulatif); 
+        };
+
+        // --------------------------------------------------------------------------------
+        // 5. INISIALISASI
+        // --------------------------------------------------------------------------------
+
+        window.onload = () => {
+            console.log("Web Siap. Memuat data Donatur dari Firebase...");
+            loadAndRenderDonatur(); 
+        };
 </body>
 </html>
+
