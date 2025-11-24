@@ -22,28 +22,50 @@
         }
     </script>
     <style>
-        /* 1. Body Background Dibuat Sangat Gelap Agar Glow Kontras */
+        /* 1. Body Background Hitam Pekat Agar Glow Sangat Kontras */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #0A1A1A; /* Hijau sangat gelap/hampir hitam */
+            background-color: #000000; /* Hitam pekat */
             color: #e0e0e0;
         }
         
-        /* 2. PENYESUAIAN FINAL: Efek Sinar Emas Neon TERTUTUP (seperti gambar) */
+        /* 2. Styling untuk Bingkai Luar dan Pseudo-Element Cahaya */
         .max-w-6xl {
-            /* Warna glow dimodifikasi sedikit ke hijau neon dan opacity dinaikkan */
-            --glow-color: rgba(255, 255, 0, 0.9); /* Kuning murni dengan opacity sangat tinggi */
-            --glow-spread: 15px; /* Spread radius yang membuat batas terlihat solid */
+            position: relative; /* Penting untuk posisi pseudo-element */
+            z-index: 1; /* Agar elemen utama berada di atas pseudo-element */
+            background-color: #1a472a; /* Latar belakang hijau gelap untuk bingkai utama */
+            border-radius: 0.75rem; /* rounded-xl dari Tailwind */
+            border: 2px solid rgba(255, 235, 59, 0.8); /* Border kuning yang lebih jelas */
+            /* Hapus semua box-shadow dari elemen utama agar tidak bertabrakan dengan pseudo-element */
+            /* Remove overflow-hidden untuk memastikan pseudo-element tidak terpotong */
             
-            box-shadow: 
-                0 0 0 var(--glow-spread) rgba(255, 255, 0, 0.2), /* Lapisan luar yang memberikan ilusi tebal/ketebalan */
-                0 0 40px 10px rgba(255, 235, 59, 0.7),           /* Lapisan inti, cerah dan menyebar sedang */
-                0 0 100px 30px rgba(255, 235, 59, 0.4);          /* Lapisan terluar, sangat luas dan lembut */
-            
-            /* Border dibuat tebal dan kuning menyala */
-            border: 3px solid #FFFF00;
+            /* Penyesuaian agar konten tidak terlalu menempel ke pinggir jika pseudo-element terlalu besar */
+            padding: 1px; /* Sedikit padding agar pseudo-element tidak langsung di bawah konten */
         }
 
+        .max-w-6xl::before {
+            content: '';
+            position: absolute;
+            top: -20px;    /* Sesuaikan posisi agar glow lebih terlihat dari belakang */
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            z-index: -1; /* Pastikan di belakang elemen utama */
+            border-radius: inherit; /* Ikuti border-radius elemen utama */
+            
+            /* Radial gradient untuk menciptakan ilusi cahaya dari tengah */
+            background: radial-gradient(circle at center, 
+                rgba(255, 235, 59, 0.7) 0%,   /* Kuning cerah di tengah */
+                rgba(255, 235, 59, 0.4) 30%,  /* Menipis keluar */
+                rgba(255, 235, 59, 0.1) 70%,  /* Semakin transparan */
+                transparent 100%              /* Hilang di pinggir */
+            );
+            
+            filter: blur(80px); /* KUNCI untuk efek super blur dan menyebar */
+            opacity: 0.8; /* Sesuaikan intensitas glow */
+            pointer-events: none; /* Agar tidak menghalangi interaksi mouse */
+        }
+        
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none;
@@ -106,7 +128,7 @@
 </head>
 <body class="p-4 sm:p-10">
 
-    <div class="max-w-6xl mx-auto rounded-xl shadow-2xl overflow-hidden">
+    <div class="max-w-6xl mx-auto rounded-xl shadow-2xl">
         
         <div class="bg-dark-green text-text-light py-4 px-6 flex justify-center items-center">
             <h1 class="text-3xl font-bold text-center text-yellow-accent">
@@ -325,7 +347,7 @@
                  console.error("Gagal mereset data:", error);
                  alert('Gagal menghapus data di Firestore. Cek console log.');
              }
-        };
+            }
 
 
         // --------------------------------------------------------------------------------
