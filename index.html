@@ -14,7 +14,7 @@
                     colors: {
                         // Warna diambil dari contoh gambar Anda
                         'dark-green': '#1a472a', 
-                        'medium-green': '#2b6e49', 
+                        'medium-green': '#2b6e49', // Warna awal (sekarang di-override di CSS)
                         'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
@@ -27,10 +27,10 @@
     <style>
         /* --- STYLE GLOBAL & GLOW FINAL --- */
         
-        /* 1. Body Background: HIJAU PALING GELAP (untuk efek elegan) */
+        /* 1. Body Background: HIJAU PALING GELAP */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #052600; /* Lebih gelap dari sebelumnya: #0D3D00 */
+            background-color: #052600; 
             color: #e0e0e0;
         }
         
@@ -41,23 +41,23 @@
             background-color: #1a472a; 
             border-radius: 0.75rem;
 
-            /* A. Border Kuning: Dibuat lebih tipis */
-            border: 2px solid #fff352; /* Dari 4px ke 2px */
+            /* A. Border Kuning: Tipis */
+            border: 2px solid #fff352; 
 
             /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) */
             box-shadow: 
-                0 0 10px rgba(255, 235, 59, 1), /* Sedikit dikurangi */
-                0 0 25px rgba(255, 235, 59, 0.7); /* Sedikit dikurangi */
+                0 0 10px rgba(255, 235, 59, 1), 
+                0 0 25px rgba(255, 235, 59, 0.7); 
 
             /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
             filter: 
-                drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) /* Lebih sedikit blur */
-                drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); /* Lebih sedikit blur */
+                drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) 
+                drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
         }
         
-        /* 3. Warna Inner Content: Dibuat sedikit lebih gelap */
+        /* 3. Warna Inner Content: Dibuat LEBIH GELAP LAGI (#1D4F31) */
         .bg-medium-green {
-            background-color: #245c3b; /* Lebih gelap dari #2b6e49 */
+            background-color: #1D4F31; /* Perubahan: Dari #245c3b menjadi #1D4F31 */
         }
 
         /* --- UTILITY CSS lainnya tetap sama --- */
@@ -94,7 +94,7 @@
 
         /* Wrapper Tabel */
         .table-wrapper {
-            box-shadow: 0 0 15px rgba(255, 235, 59, 0.2); /* Shadow tabel juga diubah */
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.2); 
             border: 1px solid #ffeb3b; 
         }
         
