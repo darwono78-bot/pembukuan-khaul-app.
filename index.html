@@ -27,11 +27,11 @@
             
             <div id="login-form-container">
                 <p class="mb-2 text-sm text-red-600 font-medium">
-                    *Harap siapkan akun Admin di Firebase Authentication Console Anda.
+                    *Harap pastikan akun **darwono78@gmail.com** terdaftar di Firebase Auth.
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <input type="email" id="admin-email-input" class="p-2 border rounded md:col-span-2" placeholder="Email Admin (di Firebase Auth)" required>
-                    <input type="password" id="admin-password-input" class="p-2 border rounded" placeholder="Password Admin" required>
+                    <input type="email" id="admin-email-input" class="p-2 border rounded md:col-span-2" placeholder="Email Admin" value="darwono78@gmail.com" required>
+                    <input type="password" id="admin-password-input" class="p-2 border rounded" placeholder="Password Admin" value="haul2025" required>
                     <button onclick="adminLogin()" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-semibold">
                         Login Admin
                     </button>
@@ -106,6 +106,7 @@
     </div>
 
     <script type="module">
+        
         // --------------------------------------------------------------------------------
         // 1. FIREBASE SETUP DAN KONFIGURASI
         // --------------------------------------------------------------------------------
@@ -113,14 +114,14 @@
         // Import fungsi-fungsi yang diperlukan dari Firebase SDK (Versi 9 modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // !!! HARAP GANTI TOTAL DENGAN KONFIGURASI FIREBASE ASLI ANDA !!!
+        // KONFIGURASI FIREBASE FINAL (Sesuai Konfirmasi Anda)
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
             projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+            storageBucket: "catatan-keuangan-haul.appspot.com",
             messagingSenderId: "955355049778",
             appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
@@ -173,14 +174,13 @@
         // Mengelola perubahan status login: Ini akan dipanggil setiap kali status auth berubah
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in
                 isAdminLoggedIn = true;
+                console.log("Status Admin: LOGIN BERHASIL");
             } else {
-                // User is signed out
                 isAdminLoggedIn = false;
+                console.log("Status Admin: LOGOUT");
             }
             updateAdminView();
-            // Panggil fungsi untuk mengambil data setiap kali status login berubah
             loadAndRenderDonatur(); 
         });
 
@@ -190,20 +190,28 @@
             const password = document.getElementById('admin-password-input').value;
             
             if (!email || !password) {
-                alert('Mohon masukkan Email dan Password Admin yang terdaftar di Firebase Auth.');
+                alert('Mohon masukkan Email dan Password Admin.');
                 return;
             }
 
             try {
-                // Coba Login ke Firebase Auth
                 await signInWithEmailAndPassword(auth, email, password);
-                
-                // Login Berhasil (onAuthStateChanged akan menangani sisanya)
-                alert('Login Berhasil! Anda memiliki akses admin.');
+                alert('Login Berhasil! Selamat datang, Admin.');
                 
             } catch (error) {
                 console.error("Login Error:", error.code);
-                alert(`Login Gagal. Pastikan Email dan Password Anda benar.`);
+                // Menampilkan pesan error yang lebih jelas di UI
+                let errorMessage = 'Login Gagal. ';
+                if (error.code === 'auth/wrong-password') {
+                    errorMessage += 'Password salah.';
+                } else if (error.code === 'auth/user-not-found') {
+                    errorMessage += 'Akun Admin tidak ditemukan.';
+                } else if (error.code === 'auth/invalid-api-key') {
+                    errorMessage = 'FATAL: Konfigurasi Project ID/API Key salah. Cek Google Cloud Console.';
+                } else {
+                    errorMessage += 'Terjadi kesalahan sistem.';
+                }
+                alert(errorMessage);
             }
         };
 
@@ -211,7 +219,6 @@
             if (confirm('Anda yakin ingin keluar dari mode Admin?')) {
                 try {
                     await signOut(auth);
-                    alert('Logout Berhasil. Kembali ke mode Tampilan Publik.');
                 } catch (error) {
                     console.error("Logout Error:", error);
                     alert(`Logout Gagal: ${error.message}`);
@@ -228,8 +235,13 @@
              
              try {
                 const donaturSnapshot = await getDocs(donaturCol);
-                const donaturDeletePromises = donaturSnapshot.docs.map(d => deleteDoc(doc(db, "donatur_haul", d.id)));
-                await Promise.all(donaturDeletePromises);
+                const batch = writeBatch(db); // Menggunakan batch untuk menghapus banyak dokumen
+                
+                donaturSnapshot.docs.forEach((d) => {
+                    batch.delete(doc(db, "donatur_haul", d.id));
+                });
+                
+                await batch.commit();
 
                 alert('SEMUA DATA DONATUR BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
                 await loadAndRenderDonatur();
@@ -250,7 +262,6 @@
             tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data dari Firebase...</td></tr>`;
 
             try {
-                // Urutkan berdasarkan timestamp ASC (data lama di atas, data baru di bawah)
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
                 const donaturSnapshot = await getDocs(donaturQuery);
 
@@ -262,7 +273,8 @@
                         name: data.name,
                         address: data.address || '-',
                         amount: data.amount,
-                        timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(), 
+                        // Gunakan timestamp untuk sorting, atau date jika timestamp tidak ada
+                        timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
                 
@@ -273,7 +285,7 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" class="py-4 text-center text-red-600">
-                            🔴 GAGAL KONEKSI/MEMUAT DATA. Cek Konfigurasi Firebase & Akses Firestore Anda.
+                            🔴 GAGAL KONEKSI/MEMUAT DATA. Cek Konfigurasi Firebase Anda.
                         </td>
                     </tr>`;
             }
@@ -297,7 +309,7 @@
                 name: name,
                 address: address || '',
                 amount: amount,
-                timestamp: serverTimestamp() // Waktu server agar urutan kronologis terjaga
+                timestamp: serverTimestamp() 
             };
 
             try {
@@ -307,10 +319,9 @@
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-address-input').value = '';
                 document.getElementById('donatur-amount-input').value = '';
-                document.getElementById('donatur-date-input').value = new Date().toLocaleDateString('en-CA');
                 
                 alert('Donasi berhasil ditambahkan ke Firebase!');
-                await loadAndRenderDonatur(); // Muat ulang data
+                await loadAndRenderDonatur(); 
             } catch (error) {
                 console.error("Gagal menambahkan Donatur:", error);
                 alert("Gagal menyimpan donasi. Cek console log.");
@@ -337,10 +348,9 @@
 
             allDonatur.forEach((t, index) => {
                 totalNilaiDonasi += t.amount;
-                kumulatif += t.amount; // Nilai kumulatif selalu bertambah
+                kumulatif += t.amount; 
 
                 const row = tableBody.insertRow();
-                // Format tanggal ke format Indonesia yang lebih mudah dibaca
                 const formattedDate = new Date(t.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 row.innerHTML = `
@@ -363,9 +373,12 @@
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            console.log("Web Siap. Menunggu status Admin dari Firebase...");
             // Set tanggal hari ini di input
-            document.getElementById('donatur-date-input').value = new Date().toLocaleDateString('en-CA');
+            const today = new Date().toLocaleDateString('en-CA');
+            const dateInput = document.getElementById('donatur-date-input');
+            if (dateInput) {
+                dateInput.value = today;
+            }
             // onAuthStateChanged akan memicu loadAndRenderDonatur dan updateAdminView
         };
     </script>
