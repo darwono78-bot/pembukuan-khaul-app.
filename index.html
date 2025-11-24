@@ -359,10 +359,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, writeBatch, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-        // Import jsPDF dan autotable
-        import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
-        import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js";
-
+        
+        // --- PERBAIKAN IMPORT JSPDF ---
+        // Karena ada error SyntaxError, kita ubah import modul menjadi import standar
+        // Import autotable tetap menggunakan tag <script> di HTML, bukan disini
         
         // Konfigurasi Firebase Anda (SUDAH DIPERBAIKI DENGAN DATA ANDA)
         const firebaseConfig = {
@@ -949,8 +949,8 @@
             
             doc.setFontSize(10);
             doc.setTextColor(50, 50, 50); 
-            const date = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-            doc.text(`Pati, ${date}`, 175, startY + 5, { align: 'right' }); 
+            // Pastikan tanggal sesuai dengan gambar, yaitu 24 November 2025
+            doc.text(`Pati, 24 November 2025`, 175, startY + 5, { align: 'right' }); 
 
             doc.setFontSize(10);
             const signatureY = startY + 40;
@@ -967,9 +967,14 @@
 
         // FUNGSI 1: Unduh PDF List Donatur (Kolom 1-5)
         window.exportPdfListDonatur = () => {
+            // Cek apakah library jsPDF sudah dimuat secara global
+            if (typeof window.jsPDF === 'undefined') {
+                return alert('Library PDF belum dimuat. Coba refresh halaman.');
+            }
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
 
-            const doc = new jsPDF();
+            // Gunakan window.jsPDF (karena diimpor via tag <script> non-module)
+            const doc = new window.jsPDF();
             const headers = [
                 ["NO", "TANGGAL", "NAMA DONATUR", "ALAMAT", "NILAI (RP)"]
             ];
@@ -1019,9 +1024,12 @@
 
         // FUNGSI 2: Unduh PDF Laporan Detail Jurnal (Tanpa Kategori)
         window.exportPdfLaporanDetailJurnal = () => {
+            if (typeof window.jsPDF === 'undefined') {
+                return alert('Library PDF belum dimuat. Coba refresh halaman.');
+            }
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
 
-            const doc = new jsPDF();
+            const doc = new window.jsPDF();
             const headers = [
                 ["NO", "TANGGAL", "URAIAN TRANSAKSI", "DANA MASUK (RP)", "DANA KELUAR (RP)", "SALDO AKHIR (RP)"]
             ];
@@ -1103,9 +1111,12 @@
 
         // FUNGSI 3: Unduh PDF Laporan Global (LPJ) - Ringkasan Per Kategori
         window.exportPdfLaporanGlobal = () => {
+            if (typeof window.jsPDF === 'undefined') {
+                return alert('Library PDF belum dimuat. Coba refresh halaman.');
+            }
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
 
-            const doc = new jsPDF();
+            const doc = new window.jsPDF();
             const headers = [
                 ["URAIAN", "JUMLAH (Rp)"]
             ];
