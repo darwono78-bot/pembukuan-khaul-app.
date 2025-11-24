@@ -22,49 +22,37 @@
         }
     </script>
     <style>
-        /* 1. Body Background Hitam Pekat Agar Glow Sangat Kontras */
+        /* Body Background Hitam Pekat */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #000000; /* Hitam pekat */
+            background-color: #000000; /* Hitam pekat agar glow sangat kontras */
             color: #e0e0e0;
         }
         
-        /* 2. Styling untuk Bingkai Luar dan Pseudo-Element Cahaya */
+        /* 💡 TEKNIK TERAKHIR: Menggunakan Tumpukan filter: drop-shadow() */
         .max-w-6xl {
-            position: relative; /* Penting untuk posisi pseudo-element */
-            z-index: 1; /* Agar elemen utama berada di atas pseudo-element */
-            background-color: #1a472a; /* Latar belakang hijau gelap untuk bingkai utama */
-            border-radius: 0.75rem; /* rounded-xl dari Tailwind */
-            border: 2px solid rgba(255, 235, 59, 0.8); /* Border kuning yang lebih jelas */
-            /* Hapus semua box-shadow dari elemen utama agar tidak bertabrakan dengan pseudo-element */
-            /* Remove overflow-hidden untuk memastikan pseudo-element tidak terpotong */
+            /* Hapus semua properti glow sebelumnya */
             
-            /* Penyesuaian agar konten tidak terlalu menempel ke pinggir jika pseudo-element terlalu besar */
-            padding: 1px; /* Sedikit padding agar pseudo-element tidak langsung di bawah konten */
+            position: relative; 
+            z-index: 10;
+            background-color: #1a472a; /* Latar belakang hijau gelap untuk bingkai utama */
+            border-radius: 0.75rem;
+            border: none; /* Hapus border fisik, biarkan glow saja */
+
+            /* Tumpukan Filter Drop-Shadow untuk Glow yang Super Blur dan Tebal */
+            filter: 
+                drop-shadow(0 0 50px rgba(255, 255, 0, 1)) /* Inti cahaya terang */
+                drop-shadow(0 0 80px rgba(255, 235, 59, 0.7)) /* Lapisan menengah, lebih lembut */
+                drop-shadow(0 0 120px rgba(255, 235, 59, 0.5)) /* Lapisan luar, menyebar luas */
+                drop-shadow(0 0 150px rgba(255, 235, 59, 0.3)); /* Lapisan terluas, sangat blur */
+        }
+        
+        /* Mengganti background-color elemen di dalamnya agar tidak kena filter: drop-shadow() secara tidak sengaja */
+        .bg-medium-green {
+            background-color: #2b6e49;
         }
 
-        .max-w-6xl::before {
-            content: '';
-            position: absolute;
-            top: -20px;    /* Sesuaikan posisi agar glow lebih terlihat dari belakang */
-            left: -20px;
-            right: -20px;
-            bottom: -20px;
-            z-index: -1; /* Pastikan di belakang elemen utama */
-            border-radius: inherit; /* Ikuti border-radius elemen utama */
-            
-            /* Radial gradient untuk menciptakan ilusi cahaya dari tengah */
-            background: radial-gradient(circle at center, 
-                rgba(255, 235, 59, 0.7) 0%,   /* Kuning cerah di tengah */
-                rgba(255, 235, 59, 0.4) 30%,  /* Menipis keluar */
-                rgba(255, 235, 59, 0.1) 70%,  /* Semakin transparan */
-                transparent 100%              /* Hilang di pinggir */
-            );
-            
-            filter: blur(80px); /* KUNCI untuk efek super blur dan menyebar */
-            opacity: 0.8; /* Sesuaikan intensitas glow */
-            pointer-events: none; /* Agar tidak menghalangi interaksi mouse */
-        }
+        /* Karena kita tidak bisa pakai pseudo-element, kita harus pastikan konten tidak terpotong */
         
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
