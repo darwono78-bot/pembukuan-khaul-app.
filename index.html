@@ -1163,10 +1163,150 @@
                 dateInputKas.value = today;
             }
         };
+        <script>
+    // Fungsi bantuan untuk mengambil jsPDF secara aman dari window (GLOBAL)
+    const getJsPDF = () => {
+        // Karena library sudah dimuat, kita hanya perlu mengaksesnya
+        if (window.jspdf && window.jspdf.jsPDF) {
+            return window.jspdf.jsPDF;
+        }
+        console.error("Kesalahan: Library jsPDF tidak dimuat dengan benar.");
+        return null;
+    };
 
+    // --- FUNGSI 1: EXPORT PDF LIST DONATUR ---
+    window.exportPdfListDonatur = function() {
+        const jsPDF = getJsPDF();
+        if (!jsPDF) return;
+
+        const doc = new jsPDF();
+        
+        // Data contoh
+        const dataTransaksi = [
+            [1, '09/11/2025', 'sarpin', 'Ngablak', '500.000', '500.000'],
+            [2, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '1.500.000'],
+            [3, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '2.500.000'],
+        ];
+
+        const header = [
+            ['NO', 'TANGGAL', 'NAMA DONATUR', 'ALAMAT', 'NILAI (RP)', 'JUMLAH JARIYAH (KUMULATIF)']
+        ];
+
+        doc.setFontSize(14);
+        doc.text('List Data Donatur Haul', 105, 15, null, null, 'center');
+        
+        doc.autoTable({
+            head: header,
+            body: dataTransaksi,
+            startY: 20,
+            theme: 'grid',
+            headStyles: { fillColor: [40, 167, 69] },
+            styles: { fontSize: 10, cellPadding: 2 },
+        });
+
+        doc.save("List_Donatur.pdf");
+    }
+
+
+    // --- FUNGSI 2: EXPORT PDF DETAIL JURNAL ---
+    window.exportPdfLaporanDetailJurnal = function() {
+        const jsPDF = getJsPDF();
+        if (!jsPDF) return;
+
+        const doc = new jsPDF('l'); 
+        
+        // Data contoh
+        const dataDetail = [
+            [1, '09/11/2025', 'sarpin', 'Ngablak', '500.000', '75.000', '75.000', '350.000'],
+            [2, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '150.000', '150.000', '700.000'],
+            [3, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '150.000', '150.000', '700.000'],
+            ['', '', '', 'TOTAL KESELURUHAN:', '2.500.000', '375.000', '375.000', '1.750.000']
+        ];
+
+        const header = [
+            ['NO', 'TANGGAL', 'NAMA DONATUR', 'ALAMAT', 'NILAI (RP)', 'PERAWATAN MAKAM (15%)', 'BISYAROH PANITIA (15%)', 'BIAYA HAUL (70%)']
+        ];
+        
+        doc.setFontSize(14);
+        doc.text('Catatan Pembukuan Donatur Haul - Detail Jurnal', 148.5, 15, null, null, 'center');
+        
+        doc.autoTable({
+            head: header,
+            body: dataDetail,
+            startY: 20,
+            theme: 'grid',
+            headStyles: { fillColor: [40, 167, 69] },
+            styles: { fontSize: 10, cellPadding: 2 },
+        });
+
+        doc.save("Detail_Jurnal_Haul.pdf");
+    }
+
+
+    // --- FUNGSI 3: EXPORT PDF LAPORAN GLOBAL (LPJ) ---
+    window.exportPdfLaporanGlobal = function() {
+        const jsPDF = getJsPDF();
+        if (!jsPDF) return;
+
+        const doc = new jsPDF();
+        
+        // Data contoh
+        const dataLPJ = [
+            ['DANA MASUK', ''],
+            ['Donatur (Total Donasi)', 'Rp 13.953.500'],
+            ['TOTAL DANA MASUK', 'Rp 13.953.500'],
+            ['DANA KELUAR', ''],
+            ['Ongkos Kiai', 'Rp 700.000'],
+            ['Bayar Khataman', 'Rp 1.000.000'],
+            ['Bayar Konsumsi', 'Rp 2.000.000'],
+            ['Bayar Persewaan', 'Rp 1.800.000'],
+            ['TOTAL DANA KELUAR', 'Rp 5.500.000'],
+            ['SALDO AKHIR', 'Rp 8.453.500']
+        ];
+
+        const header = [
+            ['URAIAN', 'JUMLAH (Rp)']
+        ];
+
+        doc.setFontSize(16);
+        doc.text('LPJ Keuangan Haul', 105, 15, null, null, 'center');
+        doc.setFontSize(12);
+        doc.text('Laporan Global LPJ (Ringkasan Per Kategori)', 105, 20, null, null, 'center');
+        
+        doc.autoTable({
+            head: header,
+            body: dataLPJ,
+            startY: 25,
+            theme: 'grid',
+            headStyles: { fillColor: [102, 51, 153] }, 
+            bodyStyles: [
+                { row: 2, cellStyles: { fillColor: [144, 238, 144], fontStyle: 'bold' } }, 
+                { row: 7, cellStyles: { fillColor: [255, 192, 203], fontStyle: 'bold' } }, 
+                { row: 9, cellStyles: { fillColor: [255, 255, 0], fontStyle: 'bold' } } 
+            ],
+            styles: { fontSize: 10, cellPadding: 2 },
+        });
+        
+        // Tanda Tangan
+        let finalY = doc.autoTable.previous.finalY;
+        doc.setFontSize(10);
+        doc.text('Pati, 24 November 2025', 180, finalY + 10);
+        
+        doc.text('Mengetahui,', 20, finalY + 25);
+        doc.text('Ketua Panitia Haul', 20, finalY + 30);
+        doc.text('Bendahara Haul', 105, finalY + 30, null, null, 'center');
+        doc.text('Sekretaris', 190, finalY + 30, null, null, 'right');
+        
+        doc.text('......................................................', 20, finalY + 45);
+        doc.text('......................................................', 105, finalY + 45, null, null, 'center');
+        doc.text('......................................................', 190, finalY + 45, null, null, 'right');
+
+        doc.save("Laporan_Global_LPJ.pdf");
+    }
     </script>
 </body>
 </html>
+
 
 
 
