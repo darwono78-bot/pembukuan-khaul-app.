@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Donatur Haul (Firebase)</title>
+    <title>Pembukuan Haul: Firebase & Admin Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: sans-serif; }
-        /* Gaya agar input angka tidak ada panah spin */
+        /* Hilangkan panah pada input type=number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none;
@@ -15,12 +15,43 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-8">
+<body class="bg-gray-100 p-4 sm:p-8">
 
     <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-xl">
-        <h1 class="text-2xl font-bold mb-6 text-center text-blue-800">
-            Catatan Pembukuan Donatur Haul Ulama
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-800">
+            Catatan Pembukuan Donatur Haul (Firebase)
         </h1>
+
+        <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">Kontrol Admin</h2>
+            
+            <div id="login-form-container">
+                <p class="mb-2 text-sm text-red-600 font-medium">
+                    *Harap siapkan akun Admin di Firebase Authentication Console Anda.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input type="email" id="admin-email-input" class="p-2 border rounded md:col-span-2" placeholder="Email Admin (di Firebase Auth)" required>
+                    <input type="password" id="admin-password-input" class="p-2 border rounded" placeholder="Password Admin" required>
+                    <button onclick="adminLogin()" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-semibold">
+                        Login Admin
+                    </button>
+                </div>
+            </div>
+
+            <div id="admin-actions-container" class="hidden">
+                <p class="text-sm font-semibold text-green-600 mb-3">✅ Anda terhubung sebagai Admin.</p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="confirmResetData()" class="bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm flex-grow">
+                        RESET SEMUA DATA
+                    </button>
+                    <button onclick="adminLogout()" class="bg-gray-400 text-white p-2 rounded hover:bg-gray-500 text-sm flex-grow sm:flex-grow-0">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="my-6">
 
         <h2 class="text-xl font-semibold mb-3 text-gray-700">Data Donasi Masuk</h2>
         <div class="table-wrapper overflow-x-auto mb-8">
@@ -31,7 +62,7 @@
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Donatur</th>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alamat</th>
-                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai Donasi (Rp)</th>
+                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai (Rp)</th>
                         <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Total (Kumulatif)</th>
                     </tr>
                 </thead>
@@ -48,7 +79,7 @@
             </table>
         </div>
 
-        <div id="donasi-input-container" class="border p-4 rounded-lg bg-blue-50">
+        <div id="donasi-input-container" class="border p-4 rounded-lg bg-blue-50 hidden">
             <h2 class="text-xl font-semibold mb-3 text-blue-700">Input Data Donatur Baru</h2>
             <div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
                 <div class="md:col-span-2">
@@ -57,7 +88,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <label for="donatur-name-input" class="block text-xs font-medium text-gray-700">Nama Donatur</label>
-                    <input type="text" id="donatur-name-input" class="p-2 border rounded w-full" placeholder="Nama" required>
+                    <input type="text" id="donatur-name-input" class="p-2 border rounded w-full" placeholder="Nama Donatur" required>
                 </div>
                 <div>
                     <label for="donatur-address-input" class="block text-xs font-medium text-gray-700">Alamat</label>
@@ -67,23 +98,24 @@
                     <label for="donatur-amount-input" class="block text-xs font-medium text-gray-700">Nilai Donasi (Rp)</label>
                     <input type="number" id="donatur-amount-input" class="p-2 border rounded w-full" placeholder="Jumlah" min="1" required>
                 </div>
-                <button onclick="addDonatur()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 w-full">
-                    Simpan
+                <button onclick="addDonatur()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 w-full font-semibold">
+                    Simpan Donasi
                 </button>
             </div>
         </div>
     </div>
-<script type="module">
-    // --------------------------------------------------------------------------------
+
+    <script type="module">
+       // --------------------------------------------------------------------------------
         // 1. FIREBASE SETUP DAN KONFIGURASI
         // --------------------------------------------------------------------------------
         
-        // Import fungsi-fungsi yang diperlukan dari Firebase SDK
+        // Import fungsi-fungsi yang diperlukan dari Firebase SDK (Versi 9 modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // !!! HARAP GANTI INI DENGAN KONFIGURASI FIREBASE ASLI ANDA !!!
-        // Jika ini salah, penyimpanan PASTI GAGAL
+        // !!! HARAP GANTI TOTAL DENGAN KONFIGURASI FIREBASE ASLI ANDA !!!
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -93,14 +125,17 @@
             appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
         
-        // Initialize Firebase
+        // Initialize Firebase dan dapatkan referensi Auth & Firestore
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
         
         // Definisikan Collection
-        const donaturCol = collection(db, "donatur_simple"); 
-        
+        const donaturCol = collection(db, "donatur_haul"); 
+
+        // Global State
         let allDonatur = []; 
+        let isAdminLoggedIn = false; 
 
         // --------------------------------------------------------------------------------
         // 2. HELPER FUNCTIONS
@@ -119,17 +154,103 @@
                 element.textContent = formatRupiah(value);
             }
         };
+        
+        const updateAdminView = () => {
+            const isLogged = isAdminLoggedIn;
+            
+            // Tampilkan/Sembunyikan Panel Login/Logout
+            document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
+            document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
+            
+            // Tampilkan/Sembunyikan Form Input Donasi
+            document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
+        };
 
         // --------------------------------------------------------------------------------
-        // 3. FIREBASE CRUD (CREATE & READ)
+        // 3. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
+        // --------------------------------------------------------------------------------
+
+        // Mengelola perubahan status login: Ini akan dipanggil setiap kali status auth berubah
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                isAdminLoggedIn = true;
+            } else {
+                // User is signed out
+                isAdminLoggedIn = false;
+            }
+            updateAdminView();
+            // Panggil fungsi untuk mengambil data setiap kali status login berubah
+            loadAndRenderDonatur(); 
+        });
+
+
+        window.adminLogin = async () => {
+            const email = document.getElementById('admin-email-input').value;
+            const password = document.getElementById('admin-password-input').value;
+            
+            if (!email || !password) {
+                alert('Mohon masukkan Email dan Password Admin yang terdaftar di Firebase Auth.');
+                return;
+            }
+
+            try {
+                // Coba Login ke Firebase Auth
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // Login Berhasil (onAuthStateChanged akan menangani sisanya)
+                alert('Login Berhasil! Anda memiliki akses admin.');
+                
+            } catch (error) {
+                console.error("Login Error:", error.code);
+                alert(`Login Gagal. Pastikan Email dan Password Anda benar.`);
+            }
+        };
+
+        window.adminLogout = async () => {
+            if (confirm('Anda yakin ingin keluar dari mode Admin?')) {
+                try {
+                    await signOut(auth);
+                    alert('Logout Berhasil. Kembali ke mode Tampilan Publik.');
+                } catch (error) {
+                    console.error("Logout Error:", error);
+                    alert(`Logout Gagal: ${error.message}`);
+                }
+            }
+        };
+        
+        window.confirmResetData = async () => {
+             if (!isAdminLoggedIn) return alert('Hanya Admin yang dapat mereset data.');
+             
+             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi? Tindakan ini tidak bisa dibatalkan.')) return;
+             
+             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua donatur di Firebase. LANJUTKAN?')) return;
+             
+             try {
+                const donaturSnapshot = await getDocs(donaturCol);
+                const donaturDeletePromises = donaturSnapshot.docs.map(d => deleteDoc(doc(db, "donatur_haul", d.id)));
+                await Promise.all(donaturDeletePromises);
+
+                alert('SEMUA DATA DONATUR BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
+                await loadAndRenderDonatur();
+             } catch (error) {
+                 console.error("Gagal mereset data:", error);
+                 alert('Gagal menghapus data di Firestore. Cek console log.');
+             }
+        };
+
+
+        // --------------------------------------------------------------------------------
+        // 4. FIRESTORE CRUD (CREATE & READ)
         // --------------------------------------------------------------------------------
 
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data dari Firebase...</td></tr>`;
 
             try {
+                // Urutkan berdasarkan timestamp ASC (data lama di atas, data baru di bawah)
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
                 const donaturSnapshot = await getDocs(donaturQuery);
 
@@ -145,7 +266,6 @@
                     });
                 });
                 
-                allDonatur.sort((a, b) => a.timestamp - b.timestamp);
                 renderDonaturTable();
                 
             } catch (error) {
@@ -153,65 +273,55 @@
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="6" class="py-4 text-center text-red-600">
-                            🔴 GAGAL KONEKSI/MEMUAT DATA. Periksa Konfigurasi Firebase Anda.
+                            🔴 GAGAL KONEKSI/MEMUAT DATA. Cek Konfigurasi Firebase & Akses Firestore Anda.
                         </td>
                     </tr>`;
             }
         };
         
         window.addDonatur = async () => {
-            console.log("--- Memulai proses addDonatur (Langkah 1) ---"); 
+            if (!isAdminLoggedIn) return alert('Hanya Admin yang dapat menginput data.');
 
             const date = document.getElementById('donatur-date-input').value;
             const name = document.getElementById('donatur-name-input').value;
             const address = document.getElementById('donatur-address-input').value;
-            let amountInput = document.getElementById('donatur-amount-input').value;
+            let amount = parseInt(document.getElementById('donatur-amount-input').value);
             
-            // Konversi nilai menjadi angka
-            let amount = parseInt(amountInput);
-            
-            console.log("Input values (Langkah 2):", { date, name, address, amount, amountInputType: typeof amountInput }); 
-
             if (!date || !name || isNaN(amount) || amount <= 0) {
-                console.error("Validasi gagal (Langkah 3): Ada input yang kosong atau jumlah tidak valid."); 
                 alert('Mohon isi Tanggal, Nama, dan Nilai Donasi dengan benar (Angka Positif).');
                 return;
             }
-            
+
             const newDonatur = {
                 date: date,
                 name: name,
                 address: address || '',
                 amount: amount,
-                timestamp: serverTimestamp() 
+                timestamp: serverTimestamp() // Waktu server agar urutan kronologis terjaga
             };
 
             try {
-                console.log("Mencoba menambahkan dokumen ke Firestore (Langkah 4)..."); 
-                // !!! PENYIMPANAN DATA !!!
                 await addDoc(donaturCol, newDonatur);
                 
-                // Reset form
-                document.getElementById('donatur-date-input').value = '';
+                // Reset form setelah sukses
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-address-input').value = '';
                 document.getElementById('donatur-amount-input').value = '';
+                document.getElementById('donatur-date-input').value = new Date().toLocaleDateString('en-CA');
                 
-                console.log("Donasi berhasil ditambahkan (Langkah 5)!");
                 alert('Donasi berhasil ditambahkan ke Firebase!');
-                await loadAndRenderDonatur(); 
+                await loadAndRenderDonatur(); // Muat ulang data
             } catch (error) {
-                console.error("🛑 FATAL ERROR saat menyimpan ke Firebase (Langkah 4 GAGAL):", error); 
-                alert("Gagal menyimpan donasi. Cek console log (baris merah) untuk detail error Firebase.");
+                console.error("Gagal menambahkan Donatur:", error);
+                alert("Gagal menyimpan donasi. Cek console log.");
             }
         };
 
         // --------------------------------------------------------------------------------
-        // 4. RENDER DATA
+        // 5. RENDER DATA (LOGIC KUMULATIF)
         // --------------------------------------------------------------------------------
 
         const renderDonaturTable = () => {
-            // ... (Kode render tabel sama seperti sebelumnya)
             const tableBody = document.getElementById('donatur-table-body');
             tableBody.innerHTML = '';
             
@@ -227,12 +337,15 @@
 
             allDonatur.forEach((t, index) => {
                 totalNilaiDonasi += t.amount;
-                kumulatif += t.amount; 
+                kumulatif += t.amount; // Nilai kumulatif selalu bertambah
 
                 const row = tableBody.insertRow();
+                // Format tanggal ke format Indonesia yang lebih mudah dibaca
+                const formattedDate = new Date(t.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
                 row.innerHTML = `
                     <td class="px-4 py-2 border-b text-center">${index + 1}</td>
-                    <td class="px-4 py-2 border-b">${t.date}</td>
+                    <td class="px-4 py-2 border-b">${formattedDate}</td>
                     <td class="px-4 py-2 border-b">${t.name}</td>
                     <td class="px-4 py-2 border-b">${t.address}</td>
                     <td class="px-4 py-2 border-b text-right">${formatRupiah(t.amount)}</td>
@@ -240,21 +353,21 @@
                 `;
             });
 
+            // Update Footer Total
             updateFooter('total-donasi-nilai', totalNilaiDonasi);
             updateFooter('total-donasi-jumlah', kumulatif); 
         };
 
         // --------------------------------------------------------------------------------
-        // 5. INISIALISASI
+        // 6. INISIALISASI
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            console.log("Web Siap. Memuat data Donatur dari Firebase...");
-            loadAndRenderDonatur(); 
+            console.log("Web Siap. Menunggu status Admin dari Firebase...");
+            // Set tanggal hari ini di input
+            document.getElementById('donatur-date-input').value = new Date().toLocaleDateString('en-CA');
+            // onAuthStateChanged akan memicu loadAndRenderDonatur dan updateAdminView
         };
-          </script>          
+    </script>
 </body>
 </html>
-
-
-
