@@ -94,17 +94,17 @@
             text-align: right; /* Default rata kanan untuk semua kolom data */
         }
         
-        /* >>> PERUBAHAN 1: Ukuran & Warna Angka Rupiah di Baris Data <<< */
-        #donatur-table .kolom-nilai-alokasi { /* Kelas baru untuk nilai dan alokasi */
-            font-size: 1rem; /* Naik sedikit dari 0.875rem, jadi 16px */
-            color: #e0e0e0; /* Warna putih (text-light) */
-            font-weight: normal; /* Tidak tebal */
+        /* Ukuran & Warna Angka Rupiah di BARIS DATA (PUTIH) */
+        #donatur-table .kolom-nilai-alokasi { 
+            font-size: 1rem; 
+            color: #e0e0e0; /* PUTIH (text-light) */
+            font-weight: normal; 
         }
         
-        /* >>> PERUBAHAN 2: Ukuran & Warna Teks Nama Donatur & Alamat <<< */
-        #donatur-table .kolom-nama-alamat { /* Kelas baru untuk nama & alamat */
-            font-size: 1rem; /* Sama dengan angka Rupiah */
-            color: #e0e0e0; /* Warna putih (text-light) */
+        /* Ukuran & Warna Teks Nama Donatur & Alamat (PUTIH) */
+        #donatur-table .kolom-nama-alamat { 
+            font-size: 1rem; 
+            color: #e0e0e0; /* PUTIH (text-light) */
         }
 
 
@@ -143,19 +143,18 @@
         
         /* --- STYLE KHUSUS UNTUK FOOTER TOTAL --- */
         
-        /* Style untuk footer agar tetap tebal dan menonjol */
+        /* Style untuk Label "TOTAL KESELURUHAN:" (KUNING) */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.075rem; /* Ukuran default untuk label TOTAL KESELURUHAN */
-            /* KARENA ANDA INGIN LABELNYA KUNING: */
-            color: #ffeb3b; /* Menggunakan nilai Hex code yellow-accent */
+            font-size: 1.125rem; 
+            color: #ffeb3b; /* KUNING (yellow-accent) */
         }
 
-        /* >>> PERUBAHAN 3: Ukuran & Warna Angka Rupiah di Baris Total (Footer) <<< */
-        #donatur-table tfoot .total-angka-rupiah { /* Kelas untuk angka total */
-            font-size: 1.25rem; /* Lebih besar dari angka data */
-            color: #e0e0e0; /* Warna putih (text-light) */
-            font-weight: normal; /* Tidak tebal */
+        /* >>> PERBAIKAN: Angka Rupiah di Baris Total (Footer) DIKEMBALIKAN KE KUNING <<< */
+        #donatur-table tfoot .total-angka-rupiah { 
+            font-size: 1.25rem; 
+            color: #ffeb3b; /* KUNING (yellow-accent) */
+            font-weight: normal; /* TIDAK TEBAL */
         }
     </style>
 </head>
@@ -194,7 +193,7 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td> 
+                            <td colspan="4" class="px-4 py-3 text-right">TOTAL KESELURUHAN:</td> 
                             
                             <td id="total-donasi-input" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
                             <td id="total-perawatan-makam" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
@@ -578,4 +577,3 @@
     </script>
 </body>
 </html>
-
