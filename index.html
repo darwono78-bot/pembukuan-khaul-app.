@@ -23,16 +23,20 @@
     </script>
     <style>
         body { 
-            /* Menggunakan font sistem umum yang bagus dan mudah dibaca (Calibri/Cambria-like) */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #1a472a;
             color: #e0e0e0;
         }
         
-        /* 💡 Efek Cahaya Emas pada Bingkai Luar */
+        /* 💡 FINAL FIX: Efek Sinar Emas Lembut dari Belakang pada Bingkai Luar */
         .max-w-6xl {
-            box-shadow: 0 0 40px rgba(255, 235, 59, 0.4); /* Emas dengan blur 40px, opacity 40% */
-            border: 1px solid rgba(255, 235, 59, 0.2);
+            /* Hapus border tipis sebelumnya, fokus pada shadow */
+            /* Menggunakan beberapa lapisan box-shadow untuk efek glow yang merata dan lembut */
+            box-shadow: 
+                0 0 50px rgba(255, 235, 59, 0.5), /* Glow utama, lebih terang */
+                0 0 100px rgba(255, 235, 59, 0.3), /* Glow lebih luas dan lembut */
+                0 0 150px rgba(255, 235, 59, 0.1); /* Glow terluar, paling lembut */
+            border: none; /* Hapus border solid agar glow lebih menonjol */
         }
 
         input[type=number]::-webkit-inner-spin-button, 
@@ -63,10 +67,11 @@
             font-size: 0.875rem; /* Ukuran seragam (text-sm) */
         }
 
-        /* 💡 Efek Cahaya Emas pada Wrapper Tabel */
+        /* Wrapper Tabel */
         .table-wrapper {
-            box-shadow: 0 0 20px rgba(255, 235, 59, 0.2); /* Emas dengan blur 20px, opacity 20% */
-            border: 1px solid #ffeb3b; /* Border emas tipis untuk memperkuat bingkai */
+            /* Tetap berikan shadow dan border pada tabel untuk menonjolkan kontennya */
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.2); 
+            border: 1px solid #ffeb3b; 
         }
         
         /* Style khusus untuk kolom agar rapi */
