@@ -28,15 +28,14 @@
             color: #e0e0e0;
         }
         
-        /* 💡 FINAL ATTEMPT: Efek Sinar Emas Lembut Menyeluruh pada Bingkai Luar */
+        /* 💡 PENYESUAIAN FINAL: Efek Sinar Emas Super BLUR dan LUAS */
         .max-w-6xl {
-            /* Hapus border tipis sebelumnya, fokus pada shadow */
-            /* Menggunakan beberapa lapisan box-shadow yang lebih agresif untuk efek yang mirip gambar */
+            /* Nilai Blur dan Spread yang sangat besar untuk efek cahaya super lembut dan luas */
             box-shadow: 
-                0 0 80px 30px rgba(255, 235, 59, 0.4),   /* Lapisan inti, lebih cerah dan tebal */
-                0 0 150px 70px rgba(255, 235, 59, 0.25), /* Lapisan menengah, sangat menyebar */
-                0 0 250px 100px rgba(255, 235, 59, 0.1); /* Lapisan terluar, super lembut dan luas */
-            border: 1px solid rgba(255, 235, 59, 0.5); /* Tambahkan border kuning tipis yang menyatu dengan glow */
+                0 0 100px 50px rgba(255, 235, 59, 0.5),   /* Lapisan inti, paling cerah dan sangat menyebar */
+                0 0 200px 100px rgba(255, 235, 59, 0.3),  /* Lapisan menengah, lebih lembut */
+                0 0 350px 150px rgba(255, 235, 59, 0.15); /* Lapisan terluar, super luas dan tipis */
+            border: 1px solid rgba(255, 235, 59, 0.5); /* Border tipis untuk menyatukan glow */
         }
 
         input[type=number]::-webkit-inner-spin-button, 
