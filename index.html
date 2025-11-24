@@ -301,7 +301,6 @@
         </div>
 
     </div>
-
     <script type="module">
         // --------------------------------------------------------------------------------
         // 1. FIREBASE SETUP DAN KONFIGURASI
@@ -312,7 +311,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // Konfigurasi Firebase Anda (Sesuai dengan yang Kakak berikan)
+        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -335,7 +334,6 @@
         // 2. GLOBAL VARIABLES
         // --------------------------------------------------------------------------------
 
-        // allTransactions akan menampung data gabungan dari donatur dan jurnal (yang sudah di-fetch dari Firestore)
         let allTransactions = []; 
         let isAdminLoggedIn = false; 
 
@@ -403,7 +401,6 @@
         // 4. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
         // --------------------------------------------------------------------------------
 
-        // FUNGSI INI SUDAH DIPERBAIKI TOTAL DAN AMAN DARI ERROR NULL
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
@@ -464,10 +461,8 @@
         // Mengelola perubahan status login
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // User is signed in (Admin)
                 isAdminLoggedIn = true;
             } else {
-                // User is signed out (Publik)
                 isAdminLoggedIn = false;
             }
             updateAdminView();
@@ -477,7 +472,6 @@
 
 
         window.adminLogin = async () => {
-            // Ambil input email dan password yang baru kita tambahkan di HTML
             const email = document.getElementById('admin-email-input').value;
             const password = document.getElementById('admin-password-input').value;
             
@@ -487,22 +481,16 @@
             }
 
             try {
-                // Bersihkan input setelah login dicoba
                 document.getElementById('admin-email-input').value = '';
                 document.getElementById('admin-password-input').value = '';
 
-                // Autentikasi menggunakan Firebase
                 await signInWithEmailAndPassword(auth, email, password);
                 
                 alert('Login Berhasil! Anda memiliki akses admin.');
-                // onAuthStateChanged akan menangani pemanggilan updateAdminView() dan loadAndRenderData()
-                
-                // Scroll ke bagian input Jurnal setelah login
                 window.scrollTo({ top: document.getElementById('jurnal-input-container')?.offsetTop - 50, behavior: 'smooth' });
                 
             } catch (error) {
                 console.error("Login Error:", error);
-                // Menangani error umum (misalnya: email/password salah)
                 alert(`Login Gagal. Pastikan Email dan Password Anda benar.`);
             }
         };
@@ -512,8 +500,6 @@
                 try {
                     await signOut(auth);
                     alert('Logout Berhasil. Kembali ke mode Tampilan Publik.');
-                    
-                    // Scroll ke tombol login setelah logout
                     window.scrollTo({ top: document.getElementById('login-form-container')?.offsetTop - 50, behavior: 'smooth' });
                 } catch (error) {
                     console.error("Logout Error:", error);
@@ -541,7 +527,6 @@
                 await Promise.all(jurnalDeletePromises);
 
                 alert('SEMUA DATA DONATUR DAN JURNAL BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
-                // Muat ulang data (akan menjadi kosong)
                 await loadAndRenderData();
              } catch (error) {
                  console.error("Gagal mereset data:", error);
@@ -553,24 +538,22 @@
         // 5. FIRESTORE CRUD (CREATE, READ, UPDATE, DELETE)
         // --------------------------------------------------------------------------------
 
-        // *** READ: Mengambil Data dari Firestore dan Menggabungkannya ***
         const loadAndRenderData = async () => {
-            // Reset array global
             allTransactions = [];
 
             try {
-                // 1. Ambil data Donatur
+                // 1. Ambil data Donatur (Donatur dan Jurnal harus di-fetch terpisah karena berbeda Collection)
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "desc"));
                 const donaturSnapshot = await getDocs(donaturQuery);
 
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
                     allTransactions.push({
-                        id: doc.id, // ID Firestore
+                        id: doc.id, 
                         type: 'IN',
                         description: data.description,
                         amount: data.amount,
-                        // Pastikan timestamp diubah dari Firestore.Timestamp ke milidetik
+                        // Konversi Firebase Timestamp ke milidetik atau gunakan tanggal string jika timestamp null
                         timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(), 
                         date: data.date,
                         donaturName: data.donaturName 
@@ -584,8 +567,8 @@
                 jurnalSnapshot.forEach(doc => {
                     const data = doc.data();
                     allTransactions.push({
-                        id: doc.id, // ID Firestore
-                        type: data.type, // IN atau OUT
+                        id: doc.id, 
+                        type: data.type, 
                         description: data.description,
                         amount: data.amount,
                         timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(),
@@ -593,7 +576,6 @@
                     });
                 });
 
-                // Setelah semua data diambil, render ulang
                 renderAllTables();
                 
             } catch (error) {
@@ -602,7 +584,6 @@
             }
         };
         
-        // *** CREATE: Menambah Transaksi Jurnal ***
         window.addTransaction = async () => {
             if (!isAdminLoggedIn) return;
             
@@ -639,7 +620,6 @@
             }
         };
 
-        // *** CREATE: Menambah Data Donatur ***
         window.addDonatur = async () => {
             if (!isAdminLoggedIn) return;
             
@@ -676,7 +656,6 @@
             }
         };
         
-        // *** UPDATE: Mengedit Transaksi/Donatur ***
         window.editTransaction = async (id) => {
             if (!isAdminLoggedIn) return;
             
@@ -696,7 +675,6 @@
                 return;
             }
             
-            // Tentukan koleksi (donatur atau jurnal) berdasarkan keberadaan properti donaturName
             const collectionRef = transaction.donaturName ? donaturCol : jurnalCol;
             const docRef = doc(collectionRef, id);
 
@@ -706,7 +684,6 @@
                 date: newDate,
             };
 
-            // Jika Donatur, izinkan edit nama juga
             if (transaction.donaturName) {
                  const newDonaturName = prompt('Edit Nama Donatur:', transaction.donaturName);
                  if (newDonaturName !== null) updatedData.donaturName = newDonaturName;
@@ -722,7 +699,6 @@
             }
         };
 
-        // *** DELETE: Menghapus Transaksi/Donatur ***
         window.deleteTransaction = async (id) => {
             if (!isAdminLoggedIn) return;
 
@@ -731,7 +707,6 @@
             const transaction = allTransactions.find(t => t.id === id);
             if (!transaction) return;
             
-            // Tentukan koleksi (donatur atau jurnal)
             const collectionRef = transaction.donaturName ? donaturCol : jurnalCol;
             const docRef = doc(collectionRef, id);
 
@@ -747,7 +722,7 @@
 
 
         // --------------------------------------------------------------------------------
-        // 6. RENDER DATA (Disesuaikan untuk ID dari Firestore)
+        // 6. RENDER DATA
         // --------------------------------------------------------------------------------
 
         const renderDonaturTable = (transactions, page) => {
@@ -755,8 +730,7 @@
             const donaturTotalElement = document.getElementById('donatur-total');
 
             // 1. Filter, Urutkan & Hitung Total
-            const donasiTransactions = transactions.filter(t => t.donaturName); // Donatur saja
-            // Data sudah diurutkan saat fetch (timestamp desc)
+            const donasiTransactions = transactions.filter(t => t.donaturName); 
             const sortedData = donasiTransactions.sort((a, b) => b.timestamp - a.timestamp); 
             const totalDanaMasuk = sortedData.reduce((sum, t) => sum + t.amount, 0);
             
@@ -766,7 +740,7 @@
             // Update Total
             if (donaturTotalElement) donaturTotalElement.textContent = formatRupiah(totalDanaMasuk);
             
-            // 2. Jika Data Kosong (PERBAIKAN ERROR NULL)
+            // 2. Jika Data Kosong
             if (sortedData.length === 0) {
                 document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(0);
                 document.getElementById('total-makam-footer')?.textContent = formatRupiah(0);
@@ -797,6 +771,7 @@
             tableBody.innerHTML = '';
             paginatedDonasi.forEach((t, index) => {
                 const row = tableBody.insertRow();
+                // Menggunakan ID Firestore, bukan timestamp
                 row.innerHTML = `
                     <td class="py-2 px-4 border-b">${start + index + 1}</td>
                     <td class="py-2 px-4 border-b">${t.date}</td>
@@ -813,7 +788,6 @@
                 `;
             });
             
-            // Render Pagination
             createPagination(sortedData, sortedData.length, 'donatur-pagination-container', 'donatur', page, window.changePage);
             
             return totalDanaMasuk;
@@ -878,12 +852,10 @@
                 `;
             });
             
-            // Render Pagination
             createPagination(sortedData, sortedData.length, 'jurnal-pagination-container', 'jurnal', page, window.changePage);
         };
 
         const renderAllTables = () => {
-            // Urutkan transaksi gabungan (donatur dan jurnal)
             allTransactions.sort((a, b) => b.timestamp - a.timestamp);
             const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
             renderJurnalTable(totalDonasi, currentJurnalPage);
@@ -1060,14 +1032,13 @@
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            // onAuthStateChanged akan otomatis dipanggil oleh Firebase SDK
-            // dan akan memanggil updateAdminView dan loadAndRenderData setelah status login terdeteksi.
             console.log("Web Siap. Menunggu status autentikasi Firebase...");
         };
         
-    </script>
+    </script>    
 </body>
 </html>
+
 
 
 
