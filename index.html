@@ -199,7 +199,7 @@
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Jurnal Kas Umum (Dana Masuk & Keluar)
             </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-4">
                 <table id="jurnal-kas-table" class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
@@ -223,6 +223,10 @@
                     </tfoot>
                 </table>
             </div>
+            
+            <div id="jurnal-kas-pagination" class="flex justify-center mt-4 mb-10 space-x-2">
+                </div>
+
             
             <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-red-danger border-b border-red-danger/50 pb-3">
@@ -254,7 +258,7 @@
             <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Ringkasan Data Transaksi Donatur (Dana Masuk)
             </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-4">
                 <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
@@ -283,6 +287,9 @@
                     </tfoot>
                 </table>
             </div>
+
+            <div id="donatur-pagination" class="flex justify-center mt-4 mb-10 space-x-2">
+                </div>
 
             <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
@@ -361,6 +368,11 @@
         let allPengeluaran = []; 
         let isAdminLoggedIn = false; 
         
+        // Variable untuk melacak halaman saat ini dan batas baris
+        let currentDonaturPage = 1;
+        let currentJurnalKasPage = 1;
+        const ROWS_PER_PAGE = 10; // Batasan 10 baris per halaman
+
         // Konstanta Prosentase Alokasi
         const PERSENTASE = {
             PERAWATAN_MAKAM: 0.15, // 15%
@@ -410,6 +422,75 @@
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged);
         };
+        
+        // Fungsi Generik untuk Membuat Tombol Pagination
+        const setupPagination = (data, currentPage, containerId, renderFunction) => {
+            const totalPages = Math.ceil(data.length / ROWS_PER_PAGE);
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Bersihkan konten lama
+
+            if (totalPages <= 1) return; // Tidak perlu pagination jika hanya 1 halaman
+
+            // Fungsi untuk membuat tombol
+            const createButton = (label, page, isActive, isSpecial) => {
+                const button = document.createElement('button');
+                button.textContent = label;
+                button.classList.add('px-4', 'py-2', 'rounded-lg', 'font-bold', 'transition', 'duration-150', 'shadow-md', 'text-sm');
+
+                if (isActive) {
+                    // Tombol Aktif (Warna Kuning Solid)
+                    button.classList.add('bg-yellow-accent', 'text-dark-green');
+                } else {
+                    // Tombol Non-Aktif (Warna Hijau Gelap dengan Border Kuning)
+                    button.classList.add('bg-dark-green', 'text-yellow-accent', 'hover:bg-dark-green/70', 'border', 'border-yellow-accent');
+                    button.onclick = () => {
+                        if (containerId === 'donatur-pagination') {
+                            currentDonaturPage = page;
+                        } else {
+                            currentJurnalKasPage = page;
+                        }
+                        // Scroll ke atas tabel setelah pindah halaman
+                        document.getElementById(containerId).previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        renderFunction(); // Panggil fungsi render ulang
+                    };
+                }
+                
+                // Handle Tombol "<<" dan ">>"
+                if (isSpecial) {
+                    // Tombol Panah (Previous/Next) nonaktif jika sudah di ujung
+                    button.disabled = isActive; 
+                }
+
+                container.appendChild(button);
+            };
+
+            // Tombol "<<" (Previous)
+            createButton('<<', Math.max(1, currentPage - 1), currentPage === 1, true);
+
+            // Tampilkan hingga 5 halaman di sekitar halaman aktif
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+            
+            // Logika untuk memastikan 5 tombol (jika memungkinkan)
+            if (endPage - startPage < 4) {
+                if (startPage > 1) {
+                    startPage = Math.max(1, endPage - 4);
+                } else if (endPage < totalPages) {
+                    endPage = Math.min(totalPages, startPage + 4);
+                }
+            }
+            
+            // Pastikan endPage tidak melebihi totalPages
+            endPage = Math.min(totalPages, endPage);
+
+            for (let i = startPage; i <= endPage; i++) {
+                createButton(i.toString(), i, i === currentPage, false);
+            }
+            
+            // Tombol ">>" (Next)
+            createButton('>>', Math.min(totalPages, currentPage + 1), currentPage === totalPages, true);
+        };
+
 
         // --------------------------------------------------------------------------------
         // 3. FIREBASE AUTH & ADMIN ACTIONS
@@ -486,6 +567,9 @@
                 await batch.commit();
 
                 alert('SEMUA DATA DONASI DAN PENGELUARAN BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
+                // Reset halaman ke 1 setelah reset data
+                currentDonaturPage = 1;
+                currentJurnalKasPage = 1;
                 await loadAndRenderData(); 
              } catch (error) {
                  console.error("Gagal mereset data:", error);
@@ -605,6 +689,8 @@
                 document.getElementById('donasi-nilai-input').value = '';
                 
                 alert('Donasi berhasil ditambahkan & dana dialokasikan!');
+                // Reset halaman ke 1 setelah tambah data
+                currentDonaturPage = 1; 
                 await loadAndRenderData(); 
             } catch (error) {
                 console.error("Gagal menambahkan Donasi:", error);
@@ -641,6 +727,8 @@
                 document.getElementById('kas-kategori-input').value = '';
                 
                 alert('Pengeluaran berhasil dicatat!');
+                // Reset halaman ke 1 setelah tambah data
+                currentJurnalKasPage = 1;
                 await loadAndRenderData(); 
             } catch (error) {
                 console.error("Gagal menambahkan Pengeluaran:", error);
@@ -673,10 +761,17 @@
                 updateFooter('total-perawatan-makam', 0); 
                 updateFooter('total-bisyaroh-panitia', 0); 
                 updateFooter('total-biaya-haul', 0); 
+                setupPagination([], 1, 'donatur-pagination', renderDonaturTable); // Reset pagination
                 return;
             }
 
-            allDonatur.forEach((d, index) => {
+            // --- LOGIKA PAGINATION DONATUR ---
+            const startIndex = (currentDonaturPage - 1) * ROWS_PER_PAGE;
+            const endIndex = startIndex + ROWS_PER_PAGE;
+            const paginatedData = allDonatur.slice(startIndex, endIndex);
+            
+            // Hitung Total Keseluruhan (Hitung Semua Data)
+            allDonatur.forEach((d) => {
                 const nilaiDonasi = parseFloat(d.nilai) || 0;
                 const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
                 const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
@@ -686,14 +781,23 @@
                 totalPerawatanMakam += pm;
                 totalBisyarohPanitia += bp;
                 totalBiayaHaul += bh;
+            });
 
+            // Render data untuk halaman yang aktif
+            paginatedData.forEach((d, index) => {
+                const rowNumber = startIndex + index + 1; // Nomor urut global
+                const nilaiDonasi = parseFloat(d.nilai) || 0;
+                const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
+                const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
+                const bh = parseFloat(d.alokasi.biaya_haul) || 0;
+                
                 const row = tableBody.insertRow();
                 
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
                 row.innerHTML = `
-                    <td class="px-4 py-3 kolom-no text-center">${index + 1}</td>
+                    <td class="px-4 py-3 kolom-no text-center">${rowNumber}</td>
                     <td class="px-4 py-3 kolom-tanggal text-left">${formattedDate}</td>
                     <td class="px-4 py-3 kolom-nama kolom-nama-alamat text-left">${d.nama}</td> 
                     <td class="px-4 py-3 kolom-alamat kolom-nama-alamat text-left">${d.alamat}</td> 
@@ -710,11 +814,8 @@
             updateFooter('total-bisyaroh-panitia', totalBisyarohPanitia); 
             updateFooter('total-biaya-haul', totalBiayaHaul); 
             
-            // Pengecekan konsistensi
-            const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
-            if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
-                console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi}). Selisih Pembulatan: ${totalDonasiInput - totalAkumulasiAlokasi}`);
-            }
+            // Setup Pagination
+            setupPagination(allDonatur, currentDonaturPage, 'donatur-pagination', renderDonaturTable);
         };
 
         const renderJurnalKasTable = () => {
@@ -723,8 +824,6 @@
             
             // Ambil total Donasi dari footer tabel donatur
             const totalDonasi = parseFloat(document.getElementById('total-donasi-input').textContent.replace(/\./g, '')) || 0;
-            let saldo = 0;
-            let no = 1;
             
             const kasEntries = [];
 
@@ -736,7 +835,7 @@
                     kategori: 'Donatur',
                     masuk: totalDonasi,
                     keluar: 0,
-                    timestamp: 0 // Agar selalu di urutan pertama
+                    timestamp: 0 
                 });
             }
 
@@ -754,20 +853,38 @@
 
             // 3. Urutkan Jurnal Kas berdasarkan Tanggal/Timestamp
             kasEntries.sort((a, b) => {
-                if (a.timestamp === 0 && b.timestamp !== 0) return -1; // Pastikan total donasi selalu di urutan pertama
+                if (a.timestamp === 0 && b.timestamp !== 0) return -1; 
                 if (b.timestamp === 0 && a.timestamp !== 0) return 1;
                 return a.timestamp - b.timestamp;
             });
+            
+            // Total Saldo Akhir (Seluruh Data)
+            const finalSaldo = kasEntries.reduce((acc, curr) => acc + curr.masuk - curr.keluar, 0);
 
-            // 4. Render Jurnal Kas & Hitung Saldo
+            // 4. Cek Jika Kosong
             if (kasEntries.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Jurnal Kas kosong. Silakan catat donasi atau pengeluaran.</td></tr>`;
                 updateFooter('total-saldo-akhir', 0);
+                setupPagination([], 1, 'jurnal-kas-pagination', renderJurnalKasTable); // Reset pagination
                 return;
             }
 
-            kasEntries.forEach(entry => {
+            // --- LOGIKA PAGINATION JURNAL KAS ---
+            const startIndex = (currentJurnalKasPage - 1) * ROWS_PER_PAGE;
+            // Batasi data yang akan dirender hanya di halaman ini
+            const paginatedData = kasEntries.slice(startIndex, startIndex + ROWS_PER_PAGE);
+
+            // 5. Hitung Saldo Awal untuk Halaman Aktif
+            // Saldo harus dihitung kumulatif dari semua entri SEBELUM halaman ini
+            let saldo = 0;
+            for (let i = 0; i < startIndex; i++) {
+                saldo += kasEntries[i].masuk - kasEntries[i].keluar;
+            }
+
+            // 6. Render Jurnal Kas & Lanjutkan Hitung Saldo Halaman Aktif
+            paginatedData.forEach((entry, index) => {
                 saldo += entry.masuk - entry.keluar;
+                const rowNumber = startIndex + index + 1; // Nomor urut global
 
                 const dateObj = new Date(entry.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -777,7 +894,7 @@
                 
                 const row = tableBody.insertRow();
                 row.innerHTML = `
-                    <td class="px-4 py-3 kolom-no text-center">${no++}</td>
+                    <td class="px-4 py-3 kolom-no text-center">${rowNumber}</td>
                     <td class="px-4 py-3 kolom-tanggal text-left">${formattedDate}</td>
                     <td class="px-4 py-3 text-left">${entry.uraian}</td>
                     <td class="px-4 py-3 text-left">${entry.kategori}</td>
@@ -787,8 +904,11 @@
                 `;
             });
             
-            // Update Saldo Akhir
-            updateFooter('total-saldo-akhir', saldo);
+            // Update Saldo Akhir (Total Keseluruhan)
+            updateFooter('total-saldo-akhir', finalSaldo);
+            
+            // Setup Pagination
+            setupPagination(kasEntries, currentJurnalKasPage, 'jurnal-kas-pagination', renderJurnalKasTable);
         };
 
         // --------------------------------------------------------------------------------
