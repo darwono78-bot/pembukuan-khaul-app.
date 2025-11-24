@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Transaksi Keuangan Haul</title>
+    <title>Pembukuan Donasi Haul</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
@@ -39,15 +39,16 @@
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
-        select {
-            -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23e0e0e0'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 0.7rem center;
-            background-size: 1.5em 1.5em;
-            padding-right: 2.5rem;
+        /* Style untuk Tabel Header */
+        #donatur-table th {
+            font-size: 0.75rem; /* text-xs */
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+        /* Style untuk Konten Tabel */
+        #donatur-table td {
+            padding: 0.75rem 1rem;
+            vertical-align: top;
         }
     </style>
 </head>
@@ -55,7 +56,7 @@
 
     <div class="max-w-6xl mx-auto rounded-xl shadow-2xl overflow-hidden">
         
-        <div class="bg-dark-green text-text-light py-3 px-6 flex justify-center items-center border-b border-text-light/20">
+        <div class="bg-dark-green text-text-light py-4 px-6 flex justify-center items-center">
             <h1 class="text-3xl font-bold text-center text-yellow-accent">
                 Catatan Pembukuan Donatur Haul
             </h1>
@@ -66,61 +67,46 @@
 
             <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                    Input Transaksi Baru
+                    Input Data Donatur Baru
                 </h2>
-                <div class="grid grid-cols-1 gap-6">
-                    <div>
-                        <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
-                    </div>
-                    <div>
-                        <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Uraian Transaksi (Contoh: Saldo bulan lalu/Bayar Bisyaroh)" required>
-                    </div>
-                    <div>
-                        <select id="kategori-transaksi-select" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent">
-                            <option value="">--- Pilih Kategori ---</option>
-                            <option value="Dana Masuk">Dana Masuk (Contoh: Donasi, Pemasukan)</option>
-                            <option value="Dana Keluar">Dana Keluar (Contoh: Bisyaroh, Belanja)</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <input type="number" id="donasi-dana-masuk-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Jumlah Dana Masuk">
-                        </div>
-                        <div>
-                            <input type="number" id="donasi-dana-keluar-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Jumlah Dana Keluar">
-                        </div>
-                    </div>
-                    <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md">
-                        Simpan Transaksi
-                    </button>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                    
+                    <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Nama Donatur (Contoh: Saripin)" required>
+                    
+                    <input type="text" id="donatur-alamat-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Alamat (Contoh: Ngablak)" required>
+                    
+                    <input type="number" id="donasi-nilai-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Donasi (Rp)" required>
                 </div>
+                
+                <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
+                    Simpan Donasi
+                </button>
             </div>
 
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Ringkasan Data Transaksi
             </h2>
             <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl border border-text-light/20 mb-6">
-                <table class="min-w-full divide-y divide-text-light/20">
+                <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
-                            <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider rounded-tl-xl">No</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tanggal</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Uraian Transaksi</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Kategori</th>
-                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Dana Masuk (Rp)</th>
-                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Dana Keluar (Rp)</th>
-                            <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider rounded-tr-xl">Saldo Akhir</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl w-10">NO</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-24">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">NAMA DONATUR</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">ALAMAT</th>
+                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider w-32">NILAI (RP)</th>
+                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl w-40">JUMLAH JARIYAH (KUMULATIF)</th>
                         </tr>
                     </thead>
                     <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
-                        <tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
+                        <tr><td colspan="6" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
                     </tbody>
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL SALDO AKHIR:</td>
-                            <td id="total-dana-masuk" class="px-4 py-3 text-right text-yellow-accent">Rp 0</td>
-                            <td id="total-dana-keluar" class="px-4 py-3 text-right text-yellow-accent">Rp 0</td>
-                            <td id="total-donasi-jumlah" class="px-4 py-3 text-right text-yellow-accent text-lg">Rp 0</td>
+                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
+                            <td id="total-nilai-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">Rp 0</td>
+                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">Rp 0</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -128,7 +114,7 @@
             
             <div class="p-4 rounded-xl bg-dark-green/50 shadow-inner">
                 
-                <div id="login-form-container" class="flex flex-grow justify-end items-center gap-4 mb-4">
+                <div id="login-form-container" class="flex flex-grow justify-end items-center gap-4">
                     <input type="email" id="admin-email-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Email Admin" value="darwono78@gmail.com" required>
                     <input type="password" id="admin-password-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Password Admin" value="haul2025" required>
                     <button onclick="adminLogin()" class="bg-yellow-accent text-dark-green py-2 px-4 rounded hover:bg-yellow-accent/90 font-semibold transition duration-150 shadow-md">
@@ -136,8 +122,7 @@
                     </button>
                 </div>
                 
-                <div id="admin-actions-container" class="hidden">
-                    <p class="text-sm font-semibold mb-3 text-yellow-accent/80">Selamat datang, Bendahara! Mode Admin Aktif.</p>
+                <div id="admin-actions-container" class="hidden mt-4">
                     <div class="flex justify-between items-center gap-4">
                         <button onclick="confirmResetData()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
                             Reset Data (Hapus Permanen)
@@ -147,6 +132,7 @@
                             Logout
                         </button>
                     </div>
+                    <p class="text-sm font-semibold mt-3 text-yellow-accent/80 text-right">Mode Admin Aktif.</p>
                 </div>
             </div>
             
@@ -180,7 +166,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        // Definisikan Collection
+        // Definisikan Collection (Menggunakan nama koleksi yang sudah disepakati)
         const donaturCol = collection(db, "transaksi_haul"); 
 
         // Global State
@@ -210,13 +196,13 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Login Form di bawah tabel (Muncul saat BELUM Login)
+            // Tampilkan/Sembunyikan Login Form di bawah tabel
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             
-            // Admin Actions (Reset/Logout) di bawah tabel (Muncul setelah LOGIN)
+            // Tampilkan/Sembunyikan Admin Actions (Reset/Logout) di bawah tabel
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
-            // Input Transaksi Baru form (Muncul setelah LOGIN)
+            // Tampilkan/Sembunyikan Input Donasi Baru form
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
@@ -277,9 +263,9 @@
         window.confirmResetData = async () => {
              if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mereset data.');
              
-             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Transaksi? Tindakan ini tidak bisa dibatalkan.')) return;
+             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi? Tindakan ini tidak bisa dibatalkan.')) return;
              
-             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua transaksi di Firebase. LANJUTKAN?')) return;
+             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua donasi di Firebase. LANJUTKAN?')) return;
              
              try {
                 const donaturSnapshot = await getDocs(donaturCol);
@@ -291,7 +277,7 @@
                 
                 await batch.commit();
 
-                alert('SEMUA DATA TRANSAKSI BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
+                alert('SEMUA DATA DONASI BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
                 await loadAndRenderDonatur();
              } catch (error) {
                  console.error("Gagal mereset data:", error);
@@ -307,21 +293,22 @@
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
 
             try {
+                // Urutkan data berdasarkan timestamp/tanggal
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
                 const donaturSnapshot = await getDocs(donaturQuery);
 
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
+                    // Menggunakan Nilai Donasi saja, mengabaikan danaKeluar
                     allDonatur.push({
                         id: doc.id, 
                         date: data.date,
-                        uraian: data.uraian,
-                        kategori: data.kategori || '-',
-                        danaMasuk: data.danaMasuk || 0,
-                        danaKeluar: data.danaKeluar || 0,
+                        nama: data.nama || data.uraian || 'Tanpa Nama', // Menggunakan 'nama' atau fallback ke 'uraian'
+                        alamat: data.alamat || '-', // Menggunakan 'alamat'
+                        nilai: data.nilai || data.danaMasuk || 0, // Menggunakan 'nilai' atau fallback ke 'danaMasuk'
                         timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
@@ -332,7 +319,7 @@
                 console.error("Gagal memuat data dari Firestore:", error);
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="7" class="py-6 text-center text-red-danger">
+                        <td colspan="6" class="py-6 text-center text-red-danger">
                             🔴 GAGAL MEMUAT DATA. Cek Koneksi Internet atau Konfigurasi Firebase.
                         </td>
                     </tr>`;
@@ -343,49 +330,36 @@
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat menginput data. Mohon Login terlebih dahulu.');
 
             const date = document.getElementById('donatur-date-input').value;
-            const uraian = document.getElementById('donatur-name-input').value; 
-            const kategori = document.getElementById('kategori-transaksi-select').value;
-            let danaMasuk = parseInt(document.getElementById('donasi-dana-masuk-input').value) || 0;
-            let danaKeluar = parseInt(document.getElementById('donasi-dana-keluar-input').value) || 0;
+            const nama = document.getElementById('donatur-name-input').value; 
+            const alamat = document.getElementById('donatur-alamat-input').value;
+            let nilai = parseInt(document.getElementById('donasi-nilai-input').value) || 0;
             
-            if (!date || !uraian || !kategori) {
-                alert('Mohon isi Tanggal, Uraian, dan Kategori Transaksi.');
+            if (!date || !nama || !nilai || nilai <= 0) {
+                alert('Mohon isi Tanggal, Nama Donatur, dan Nilai Donasi yang valid.');
                 return;
             }
 
-            if (danaMasuk === 0 && danaKeluar === 0) {
-                alert('Mohon masukkan jumlah Dana Masuk atau Dana Keluar.');
-                return;
-            }
-            if (danaMasuk > 0 && danaKeluar > 0) {
-                 alert('Mohon hanya isi salah satu: Dana Masuk atau Dana Keluar.');
-                 return;
-            }
-
-
-            const newTransaksi = {
+            const newDonasi = {
                 date: date,
-                uraian: uraian,
-                kategori: kategori,
-                danaMasuk: danaMasuk,
-                danaKeluar: danaKeluar,
+                nama: nama,
+                alamat: alamat,
+                nilai: nilai,
                 timestamp: serverTimestamp() 
             };
 
             try {
-                await addDoc(donaturCol, newTransaksi);
+                await addDoc(donaturCol, newDonasi);
                 
                 // Reset form setelah sukses
                 document.getElementById('donatur-name-input').value = '';
-                document.getElementById('kategori-transaksi-select').value = '';
-                document.getElementById('donasi-dana-masuk-input').value = '';
-                document.getElementById('donasi-dana-keluar-input').value = '';
+                document.getElementById('donatur-alamat-input').value = '';
+                document.getElementById('donasi-nilai-input').value = '';
                 
-                alert('Transaksi berhasil ditambahkan ke Firebase!');
+                alert('Donasi berhasil ditambahkan ke Firebase!');
                 await loadAndRenderDonatur(); 
             } catch (error) {
-                console.error("Gagal menambahkan Transaksi:", error);
-                alert("Gagal menyimpan transaksi. Cek console log.");
+                console.error("Gagal menambahkan Donasi:", error);
+                alert("Gagal menyimpan donasi. Cek console log.");
             }
         };
 
@@ -397,44 +371,36 @@
             const tableBody = document.getElementById('donatur-table-body');
             tableBody.innerHTML = '';
             
-            let totalDanaMasuk = 0;
-            let totalDanaKeluar = 0;
-            let saldoAkhirKumulatif = 0;
+            let totalNilaiDonasi = 0;
+            let totalAkumulasiDonasi = 0;
             
             if (allDonatur.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Belum ada data transaksi yang dicatat.</td></tr>`;
-                updateFooter('total-dana-masuk', 0);
-                updateFooter('total-dana-keluar', 0);
-                updateFooter('total-donasi-jumlah', 0); 
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
+                updateFooter('total-nilai-donasi', 0);
+                updateFooter('total-akumulasi-donasi', 0); 
                 return;
             }
 
-            allDonatur.forEach((t, index) => {
-                totalDanaMasuk += t.danaMasuk;
-                totalDanaKeluar += t.danaKeluar;
-                saldoAkhirKumulatif += (t.danaMasuk - t.danaKeluar); 
+            allDonatur.forEach((d, index) => {
+                totalNilaiDonasi += d.nilai;
+                totalAkumulasiDonasi += d.nilai; 
 
                 const row = tableBody.insertRow();
-                const formattedDate = new Date(t.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 
-                const danaMasukText = t.danaMasuk > 0 ? 'text-yellow-accent' : 'text-text-light/50';
-                const danaKeluarText = t.danaKeluar > 0 ? 'text-red-danger' : 'text-text-light/50';
-
                 row.innerHTML = `
                     <td class="px-4 py-3 text-center">${index + 1}</td>
                     <td class="px-4 py-3">${formattedDate}</td>
-                    <td class="px-4 py-3 font-medium">${t.uraian}</td>
-                    <td class="px-4 py-3 text-sm">${t.kategori}</td>
-                    <td class="px-4 py-3 text-right font-mono ${danaMasukText}">${formatRupiah(t.danaMasuk)}</td>
-                    <td class="px-4 py-3 text-right font-mono ${danaKeluarText}">${formatRupiah(t.danaKeluar)}</td>
-                    <td class="px-4 py-3 text-right font-bold text-lg text-yellow-accent">${formatRupiah(saldoAkhirKumulatif)}</td>
+                    <td class="px-4 py-3 font-medium">${d.nama}</td>
+                    <td class="px-4 py-3 text-sm">${d.alamat}</td>
+                    <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(d.nilai)}</td>
+                    <td class="px-4 py-3 text-right font-bold text-lg text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
                 `;
             });
 
             // Update Footer Total
-            updateFooter('total-dana-masuk', totalDanaMasuk);
-            updateFooter('total-dana-keluar', totalDanaKeluar);
-            updateFooter('total-donasi-jumlah', saldoAkhirKumulatif); 
+            updateFooter('total-nilai-donasi', totalNilaiDonasi);
+            updateFooter('total-akumulasi-donasi', totalAkumulasiDonasi); 
         };
 
         // --------------------------------------------------------------------------------
