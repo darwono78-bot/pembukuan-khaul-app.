@@ -261,13 +261,29 @@
         // --------------------------------------------------------------------------------
 
         const formatRupiah = (angka) => {
-            if (typeof angka !== 'number' || isNaN(angka)) return '0'; // Pengecekan NaN
+            // Pastikan angka adalah tipe number dan bukan NaN
+            if (typeof angka !== 'number' || isNaN(angka)) return '0'; 
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             return sign + rupiah;
         };
+        
+        // Fungsi untuk menghitung alokasi dana dari nilai donasi
+        const calculateAlokasi = (nilai) => {
+            const nilaiDonasi = parseFloat(nilai) || 0;
+            if (nilaiDonasi <= 0) {
+                 return { perawatan_makam: 0, bisyaroh_panitia: 0, biaya_haul: 0 };
+            }
+            
+            const perawatan_makam = Math.round(nilaiDonasi * PERSENTASE.PERAWATAN_MAKAM);
+            const bisyaroh_panitia = Math.round(nilaiDonasi * PERSENTASE.BISYAROH_PANITIA);
+            // Sisa untuk biaya haul (untuk memastikan totalnya sama persis dengan input)
+            const biaya_haul = nilaiDonasi - perawatan_makam - bisyaroh_panitia;
+            
+            return { perawatan_makam, bisyaroh_panitia, biaya_haul };
+        }
 
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
@@ -378,18 +394,26 @@
 
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
+                    const nilaiDonasi = parseFloat(data.nilai || data.danaMasuk || 0);
+
+                    let alokasiData = data.alokasi;
+                    
+                    // --- PERBAIKAN KRITIS: Hitung ulang alokasi jika data lama atau tidak lengkap ---
+                    if (!alokasiData || 
+                        alokasiData.perawatan_makam === undefined || 
+                        alokasiData.bisyaroh_panitia === undefined) 
+                    {
+                        alokasiData = calculateAlokasi(nilaiDonasi);
+                    }
+                    // ------------------------------------------------------------------------------
+
                     allDonatur.push({
                         id: doc.id, 
                         date: data.date,
                         nama: data.nama || data.uraian || 'Tanpa Nama',
                         alamat: data.alamat || '-',
-                        nilai: data.nilai || data.danaMasuk || 0, 
-                        // Pastikan alokasi diinisialisasi dengan nilai 0 jika belum ada
-                        alokasi: {
-                            perawatan_makam: data.alokasi?.perawatan_makam || 0,
-                            bisyaroh_panitia: data.alokasi?.bisyaroh_panitia || 0,
-                            biaya_haul: data.alokasi?.biaya_haul || 0
-                        },
+                        nilai: nilaiDonasi, 
+                        alokasi: alokasiData,
                         timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
@@ -413,7 +437,6 @@
             const date = document.getElementById('donatur-date-input').value;
             const nama = document.getElementById('donatur-name-input').value; 
             const alamat = document.getElementById('donatur-alamat-input').value;
-            // Gunakan parseFloat dan pastikan hasilnya angka, jika NaN, gunakan 0
             let nilai = parseInt(document.getElementById('donasi-nilai-input').value) || 0;
             
             if (!date || !nama || !nilai || nilai <= 0) {
@@ -422,22 +445,14 @@
             }
             
             // --- LOGIC PERHITUNGAN PERSENTASE ---
-            // Gunakan Math.round untuk pembulatan yang lebih akurat
-            const perawatan_makam = Math.round(nilai * PERSENTASE.PERAWATAN_MAKAM);
-            const bisyaroh_panitia = Math.round(nilai * PERSENTASE.BISYAROH_PANITIA);
-            // Sisa untuk biaya haul (untuk memastikan totalnya sama persis dengan input)
-            const biaya_haul = nilai - perawatan_makam - bisyaroh_panitia;
+            const alokasiHitungan = calculateAlokasi(nilai);
             
             const newDonasi = {
                 date: date,
                 nama: nama,
                 alamat: alamat,
                 nilai: nilai, // Pastikan nilai disimpan sebagai angka
-                alokasi: {
-                    perawatan_makam: perawatan_makam,
-                    bisyaroh_panitia: bisyaroh_panitia,
-                    biaya_haul: biaya_haul
-                },
+                alokasi: alokasiHitungan,
                 timestamp: serverTimestamp() 
             };
 
@@ -483,6 +498,7 @@
             allDonatur.forEach((d, index) => {
                 // Pastikan semua nilai adalah angka, jika tidak, anggap 0
                 const nilaiDonasi = parseFloat(d.nilai) || 0;
+                // Ambil nilai alokasi dari data yang sudah dipastikan lengkap di loadAndRenderDonatur
                 const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
                 const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
                 const bh = parseFloat(d.alokasi.biaya_haul) || 0;
@@ -518,8 +534,12 @@
             
             // Pengecekan konsistensi
             const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
-            if (totalDonasiInput !== totalAkumulasiAlokasi) {
+            if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
                 console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi})`);
+                // Memberi tahu admin jika ada perbedaan
+                if (isAdminLoggedIn) {
+                     alert(`Peringatan: Total Donasi (${formatRupiah(totalDonasiInput)}) tidak sama dengan Total Alokasi (${formatRupiah(totalAkumulasiAlokasi)}). Selisih Pembulatan: ${formatRupiah(totalDonasiInput - totalAkumulasiAlokasi)}`);
+                }
             }
         };
 
