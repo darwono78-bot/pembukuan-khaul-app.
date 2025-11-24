@@ -8,7 +8,6 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    
     <script>
         // Konfigurasi Tailwind CSS
         tailwind.config = {
@@ -188,16 +187,16 @@
                     Data Donatur
                 </h2>
                 
-                <div id="pdf-export-container" class="mt-0 p-3 rounded-xl bg-dark-green/50 shadow-lg flex flex-wrap justify-center gap-2 hidden">
-                    <button onclick="exportPdfListDonatur()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
-                        ⬇️ Unduh PDF List Donatur
-                    </button>
-                    <button onclick="exportPdfLaporanDetailJurnal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
-                        ⬇️ Unduh PDF Detail
-                    </button>
-                    <button onclick="exportPdfLaporanGlobal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
-                        ⬇️ Unduh PDF LPJ
-                    </button>
+                <div id="pdf-export-container" class="mt-0 p-3 rounded-xl bg-dark-green/50 shadow-lg flex flex-wrap justify-center gap-2">
+    <button onclick="exportPdfListDonatur()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF List Donatur
+                    </button>
+    <button onclick="exportPdfLaporanDetailJurnal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF Detail
+                    </button>
+    <button onclick="exportPdfLaporanGlobal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF LPJ
+                    </button>
                 </div>
             </div>
             
@@ -1164,17 +1163,16 @@
                 dateInputKas.value = today;
             }
         };
-        // ==========================================================
-// PASTE KODE JAVASCRIPT INI DI FILE JS/HTML ANDA
-// (Pastikan jsPDF dan autotable sudah dimuat di atasnya)
+// ==========================================================
+// PASTE SELURUH FUNGSI JAVASCRIPT INI DI ATAS </script>
 // ==========================================================
 
-// --- FUNGSI 1: EXPORT PDF LIST DONATUR (Dipanggil oleh Unduh PDF List Donatur) ---
+// --- FUNGSI 1: EXPORT PDF LIST DONATUR ---
 function exportPdfListDonatur() {
-    const { jsPDF } = window.jspdf; // 🔑 Perbaikan Syntax Error
+    const { jsPDF } = window.jspdf; // Perbaikan Syntax Error
     const doc = new jsPDF();
     
-    // Data contoh berdasarkan tabel Donatur (hanya List, bukan detail persentase)
+    // Data contoh berdasarkan tabel Donatur (Anda mungkin perlu menyesuaikan data ini)
     const dataTransaksi = [
         [1, '09/11/2025', 'sarpin', 'Ngablak', '500.000', '500.000'],
         [2, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '1.500.000'],
@@ -1201,12 +1199,12 @@ function exportPdfListDonatur() {
 }
 
 
-// --- FUNGSI 2: EXPORT PDF DETAIL JURNAL (Dipanggil oleh Unduh PDF Detail) ---
+// --- FUNGSI 2: EXPORT PDF DETAIL JURNAL ---
 function exportPdfLaporanDetailJurnal() {
-    const { jsPDF } = window.jspdf; // 🔑 Perbaikan Syntax Error
+    const { jsPDF } = window.jspdf; // Perbaikan Syntax Error
     const doc = new jsPDF('l'); // Landscape
     
-    // Data contoh berdasarkan tabel Detail Jurnal (pembagian persentase)
+    // Data contoh berdasarkan tabel Detail Jurnal
     const dataDetail = [
         [1, '09/11/2025', 'sarpin', 'Ngablak', '500.000', '75.000', '75.000', '350.000'],
         [2, '10/11/2025', 'ngarobi', 'Ngablak', '1.000.000', '150.000', '150.000', '700.000'],
@@ -1234,12 +1232,12 @@ function exportPdfLaporanDetailJurnal() {
 }
 
 
-// --- FUNGSI 3: EXPORT PDF LAPORAN GLOBAL (LPJ) (Dipanggil oleh Unduh PDF LPJ) ---
+// --- FUNGSI 3: EXPORT PDF LAPORAN GLOBAL (LPJ) ---
 function exportPdfLaporanGlobal() {
-    const { jsPDF } = window.jspdf; // 🔑 Perbaikan Syntax Error
+    const { jsPDF } = window.jspdf; // Perbaikan Syntax Error
     const doc = new jsPDF();
     
-    // Data contoh berdasarkan tabel LPJ (image_8fbce1.png)
+    // Data contoh berdasarkan tabel LPJ
     const dataLPJ = [
         ['DANA MASUK', ''],
         ['Donatur (Total Donasi)', 'Rp 13.953.500'],
@@ -1271,7 +1269,7 @@ function exportPdfLaporanGlobal() {
         bodyStyles: [
             { row: 2, cellStyles: { fillColor: [144, 238, 144], fontStyle: 'bold' } }, 
             { row: 7, cellStyles: { fillColor: [255, 192, 203], fontStyle: 'bold' } }, 
-            { row: 9, cellStyles: { fillColor: [255, 255, 0], fontStyle: 'bold' } } // Row 9 adalah Saldo Akhir
+            { row: 9, cellStyles: { fillColor: [255, 255, 0], fontStyle: 'bold' } } 
         ],
         styles: { fontSize: 10, cellPadding: 2 },
     });
@@ -1295,4 +1293,5 @@ function exportPdfLaporanGlobal() {
     </script>
 </body>
 </html>
+
 
