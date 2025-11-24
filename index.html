@@ -3,10 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Haul: Firebase & Admin Control</title>
+    <title>Catatan Pembukuan Haul: Elegant Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#0D47A1', // Darker Blue for professional look
+                        'secondary': '#E0E7FF', // Light blue background
+                        'accent': '#4CAF50', // Green accent for Save button
+                        'danger': '#D32F2F', // Red for dangerous actions
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         /* Hilangkan panah pada input type=number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
@@ -15,90 +30,92 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-4 sm:p-8">
+<body class="bg-gray-50 p-4 sm:p-10">
 
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-xl">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-800">
-            Catatan Pembukuan Donatur Haul (Firebase)
-        </h1>
-
-        <div class="mb-8 p-4 border rounded-lg bg-gray-50">
-            <h2 class="text-xl font-semibold mb-3 text-gray-700">Kontrol Admin</h2>
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-xl shadow-2xl border border-gray-200">
+        
+        <header class="mb-8 pb-4 border-b-2 border-primary">
+            <h1 class="text-4xl font-extrabold text-primary text-center tracking-tight">
+                Catatan Keuangan Donatur Haul
+            </h1>
+            <p class="text-center text-gray-500 mt-1">Aplikasi Pembukuan Digital Terintegrasi Firebase</p>
+        </header>
+        
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Ringkasan Data Donasi Masuk</h2>
+        <div class="table-wrapper overflow-x-auto mb-10 shadow-lg rounded-xl border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-primary/90 text-white">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider rounded-tl-xl">No</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tanggal</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nama Donatur</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Alamat</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">Nilai (Rp)</th>
+                        <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider rounded-tr-xl">Jumlah Total (Kumulatif)</th>
+                    </tr>
+                </thead>
+                <tbody id="donatur-table-body" class="bg-white divide-y divide-gray-100">
+                    <tr><td colspan="6" class="py-6 text-center text-gray-500">Memuat data...</td></tr>
+                </tbody>
+                <tfoot>
+                    <tr class="bg-gray-100 font-extrabold border-t-2 border-primary">
+                        <td colspan="4" class="px-4 py-3 text-right text-gray-800">TOTAL DONASI KESELURUHAN:</td>
+                        <td id="total-donasi-nilai" class="px-4 py-3 text-right text-primary">Rp 0</td>
+                        <td id="total-donasi-jumlah" class="px-4 py-3 text-right text-primary/80 text-lg">Rp 0</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="mb-10 p-5 rounded-lg border-l-4 border-primary bg-secondary/50 shadow-inner">
+            <h2 class="text-xl font-bold mb-4 text-primary">Kontrol Akses Admin</h2>
             
             <div id="login-form-container">
-                <p class="mb-2 text-sm text-red-600 font-medium">
-                    *Harap pastikan akun **darwono78@gmail.com** terdaftar di Firebase Auth.
+                <p class="mb-3 text-sm text-gray-700">
+                    Masuk untuk mengaktifkan fitur Input Data dan Reset Data.
                 </p>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <input type="email" id="admin-email-input" class="p-2 border rounded md:col-span-2" placeholder="Email Admin" value="darwono78@gmail.com" required>
-                    <input type="password" id="admin-password-input" class="p-2 border rounded" placeholder="Password Admin" value="haul2025" required>
-                    <button onclick="adminLogin()" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-semibold">
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-center">
+                    <input type="email" id="admin-email-input" class="p-3 border rounded-lg md:col-span-3 focus:ring-primary focus:border-primary" placeholder="Email Admin" value="darwono78@gmail.com" required>
+                    <input type="password" id="admin-password-input" class="p-3 border rounded-lg md:col-span-2 focus:ring-primary focus:border-primary" placeholder="Password Admin" value="haul2025" required>
+                    <button onclick="adminLogin()" class="bg-primary text-white p-3 rounded-lg hover:bg-primary/90 font-semibold md:col-span-2 transition duration-150 shadow-md">
                         Login Admin
                     </button>
                 </div>
             </div>
 
             <div id="admin-actions-container" class="hidden">
-                <p class="text-sm font-semibold text-green-600 mb-3">✅ Anda terhubung sebagai Admin.</p>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <button onclick="confirmResetData()" class="bg-red-600 text-white p-2 rounded hover:bg-red-700 text-sm flex-grow">
-                        RESET SEMUA DATA
+                <p class="text-base font-semibold text-green-700 mb-4">✅ Selamat Datang, Admin. Mode Input Aktif.</p>
+                <div class="flex justify-between items-center gap-4">
+                    <button onclick="confirmResetData()" class="bg-danger text-white p-3 rounded-lg hover:bg-danger/90 text-sm flex-grow sm:flex-grow-0 transition duration-150 shadow-md">
+                        RESET SEMUA DATA (Hapus Permanen)
                     </button>
-                    <button onclick="adminLogout()" class="bg-gray-400 text-white p-2 rounded hover:bg-gray-500 text-sm flex-grow sm:flex-grow-0">
+                    <button onclick="adminLogout()" class="bg-gray-400 text-white p-3 rounded-lg hover:bg-gray-500 text-sm flex-grow sm:flex-grow-0 transition duration-150 shadow-md ml-auto">
                         Logout
                     </button>
                 </div>
             </div>
         </div>
         
-        <hr class="my-6">
-
-        <h2 class="text-xl font-semibold mb-3 text-gray-700">Data Donasi Masuk</h2>
-        <div class="table-wrapper overflow-x-auto mb-8">
-            <table class="min-w-full divide-y divide-gray-200 border">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Donatur</th>
-                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alamat</th>
-                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nilai (Rp)</th>
-                        <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah Total (Kumulatif)</th>
-                    </tr>
-                </thead>
-                <tbody id="donatur-table-body" class="bg-white divide-y divide-gray-200">
-                    <tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data...</td></tr>
-                </tbody>
-                <tfoot>
-                    <tr class="bg-gray-100 font-bold">
-                        <td colspan="4" class="px-4 py-2 text-right">TOTAL DONASI KESELURUHAN:</td>
-                        <td id="total-donasi-nilai" class="px-4 py-2 text-right text-blue-600">Rp 0</td>
-                        <td id="total-donasi-jumlah" class="px-4 py-2 text-right text-blue-600">Rp 0</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-
-        <div id="donasi-input-container" class="border p-4 rounded-lg bg-blue-50 hidden">
-            <h2 class="text-xl font-semibold mb-3 text-blue-700">Input Data Donatur Baru</h2>
+        <div id="donasi-input-container" class="p-6 rounded-xl bg-secondary shadow-xl hidden">
+            <h2 class="text-2xl font-bold mb-5 text-primary">Form Input Data Donatur Baru</h2>
             <div class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
-                <div class="md:col-span-2">
-                    <label for="donatur-date-input" class="block text-xs font-medium text-gray-700">Tanggal</label>
-                    <input type="date" id="donatur-date-input" class="p-2 border rounded w-full" required>
+                <div class="md:col-span-1">
+                    <label for="donatur-date-input" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                    <input type="date" id="donatur-date-input" class="p-3 border rounded-lg w-full focus:ring-accent focus:border-accent" required>
                 </div>
                 <div class="md:col-span-2">
-                    <label for="donatur-name-input" class="block text-xs font-medium text-gray-700">Nama Donatur</label>
-                    <input type="text" id="donatur-name-input" class="p-2 border rounded w-full" placeholder="Nama Donatur" required>
+                    <label for="donatur-name-input" class="block text-sm font-medium text-gray-700 mb-1">Nama Donatur</label>
+                    <input type="text" id="donatur-name-input" class="p-3 border rounded-lg w-full focus:ring-accent focus:border-accent" placeholder="Nama Donatur" required>
                 </div>
-                <div>
-                    <label for="donatur-address-input" class="block text-xs font-medium text-gray-700">Alamat</label>
-                    <input type="text" id="donatur-address-input" class="p-2 border rounded w-full" placeholder="Alamat (Optional)">
+                <div class="md:col-span-2">
+                    <label for="donatur-address-input" class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <input type="text" id="donatur-address-input" class="p-3 border rounded-lg w-full focus:ring-accent focus:border-accent" placeholder="Alamat (Optional)">
                 </div>
-                <div>
-                    <label for="donatur-amount-input" class="block text-xs font-medium text-gray-700">Nilai Donasi (Rp)</label>
-                    <input type="number" id="donatur-amount-input" class="p-2 border rounded w-full" placeholder="Jumlah" min="1" required>
+                <div class="md:col-span-1">
+                    <label for="donatur-amount-input" class="block text-sm font-medium text-gray-700 mb-1">Nilai Donasi (Rp)</label>
+                    <input type="number" id="donatur-amount-input" class="p-3 border rounded-lg w-full text-right focus:ring-accent focus:border-accent" placeholder="Jumlah" min="1" required>
                 </div>
-                <button onclick="addDonatur()" class="bg-green-600 text-white p-2 rounded hover:bg-green-700 w-full font-semibold">
+                <button onclick="addDonatur()" class="bg-accent text-white p-3 rounded-lg hover:bg-accent/90 w-full font-bold md:col-span-1 transition duration-150 shadow-md">
                     Simpan Donasi
                 </button>
             </div>
@@ -259,7 +276,7 @@
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Memuat data dari Firebase...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-500">Memuat data dari Firebase...</td></tr>`;
 
             try {
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
@@ -282,17 +299,18 @@
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
+                // Karena kita sudah set rules public read, error ini seharusnya hanya muncul jika offline atau API key salah
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="py-4 text-center text-red-600">
-                            🔴 GAGAL KONEKSI/MEMUAT DATA. Cek Konfigurasi Firebase Anda.
+                        <td colspan="6" class="py-6 text-center text-red-600">
+                            🔴 GAGAL MEMUAT DATA. Cek Koneksi Internet atau Konfigurasi Firebase.
                         </td>
                     </tr>`;
             }
         };
         
         window.addDonatur = async () => {
-            if (!isAdminLoggedIn) return alert('Hanya Admin yang dapat menginput data.');
+            if (!isAdminLoggedIn) return alert('Hanya Admin yang dapat menginput data. Mohon Login terlebih dahulu.');
 
             const date = document.getElementById('donatur-date-input').value;
             const name = document.getElementById('donatur-name-input').value;
@@ -340,7 +358,7 @@
             let kumulatif = 0;
             
             if (allDonatur.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>`;
                 updateFooter('total-donasi-nilai', 0);
                 updateFooter('total-donasi-jumlah', 0);
                 return;
@@ -351,15 +369,16 @@
                 kumulatif += t.amount; 
 
                 const row = tableBody.insertRow();
-                const formattedDate = new Date(t.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                // Menggunakan format date yang lebih rapi
+                const formattedDate = new Date(t.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
                 row.innerHTML = `
-                    <td class="px-4 py-2 border-b text-center">${index + 1}</td>
-                    <td class="px-4 py-2 border-b">${formattedDate}</td>
-                    <td class="px-4 py-2 border-b">${t.name}</td>
-                    <td class="px-4 py-2 border-b">${t.address}</td>
-                    <td class="px-4 py-2 border-b text-right">${formatRupiah(t.amount)}</td>
-                    <td class="px-4 py-2 border-b text-right font-semibold text-blue-500">${formatRupiah(kumulatif)}</td>
+                    <td class="px-4 py-3 text-center">${index + 1}</td>
+                    <td class="px-4 py-3">${formattedDate}</td>
+                    <td class="px-4 py-3 font-medium text-gray-700">${t.name}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">${t.address}</td>
+                    <td class="px-4 py-3 text-right font-mono">${formatRupiah(t.amount)}</td>
+                    <td class="px-4 py-3 text-right font-extrabold text-lg text-primary">${formatRupiah(kumulatif)}</td>
                 `;
             });
 
