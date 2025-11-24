@@ -42,6 +42,7 @@
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1); /* Membuat ikon kalender putih */
         }
+        /* Style untuk select (dropdown) */
         select {
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -58,17 +59,7 @@
 
     <div class="max-w-6xl mx-auto rounded-xl shadow-2xl overflow-hidden">
         
-        <div class="bg-dark-green text-text-light py-3 px-6 flex justify-between items-center border-b border-text-light/20">
-            <div id="admin-actions-container" class="flex items-center gap-4 hidden">
-                <button onclick="confirmResetData()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
-                    Reset Data
-                </button>
-                <span class="text-sm font-semibold">Selamat datang, Bendahara!</span>
-                <button onclick="adminLogout()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
-                    Logout
-                </button>
-            </div>
-
+        <div class="bg-dark-green text-text-light py-3 px-6 flex justify-end items-center border-b border-text-light/20">
             <div id="login-form-container" class="flex flex-grow justify-end items-center gap-4">
                 <input type="email" id="admin-email-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Email Admin" value="darwono78@gmail.com" required>
                 <input type="password" id="admin-password-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Password Admin" value="haul2025" required>
@@ -76,8 +67,13 @@
                     Login Admin
                 </button>
             </div>
+            
+            <div id="admin-status-container" class="hidden">
+                 <span class="text-sm font-semibold text-text-light">Selamat datang, Bendahara!</span>
+            </div>
         </div>
 
+        
         <div class="bg-medium-green p-8 text-text-light">
             <h1 class="text-3xl font-bold mb-6 text-center text-yellow-accent">
                 Catatan Pembukuan Donatur Haul
@@ -97,9 +93,9 @@
                     <div>
                         <select id="kategori-transaksi-select" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent">
                             <option value="">--- Pilih Kategori ---</option>
-                            <option value="Dana Masuk">Dana Masuk</option>
-                            <option value="Dana Keluar">Dana Keluar</option>
-                            </select>
+                            <option value="Dana Masuk">Dana Masuk (Contoh: Donasi, Pemasukan)</option>
+                            <option value="Dana Keluar">Dana Keluar (Contoh: Bisyaroh, Belanja)</option>
+                        </select>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -145,6 +141,17 @@
                 </table>
             </div>
         </div>
+        
+        <div id="admin-actions-container" class="bg-dark-green/80 text-text-light p-4 flex justify-between items-center hidden">
+            <button onclick="confirmResetData()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
+                Reset Data (Hapus Permanen)
+            </button>
+            
+            <button onclick="adminLogout()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
+                Logout
+            </button>
+        </div>
+        
     </div>
 
     <script type="module">
@@ -174,7 +181,7 @@
         const db = getFirestore(app);
         
         // Definisikan Collection
-        const donaturCol = collection(db, "transaksi_haul"); // Nama koleksi diubah menjadi transaksi_haul
+        const donaturCol = collection(db, "transaksi_haul"); 
 
         // Global State
         let allDonatur = []; 
@@ -203,8 +210,11 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Toggle login form and admin actions in the top bar
+            // Toggle login form in the top bar
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
+            document.getElementById('admin-status-container')?.classList.toggle('hidden', !isLogged);
+            
+            // Toggle Admin Actions (Reset/Logout) below the table
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
             // Toggle Input Transaksi Baru form
@@ -240,18 +250,14 @@
 
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // alert('Login Berhasil! Selamat datang, Bendahara.'); // Tidak perlu alert
                 
             } catch (error) {
                 console.error("Login Error:", error.code);
-                // Menampilkan pesan error yang lebih jelas di UI
                 let errorMessage = 'Login Gagal. ';
                 if (error.code === 'auth/wrong-password') {
                     errorMessage += 'Password salah.';
                 } else if (error.code === 'auth/user-not-found') {
                     errorMessage += 'Akun Admin tidak ditemukan.';
-                } else if (error.code === 'auth/invalid-api-key') {
-                    errorMessage = 'FATAL: Konfigurasi Project ID/API Key salah. Cek Google Cloud Console.';
                 } else {
                     errorMessage += 'Terjadi kesalahan sistem.';
                 }
@@ -279,7 +285,7 @@
              
              try {
                 const donaturSnapshot = await getDocs(donaturCol);
-                const batch = writeBatch(db); // Menggunakan batch untuk menghapus banyak dokumen
+                const batch = writeBatch(db); 
                 
                 donaturSnapshot.docs.forEach((d) => {
                     batch.delete(doc(db, "transaksi_haul", d.id));
@@ -339,7 +345,7 @@
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat menginput data. Mohon Login terlebih dahulu.');
 
             const date = document.getElementById('donatur-date-input').value;
-            const uraian = document.getElementById('donatur-name-input').value; // Menggunakan ini sebagai uraian
+            const uraian = document.getElementById('donatur-name-input').value; 
             const kategori = document.getElementById('kategori-transaksi-select').value;
             let danaMasuk = parseInt(document.getElementById('donasi-dana-masuk-input').value) || 0;
             let danaKeluar = parseInt(document.getElementById('donasi-dana-keluar-input').value) || 0;
@@ -401,7 +407,7 @@
                 tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Belum ada data transaksi yang dicatat.</td></tr>`;
                 updateFooter('total-dana-masuk', 0);
                 updateFooter('total-dana-keluar', 0);
-                updateFooter('total-donasi-jumlah', 0); // Total Saldo Akhir
+                updateFooter('total-donasi-jumlah', 0); 
                 return;
             }
 
@@ -412,14 +418,18 @@
 
                 const row = tableBody.insertRow();
                 const formattedDate = new Date(t.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                
+                // Menentukan warna teks berdasarkan jenis dana
+                const danaMasukText = t.danaMasuk > 0 ? 'text-yellow-accent' : 'text-text-light/50';
+                const danaKeluarText = t.danaKeluar > 0 ? 'text-red-danger' : 'text-text-light/50';
 
                 row.innerHTML = `
                     <td class="px-4 py-3 text-center">${index + 1}</td>
                     <td class="px-4 py-3">${formattedDate}</td>
                     <td class="px-4 py-3 font-medium">${t.uraian}</td>
                     <td class="px-4 py-3 text-sm">${t.kategori}</td>
-                    <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(t.danaMasuk)}</td>
-                    <td class="px-4 py-3 text-right font-mono text-red-danger">${formatRupiah(t.danaKeluar)}</td>
+                    <td class="px-4 py-3 text-right font-mono ${danaMasukText}">${formatRupiah(t.danaMasuk)}</td>
+                    <td class="px-4 py-3 text-right font-mono ${danaKeluarText}">${formatRupiah(t.danaKeluar)}</td>
                     <td class="px-4 py-3 text-right font-bold text-lg text-yellow-accent">${formatRupiah(saldoAkhirKumulatif)}</td>
                 `;
             });
@@ -441,7 +451,6 @@
             if (dateInput) {
                 dateInput.value = today;
             }
-            // onAuthStateChanged akan memicu loadAndRenderDonatur dan updateAdminView
         };
     </script>
 </body>
