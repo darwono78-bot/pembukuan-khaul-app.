@@ -6,6 +6,9 @@
     <title>Catatan Pembukuan Haul - Bendahara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    
     <script>
         // Konfigurasi Tailwind CSS
         tailwind.config = {
@@ -15,7 +18,7 @@
                         // Warna diambil dari contoh gambar Anda
                         'dark-green': '#1a472a', 
                         'medium-green': '#2b6e49', 
-                        'yellow-accent': '#ffeb3b', // Nilai ini adalah #ffeb3b
+                        'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
                     }
@@ -26,43 +29,33 @@
     
     <style>
         /* --- STYLE GLOBAL & GLOW FINAL --- */
-        
-        /* 1. Body Background: HIJAU PALING GELAP (#052600) */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #052600; 
             color: #e0e0e0;
         }
         
-        /* 2. STYLE UTAMA: Bingkai Konten */
+        /* STYLE UTAMA: Bingkai Konten */
         .max-w-6xl {
             position: relative; 
             z-index: 10;
             background-color: #1a472a; 
             border-radius: 0.75rem;
-
-            /* A. Border Kuning: Tipis */
             border: 2px solid #fff352; 
-
-            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) */
             box-shadow: 
                 0 0 10px rgba(255, 235, 59, 1), 
                 0 0 25px rgba(255, 235, 59, 0.7); 
-
-            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
             filter: 
                 drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) 
                 drop_shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
         }
         
-        /* 3. Warna Inner Content: Lebih Gelap (#1D4F31) */
+        /* Warna Inner Content: Lebih Gelap (#1D4F31) */
         .bg-medium-green {
             background-color: #1D4F31; 
         }
 
         /* --- UTILITY CSS --- */
-        
-        /* Menghilangkan panah pada input number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none;
@@ -72,14 +65,13 @@
             color: #a0a0a0;
             opacity: 1;
         }
-        /* Mengubah warna ikon kalender pada input date menjadi putih */
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
         
         /* Style untuk Tabel Header */
         #donatur-table th, #jurnal-kas-table th {
-            font-size: 0.75rem; /* text-xs */
+            font-size: 0.75rem; 
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
             text-align: center; 
@@ -90,23 +82,22 @@
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
-            font-size: 0.875rem; /* Ukuran default untuk teks data lain */
-            text-align: right; /* Default rata kanan untuk semua kolom data */
+            font-size: 0.875rem; 
+            text-align: right; 
         }
         
         /* Ukuran & Warna Angka Rupiah di BARIS DATA (PUTIH) */
         #donatur-table .kolom-nilai-alokasi { 
             font-size: 1rem; 
-            color: #e0e0e0; /* PUTIH (text-light) */
+            color: #e0e0e0; 
             font-weight: normal; 
         }
         
         /* Ukuran & Warna Teks Nama Donatur & Alamat (PUTIH) */
         #donatur-table .kolom-nama-alamat { 
             font-size: 1rem; 
-            color: #e0e0e0; /* PUTIH (text-light) */
+            color: #e0e0e0; 
         }
-
 
         /* Override untuk kolom teks agar rata kiri/tengah */
         #donatur-table .kolom-no, #jurnal-kas-table .kolom-no {
@@ -143,17 +134,14 @@
         
         /* --- STYLE KHUSUS UNTUK FOOTER TOTAL (KUNING) --- */
         
-        /* Style untuk Label "TOTAL KESELURUHAN:" (KUNING) */
         #donatur-table tfoot td {
             font-weight: bold;
             font-size: 1.125rem; 
-            color: #ffeb3b; /* KUNING (yellow-accent) */
+            color: #ffeb3b; 
         }
-
-        /* Angka Rupiah di Baris Total (Footer Donasi) KUNING */
         #donatur-table tfoot .total-angka-rupiah { 
             font-size: 1.25rem; 
-            color: #ffeb3b; /* KUNING (yellow-accent) */
+            color: #ffeb3b; 
             font-weight: normal; 
         }
 
@@ -161,14 +149,14 @@
         #jurnal-kas-table tfoot td {
             font-weight: bold;
             font-size: 1.125rem; 
-            color: #ffeb3b; /* KUNING (yellow-accent) */
+            color: #ffeb3b; 
         }
 
         /* Angka Saldo Akhir (Footer Jurnal Kas) KUNING */
         #jurnal-kas-table tfoot .total-angka-rupiah { 
             font-size: 1.25rem; 
-            color: #ffeb3b; /* KUNING (yellow-accent) */
-            font-weight: bold; /* Dibuat lebih tebal untuk Saldo Akhir */
+            color: #ffeb3b; 
+            font-weight: bold; 
         }
 
         /* Warna untuk Dana Masuk di Jurnal Kas (Kuning) */
@@ -196,7 +184,77 @@
         
         <div class="bg-medium-green p-8 text-text-light">
 
-            <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-yellow-accent border-b border-yellow-accent/50 pb-3 w-full sm:w-auto sm:border-b-0 mb-4 sm:mb-0">
+                    Ringkasan Data Transaksi Donatur (Dana Masuk)
+                </h2>
+                
+                <div id="pdf-export-container" class="mt-0 p-3 rounded-xl bg-dark-green/50 shadow-lg flex flex-wrap justify-center gap-2 hidden">
+                    <button onclick="exportPdfListDonatur()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF List Donatur
+                    </button>
+                    <button onclick="exportPdfLaporanDetailJurnal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF Detail Jurnal
+                    </button>
+                    <button onclick="exportPdfLaporanGlobal()" class="bg-yellow-accent/90 text-dark-green py-2 px-3 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-xs sm:text-sm">
+                        ⬇️ Unduh PDF Laporan Global
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-4">
+                <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
+                    <thead class="bg-dark-green/80 text-text-light">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl kolom-no">NO</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-tanggal">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-nama">NAMA DONATUR</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-alamat">ALAMAT</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th> 
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">PERAWATAN MAKAM (15%)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">BISYAROH PANITIA (15%)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl alokasi-kolom">BIAYA HAUL (70%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
+                        <tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
+                            <td colspan="4" class="px-4 py-3 text-right">TOTAL KESELURUHAN:</td> 
+                            <td id="total-donasi-input" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-perawatan-makam" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-biaya-haul" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div id="donatur-pagination" class="flex justify-center mt-4 mb-10 space-x-2">
+                </div>
+            
+            <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-12 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
+                    Input Data Donatur Baru
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                    
+                    <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Nama Donatur (Contoh: Saripin)" required>
+                    
+                    <input type="text" id="donatur-alamat-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Alamat (Contoh: Ngablak)" required>
+                    
+                    <input type="number" id="donasi-nilai-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Donasi (Rp)" required>
+                </div>
+                
+                <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
+                    Simpan Donasi & Alokasikan Dana
+                </button>
+            </div>
+            
+            
+            <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Jurnal Kas Umum (Dana Masuk & Keluar)
             </h2>
             <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-4">
@@ -227,19 +285,6 @@
             <div id="jurnal-kas-pagination" class="flex justify-center mt-4 mb-4 space-x-2">
                 </div>
             
-            <div id="pdf-export-container" class="mt-4 p-4 rounded-xl bg-dark-green/50 shadow-lg flex flex-wrap justify-center gap-4 hidden">
-                <button onclick="exportPdfListDonatur()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
-                    ⬇️ Unduh PDF List Donatur
-                </button>
-                <button onclick="exportPdfLaporanDetailJurnal()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
-                    ⬇️ Unduh PDF Laporan Detail Jurnal
-                </button>
-                <button onclick="exportPdfLaporanGlobal()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
-                    ⬇️ Unduh PDF Laporan Global (LPJ)
-                </button>
-            </div>
-
-            
             <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-red-danger border-b border-red-danger/50 pb-3">
                     Input Pengeluaran / Dana Keluar
@@ -267,60 +312,6 @@
                 </button>
             </div>
             
-            <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                Ringkasan Data Transaksi Donatur (Dana Masuk)
-            </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-4">
-                <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
-                    <thead class="bg-dark-green/80 text-text-light">
-                        <tr>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl kolom-no">NO</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-tanggal">TANGGAL</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-nama">NAMA DONATUR</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-alamat">ALAMAT</th>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th> 
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">PERAWATAN MAKAM (15%)</th>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">BISYAROH PANITIA (15%)</th>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl alokasi-kolom">BIAYA HAUL (70%)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
-                        <tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right">TOTAL KESELURUHAN:</td> 
-                            
-                            <td id="total-donasi-input" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
-                            <td id="total-perawatan-makam" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
-                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
-                            <td id="total-biaya-haul" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <div id="donatur-pagination" class="flex justify-center mt-4 mb-10 space-x-2">
-                </div>
-
-            <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                    Input Data Donatur Baru
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
-                    
-                    <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Nama Donatur (Contoh: Saripin)" required>
-                    
-                    <input type="text" id="donatur-alamat-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Alamat (Contoh: Ngablak)" required>
-                    
-                    <input type="number" id="donasi-nilai-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Donasi (Rp)" required>
-                </div>
-                
-                <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
-                    Simpan Donasi & Alokasikan Dana
-                </button>
-            </div>
             
             <div class="p-4 rounded-xl bg-dark-green/50 shadow-inner">
                 
@@ -360,11 +351,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, writeBatch, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // --- PERBAIKAN IMPORT JSPDF ---
-        // Karena ada error SyntaxError, kita ubah import modul menjadi import standar
-        // Import autotable tetap menggunakan tag <script> di HTML, bukan disini
-        
-        // Konfigurasi Firebase Anda (SUDAH DIPERBAIKI DENGAN DATA ANDA)
+        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -384,10 +371,9 @@
         let allPengeluaran = []; 
         let isAdminLoggedIn = false; 
         
-        // Variable untuk melacak halaman saat ini dan batas baris
         let currentDonaturPage = 1;
         let currentJurnalKasPage = 1;
-        const ROWS_PER_PAGE = 10; // Batasan 10 baris per halaman
+        const ROWS_PER_PAGE = 10; 
 
         // Konstanta Prosentase Alokasi
         const PERSENTASE = {
@@ -409,7 +395,6 @@
             return sign + rupiah;
         };
         
-        // Fungsi untuk menghitung alokasi dana dari nilai donasi
         const calculateAlokasi = (nilai) => {
             const nilaiDonasi = parseFloat(nilai) || 0;
             if (nilaiDonasi <= 0) {
@@ -437,62 +422,50 @@
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged);
-            document.getElementById('pdf-export-container')?.classList.toggle('hidden', !isLogged); // Tambah tombol PDF
+            document.getElementById('pdf-export-container')?.classList.toggle('hidden', !isLogged); 
         };
         
-        // Fungsi Generik untuk Membuat Tombol Pagination
         const setupPagination = (data, currentPage, containerId, renderFunction) => {
             const totalPages = Math.ceil(data.length / ROWS_PER_PAGE);
             const container = document.getElementById(containerId);
-            container.innerHTML = ''; // Bersihkan konten lama
+            container.innerHTML = ''; 
 
-            if (totalPages <= 1) return; // Tidak perlu pagination jika hanya 1 halaman
+            if (totalPages <= 1) return; 
 
-            // Fungsi untuk membuat tombol
             const createButton = (label, page, isActive, isSpecial) => {
                 const button = document.createElement('button');
                 button.textContent = label;
                 button.classList.add('px-4', 'py-2', 'rounded-lg', 'font-bold', 'transition', 'duration-150', 'shadow-md', 'text-sm');
 
                 if (isActive) {
-                    // Tombol Aktif (Warna Kuning Solid)
                     button.classList.add('bg-yellow-accent', 'text-dark-green');
                 } else {
-                    // Tombol Non-Aktif (Warna Hijau Gelap dengan Border Kuning)
                     button.classList.add('bg-dark-green', 'text-yellow-accent', 'hover:bg-dark-green/70', 'border', 'border-yellow-accent');
                     button.onclick = () => {
-                        // *** PERUBAHAN INTI LOGIKA PAGINATION ***
                         if (containerId === 'donatur-pagination') {
                             currentDonaturPage = page;
                         } else {
                             currentJurnalKasPage = page;
                         }
                         
-                        // Panggil fungsi render ulang yang SPESIFIK untuk tabel ini
                         renderFunction(); 
                         
-                        // Scroll ke atas tabel setelah pindah halaman
                         document.getElementById(containerId).previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     };
                 }
                 
-                // Handle Tombol "<<" dan ">>"
                 if (isSpecial) {
-                    // Tombol Panah (Previous/Next) nonaktif jika sudah di ujung
                     button.disabled = isActive; 
                 }
 
                 container.appendChild(button);
             };
 
-            // Tombol "<<" (Previous)
             createButton('<<', Math.max(1, currentPage - 1), currentPage === 1, true);
 
-            // Tampilkan hingga 5 halaman di sekitar halaman aktif
             let startPage = Math.max(1, currentPage - 2);
             let endPage = Math.min(totalPages, currentPage + 2);
             
-            // Logika untuk memastikan 5 tombol (jika memungkinkan)
             if (endPage - startPage < 4) {
                 if (startPage > 1) {
                     startPage = Math.max(1, endPage - 4);
@@ -501,14 +474,12 @@
                 }
             }
             
-            // Pastikan endPage tidak melebihi totalPages
             endPage = Math.min(totalPages, endPage);
 
             for (let i = startPage; i <= endPage; i++) {
                 createButton(i.toString(), i, i === currentPage, false);
             }
             
-            // Tombol ">>" (Next)
             createButton('>>', Math.min(totalPages, currentPage + 1), currentPage === totalPages, true);
         };
 
@@ -588,7 +559,6 @@
                 await batch.commit();
 
                 alert('SEMUA DATA DONASI DAN PENGELUARAN BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
-                // Reset halaman ke 1 setelah reset data
                 currentDonaturPage = 1;
                 currentJurnalKasPage = 1;
                 await loadAndRenderData(); 
@@ -659,7 +629,7 @@
                     });
                 });
 
-                renderAllDataInitial(); // Panggil fungsi render awal
+                renderAllDataInitial(); 
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
@@ -710,7 +680,6 @@
                 document.getElementById('donasi-nilai-input').value = '';
                 
                 alert('Donasi berhasil ditambahkan & dana dialokasikan!');
-                // Reset halaman ke 1 setelah tambah data
                 currentDonaturPage = 1; 
                 await loadAndRenderData(); 
             } catch (error) {
@@ -748,7 +717,6 @@
                 document.getElementById('kas-kategori-input').value = '';
                 
                 alert('Pengeluaran berhasil dicatat!');
-                // Reset halaman ke 1 setelah tambah data
                 currentJurnalKasPage = 1;
                 await loadAndRenderData(); 
             } catch (error) {
@@ -763,8 +731,6 @@
         // --------------------------------------------------------------------------------
 
         const renderAllDataInitial = () => {
-            // PENTING: Donatur harus di-render duluan agar total donasi terhitung, 
-            // karena total donasi dipakai oleh Jurnal Kas.
             renderDonaturTable();
             renderJurnalKasTable();
         };
@@ -784,7 +750,7 @@
                 updateFooter('total-perawatan-makam', 0); 
                 updateFooter('total-bisyaroh-panitia', 0); 
                 updateFooter('total-biaya-haul', 0); 
-                setupPagination([], 1, 'donatur-pagination', renderDonaturTable); // Reset pagination
+                setupPagination([], 1, 'donatur-pagination', renderDonaturTable); 
                 return;
             }
 
@@ -808,7 +774,7 @@
 
             // Render data untuk halaman yang aktif
             paginatedData.forEach((d, index) => {
-                const rowNumber = startIndex + index + 1; // Nomor urut global
+                const rowNumber = startIndex + index + 1; 
                 const nilaiDonasi = parseFloat(d.nilai) || 0;
                 const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
                 const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
@@ -845,9 +811,8 @@
             const tableBody = document.getElementById('jurnal-kas-table-body');
             tableBody.innerHTML = '';
             
-            // Ambil total Donasi dari footer tabel donatur
-            // Ini PENTING: harus ambil dari DOM karena ini adalah total dari SEMUA data donasi.
             const totalDonasiText = document.getElementById('total-donasi-input').textContent;
+            // Menghapus titik pemisah ribuan sebelum parsing
             const totalDonasi = parseFloat(totalDonasiText.replace(/\./g, '')) || 0;
             
             const kasEntries = [];
@@ -883,24 +848,21 @@
                 return a.timestamp - b.timestamp;
             });
             
-            // Total Saldo Akhir (Seluruh Data)
             const finalSaldo = kasEntries.reduce((acc, curr) => acc + curr.masuk - curr.keluar, 0);
 
             // 4. Cek Jika Kosong
             if (kasEntries.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Jurnal Kas kosong. Silakan catat donasi atau pengeluaran.</td></tr>`;
                 updateFooter('total-saldo-akhir', 0);
-                setupPagination([], 1, 'jurnal-kas-pagination', renderJurnalKasTable); // Reset pagination
+                setupPagination([], 1, 'jurnal-kas-pagination', renderJurnalKasTable); 
                 return;
             }
 
             // --- LOGIKA PAGINATION JURNAL KAS ---
             const startIndex = (currentJurnalKasPage - 1) * ROWS_PER_PAGE;
-            // Batasi data yang akan dirender hanya di halaman ini
             const paginatedData = kasEntries.slice(startIndex, startIndex + ROWS_PER_PAGE);
 
             // 5. Hitung Saldo Awal untuk Halaman Aktif
-            // Saldo harus dihitung kumulatif dari semua entri SEBELUM halaman ini
             let saldo = 0;
             for (let i = 0; i < startIndex; i++) {
                 saldo += kasEntries[i].masuk - kasEntries[i].keluar;
@@ -909,12 +871,11 @@
             // 6. Render Jurnal Kas & Lanjutkan Hitung Saldo Halaman Aktif
             paginatedData.forEach((entry, index) => {
                 saldo += entry.masuk - entry.keluar;
-                const rowNumber = startIndex + index + 1; // Nomor urut global
+                const rowNumber = startIndex + index + 1; 
 
                 const dateObj = new Date(entry.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                // Menentukan warna saldo (Kuning untuk Saldo Positif, Merah untuk Negatif)
                 const saldoClass = saldo >= 0 ? 'text-yellow-accent' : 'text-red-danger';
                 
                 const row = tableBody.insertRow();
@@ -940,16 +901,15 @@
         // --------------------------------------------------------------------------------
         // 6. PDF EXPORT FUNCTIONS
         // --------------------------------------------------------------------------------
-
+        
         // Helper untuk menambah header dan footer tanda tangan di PDF
         const addHeaderAndSignature = (doc, title, startY) => {
             doc.setFontSize(16);
-            doc.setTextColor(30, 71, 42); // Warna Dark Green
+            doc.setTextColor(30, 71, 42); 
             doc.text(title, 105, 20, { align: 'center' }); 
             
             doc.setFontSize(10);
             doc.setTextColor(50, 50, 50); 
-            // Pastikan tanggal sesuai dengan gambar, yaitu 24 November 2025
             doc.text(`Pati, 24 November 2025`, 175, startY + 5, { align: 'right' }); 
 
             doc.setFontSize(10);
@@ -967,19 +927,17 @@
 
         // FUNGSI 1: Unduh PDF List Donatur (Kolom 1-5)
         window.exportPdfListDonatur = () => {
-            // Cek apakah library jsPDF sudah dimuat secara global
+            // Menggunakan window.jsPDF karena diimpor via tag <script> non-module
             if (typeof window.jsPDF === 'undefined') {
                 return alert('Library PDF belum dimuat. Coba refresh halaman.');
             }
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
 
-            // Gunakan window.jsPDF (karena diimpor via tag <script> non-module)
             const doc = new window.jsPDF();
             const headers = [
                 ["NO", "TANGGAL", "NAMA DONATUR", "ALAMAT", "NILAI (RP)"]
             ];
             
-            // Siapkan data Donatur
             let totalNilai = 0;
             const bodyData = allDonatur.map((d, index) => {
                 const dateObj = new Date(d.date + 'T00:00:00');
@@ -1022,7 +980,7 @@
         };
 
 
-        // FUNGSI 2: Unduh PDF Laporan Detail Jurnal (Tanpa Kategori)
+        // FUNGSI 2: Unduh PDF Laporan Detail Jurnal 
         window.exportPdfLaporanDetailJurnal = () => {
             if (typeof window.jsPDF === 'undefined') {
                 return alert('Library PDF belum dimuat. Coba refresh halaman.');
@@ -1034,7 +992,6 @@
                 ["NO", "TANGGAL", "URAIAN TRANSAKSI", "DANA MASUK (RP)", "DANA KELUAR (RP)", "SALDO AKHIR (RP)"]
             ];
             
-            // Siapkan data Jurnal Kas
             const totalDonasi = allDonatur.reduce((sum, d) => sum + d.nilai, 0);
 
             const kasEntries = [];
@@ -1121,10 +1078,8 @@
                 ["URAIAN", "JUMLAH (Rp)"]
             ];
 
-            // 1. Hitung Total Dana Masuk
             const totalDonasi = allDonatur.reduce((sum, d) => sum + d.nilai, 0);
             
-            // 2. Hitung Total Dana Keluar per Kategori
             const categoryTotals = allPengeluaran.reduce((acc, p) => {
                 const key = p.kategori || 'Pengeluaran Lain';
                 acc[key] = (acc[key] || 0) + p.nilai_keluar;
@@ -1136,7 +1091,7 @@
 
             // 3. Susun Data LPJ
             const bodyData = [];
-            let startY = 30; // Posisi Awal Tabel
+            let startY = 30; 
 
             // --- DANA MASUK ---
             bodyData.push([
