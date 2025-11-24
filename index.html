@@ -726,15 +726,8 @@
                 alert('Gagal menghapus data. Cek console log.');
             }
         };
-
-
-        // --------------------------------------------------------------------------------
-        // 6. RENDER DATA
-        // --------------------------------------------------------------------------------
-
-        const renderDonaturTable = (transactions, page) => {
+const renderDonaturTable = (transactions, page) => {
             const tableBody = document.getElementById('donatur-table-body');
-            // ID ini (donatur-total) ada di footer TOTAL KESELURUHAN DONASI
             const donaturTotalElement = document.getElementById('donatur-total'); 
 
             // 1. Filter, Urutkan & Hitung Total
@@ -744,17 +737,26 @@
             
             const isLogged = isAdminLoggedIn;
             const colspanPublic = 5; 
+            
+            // --- FUNGSI AMAN BARU ---
+            const updateFooter = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = formatRupiah(value);
+                }
+            };
+            // ------------------------
 
             // Update Total
-            if (donaturTotalElement) donaturTotalElement.textContent = formatRupiah(totalDanaMasuk);
+            updateFooter('donatur-total', totalDanaMasuk);
             
             // 2. Jika Data Kosong
             if (sortedData.length === 0) {
-                // Perhatikan penggunaan '?.textContent' yang sudah aman (optional chaining)
-                document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(0);
-                document.getElementById('total-makam-footer')?.textContent = formatRupiah(0);
-                document.getElementById('total-panitia-footer')?.textContent = formatRupiah(0);
-                document.getElementById('total-haul-footer')?.textContent = formatRupiah(0);
+                // MENGGUNAKAN FUNGSI AMAN
+                updateFooter('total-jariyah-footer', 0);
+                updateFooter('total-makam-footer', 0);
+                updateFooter('total-panitia-footer', 0);
+                updateFooter('total-haul-footer', 0);
 
                 const colspan = isLogged ? 10 : colspanPublic;
                 tableBody.innerHTML = `<tr><td colspan="${colspan}" class="py-4 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>`;
@@ -767,11 +769,11 @@
             const totalPanitia = Math.round(totalDanaMasuk * PERSEN_PANITIA);
             const totalHaul = Math.round(totalDanaMasuk * PERSEN_HAUL);
 
-            // Perhatikan di sini, menggunakan '?.textContent' yang sudah aman (optional chaining)
-            document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(totalDanaMasuk); 
-            document.getElementById('total-makam-footer')?.textContent = formatRupiah(totalMakam); 
-            document.getElementById('total-panitia-footer')?.textContent = formatRupiah(totalPanitia);
-            document.getElementById('total-haul-footer')?.textContent = formatRupiah(totalHaul);
+            // MENGGUNAKAN FUNGSI AMAN
+            updateFooter('total-jariyah-footer', totalDanaMasuk); 
+            updateFooter('total-makam-footer', totalMakam); 
+            updateFooter('total-panitia-footer', totalPanitia);
+            updateFooter('total-haul-footer', totalHaul);
             
             // 4. Pagination
             const start = (page - 1) * itemsPerPage;
@@ -802,6 +804,12 @@
             
             return totalDanaMasuk;
         };
+
+        // --------------------------------------------------------------------------------
+        // 6. RENDER DATA
+        // --------------------------------------------------------------------------------
+
+        
 
         const renderJurnalTable = (totalDonasi, page) => {
             const jurnalBody = document.getElementById('jurnal-table-body');
@@ -1049,6 +1057,7 @@
     </script>    
 </body>
 </html>
+
 
 
 
