@@ -304,17 +304,16 @@
 
     <script type="module">
         // --------------------------------------------------------------------------------
-        // 1. FIREBASE SETUP DAN KONFIGURASI BARU
+        // 1. FIREBASE SETUP DAN KONFIGURASI
         // --------------------------------------------------------------------------------
         
         // Import fungsi-fungsi yang diperlukan dari Firebase SDK (Versi 9 modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // Konfigurasi Firebase Anda
+        // Konfigurasi Firebase Anda (Sesuai dengan yang Kakak berikan)
         const firebaseConfig = {
-            // HARAP DOUBLE CHECK APAKAH KUNCI INI SUDAH SESUAI DENGAN YANG KAKAK BERIKAN
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
             projectId: "catatan-keuangan-haul",
@@ -340,10 +339,16 @@
         let allTransactions = []; 
         let isAdminLoggedIn = false; 
 
-        // Pagination variables (Tetap menggunakan logic pagination lama)
+        // Pagination variables
         const itemsPerPage = 10;
         let currentDonaturPage = 1;
         let currentJurnalPage = 1;
+
+        // Persentase Donasi
+        const PERSEN_MAKAM = 0.50; // 50%
+        const PERSEN_PANITIA = 0.25; // 25%
+        const PERSEN_HAUL = 0.25; // 25%
+
 
         // --------------------------------------------------------------------------------
         // 3. HELPER FUNCTIONS
@@ -365,91 +370,96 @@
             return 'Rp ' + rupiah;
         };
 
-            const updateAdminView = () => {
+        // Fungsi baru untuk dipanggil dari tombol pagination
+        window.changePage = (tableType, page) => {
+            if (tableType === 'donatur') {
+                currentDonaturPage = page;
+            } else if (tableType === 'jurnal') {
+                currentJurnalPage = page;
+            }
+            renderAllTables();
+        };
+
+        const createPagination = (data, totalItems, containerId, tableType, currentPage, changePageFunc) => {
+            const container = document.getElementById(containerId);
+            if (!container) return; 
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            container.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.onclick = () => changePageFunc(tableType, i);
+                button.className = `mx-1 px-3 py-1 border rounded ${i === currentPage ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-gray-100'} text-sm`;
+                container.appendChild(button);
+            }
+        };
+
+
+        // --------------------------------------------------------------------------------
+        // 4. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
+        // --------------------------------------------------------------------------------
+
+        // FUNGSI INI SUDAH DIPERBAIKI TOTAL DAN AMAN DARI ERROR NULL
+        const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // 1. Tampilkan/Sembunyikan Panel Login/Logout dan Aksi Admin
-            // (Pastikan ID ini ada di HTML: login-form-container, admin-actions-container)
-            document.getElementById('login-form-container').classList.toggle('hidden', isLogged);
-            document.getElementById('admin-actions-container').classList.toggle('hidden', !isLogged);
+            // 1. Tampilkan/Sembunyikan Panel Login/Logout
+            document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
+            document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
             // --- JURNAL KAS UMUM (RAPIH PUBLIK) ---
             const thJurnalUraian = document.getElementById('th-jurnal-uraian');
+            if (thJurnalUraian) {
+                thJurnalUraian.setAttribute('colspan', isLogged ? '1' : '2');
+                thJurnalUraian.textContent = isLogged ? 'Uraian' : 'Uraian / Keterangan'; 
+            }
             
-            // Logika Gabungan Header: Jika TIDAK LOGIN, gabungkan Uraian dan Kategori di header
-            thJurnalUraian.setAttribute('colspan', isLogged ? '1' : '2');
-            thJurnalUraian.textContent = isLogged ? 'Uraian' : 'Uraian / Keterangan'; // Ubah teks header
-            
-            // Lindungi dari Null: Periksa keberadaan elemen sebelum memanipulasi classList
-            // (th-jurnal-kategori dan th-jurnal-aksi hanya ditampilkan saat Admin)
-            const thKategori = document.getElementById('th-jurnal-kategori');
-            const thAksiJurnal = document.getElementById('th-jurnal-aksi');
-            if (thKategori) thKategori.classList.toggle('hidden', !isLogged);
-            if (thAksiJurnal) thAksiJurnal.classList.toggle('hidden', !isLogged);
+            document.getElementById('th-jurnal-kategori')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('th-jurnal-aksi')?.classList.toggle('hidden', !isLogged);
             
             // Update colspan total jurnal (Footer)
-            // (td-jurnal-total-col akan bertambah lebar jika kolom kategori dan aksi hilang)
-            document.getElementById('td-jurnal-total-col').setAttribute('colspan', isLogged ? '3' : '4'); 
-            const tdKategori = document.getElementById('td-jurnal-total-kategori');
-            const tdAksiJurnal = document.getElementById('td-jurnal-total-aksi');
-            if (tdKategori) tdKategori.classList.toggle('hidden', !isLogged);
-            if (tdAksiJurnal) tdAksiJurnal.classList.toggle('hidden', !isLogged);
+            document.getElementById('td-jurnal-total-col')?.setAttribute('colspan', isLogged ? '3' : '4'); 
+            document.getElementById('td-jurnal-total-kategori')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('td-jurnal-total-aksi')?.classList.toggle('hidden', !isLogged);
 
 
             // --- LAPORAN DONATUR (RAPIH PUBLIK) ---
-            // Catatan Donatur (Persentase)
-            document.getElementById('donatur-note-persentase').classList.toggle('hidden', !isLogged);
-            
-            // Kolom Header Persentase dan Aksi
-            const thPresentase = document.getElementById('th-donatur-presentase');
-            const rowPresentase = document.getElementById('donatur-presentase-row');
-            const thAksiDonatur = document.getElementById('th-donatur-aksi');
-            if (thPresentase) thPresentase.classList.toggle('hidden', !isLogged);
-            if (rowPresentase) rowPresentase.classList.toggle('hidden', !isLogged);
-            if (thAksiDonatur) thAksiDonatur.classList.toggle('hidden', !isLogged);
+            document.getElementById('donatur-note-persentase')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('th-donatur-presentase')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('donatur-presentase-row')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('th-donatur-aksi')?.classList.toggle('hidden', !isLogged);
             
             // Update colspan total donatur (Footer)
             
-            // 1. Baris TOTAL AKUMULASI (Presentase) - Disembunyikan saat publik
-            const totalAkumulasiRow = document.getElementById('total-akumulasi-row');
-            if (totalAkumulasiRow) totalAkumulasiRow.classList.toggle('hidden', !isLogged);
-            
-            const tdCol1 = document.getElementById('td-donatur-total-col-1');
-            if (tdCol1) tdCol1.setAttribute('colspan', isLogged ? '6' : '4');
-            
-            const tdCol2 = document.getElementById('td-donatur-total-col-2');
-            const totalMakam = document.getElementById('total-makam-footer');
-            const totalPanitia = document.getElementById('total-panitia-footer');
-            const totalHaul = document.getElementById('total-haul-footer');
-            if (tdCol2) tdCol2.classList.toggle('hidden', !isLogged); 
-            if (totalMakam) totalMakam.classList.toggle('hidden', !isLogged);
-            if (totalPanitia) totalPanitia.classList.toggle('hidden', !isLogged);
-            if (totalHaul) totalHaul.classList.toggle('hidden', !isLogged);
+            // 1. Baris TOTAL AKUMULASI (Persentase)
+            document.getElementById('total-akumulasi-row')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('td-donatur-total-col-1')?.setAttribute('colspan', isLogged ? '6' : '4'); 
+            document.getElementById('td-donatur-total-col-2')?.classList.toggle('hidden', !isLogged); 
+            document.getElementById('total-makam-footer')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('total-panitia-footer')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('total-haul-footer')?.classList.toggle('hidden', !isLogged);
             
             // 2. Baris TOTAL KESELURUHAN DONASI
-            // Kolom 4 (Kolom kosong sisa presentase dan aksi)
-            const tdCol4 = document.getElementById('td-donatur-total-col-4');
-            if (tdCol4) tdCol4.classList.toggle('hidden', !isLogged); 
-            if (tdCol4) tdCol4.setAttribute('colspan', isLogged ? '4' : '0'); 
+            document.getElementById('td-donatur-total-col-3')?.setAttribute('colspan', '5'); 
+            document.getElementById('td-donatur-total-col-4')?.classList.toggle('hidden', !isLogged); 
+            document.getElementById('td-donatur-total-col-4')?.setAttribute('colspan', isLogged ? '4' : '0'); 
 
 
             // 3. Tampilkan/Sembunyikan Input Forms
-            document.getElementById('jurnal-input-container').classList.toggle('hidden', !isLogged);
-            document.getElementById('donasi-input-container').classList.toggle('hidden', !isLogged);
+            document.getElementById('jurnal-input-container')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
             
             // Reset halaman ke 1 saat admin view berubah 
             currentDonaturPage = 1;
             currentJurnalPage = 1;
             
-            // !!! BARIS PANGGILAN goToPage YANG SEBELUMNYA ERROR KINI SUDAH DIHAPUS DARI SINI !!!
-            
             // Render ulang tabel untuk menampilkan/menyembunyikan baris/kolom aksi
             renderAllTables();
         };
-
-        // --------------------------------------------------------------------------------
-        // 4. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
-        // --------------------------------------------------------------------------------
 
         // Mengelola perubahan status login
         onAuthStateChanged(auth, (user) => {
@@ -482,13 +492,13 @@
                 document.getElementById('admin-password-input').value = '';
 
                 // Autentikasi menggunakan Firebase
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                await signInWithEmailAndPassword(auth, email, password);
                 
                 alert('Login Berhasil! Anda memiliki akses admin.');
                 // onAuthStateChanged akan menangani pemanggilan updateAdminView() dan loadAndRenderData()
                 
                 // Scroll ke bagian input Jurnal setelah login
-                window.scrollTo({ top: document.getElementById('jurnal-input-container').offsetTop - 50, behavior: 'smooth' });
+                window.scrollTo({ top: document.getElementById('jurnal-input-container')?.offsetTop - 50, behavior: 'smooth' });
                 
             } catch (error) {
                 console.error("Login Error:", error);
@@ -504,12 +514,39 @@
                     alert('Logout Berhasil. Kembali ke mode Tampilan Publik.');
                     
                     // Scroll ke tombol login setelah logout
-                    window.scrollTo({ top: document.getElementById('login-form-container').offsetTop - 50, behavior: 'smooth' });
+                    window.scrollTo({ top: document.getElementById('login-form-container')?.offsetTop - 50, behavior: 'smooth' });
                 } catch (error) {
                     console.error("Logout Error:", error);
                     alert(`Logout Gagal: ${error.message}`);
                 }
             }
+        };
+
+        window.confirmResetData = async () => {
+             if (!isAdminLoggedIn) return;
+             
+             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi dan Jurnal? Tindakan ini tidak bisa dibatalkan.')) return;
+             
+             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua data Donatur dan Jurnal di Firebase. LANJUTKAN?')) return;
+             
+             try {
+                // Hapus semua Donatur
+                const donaturSnapshot = await getDocs(donaturCol);
+                const donaturDeletePromises = donaturSnapshot.docs.map(d => deleteDoc(doc(db, "donatur", d.id)));
+                await Promise.all(donaturDeletePromises);
+
+                // Hapus semua Jurnal
+                const jurnalSnapshot = await getDocs(jurnalCol);
+                const jurnalDeletePromises = jurnalSnapshot.docs.map(d => deleteDoc(doc(db, "jurnal", d.id)));
+                await Promise.all(jurnalDeletePromises);
+
+                alert('SEMUA DATA DONATUR DAN JURNAL BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
+                // Muat ulang data (akan menjadi kosong)
+                await loadAndRenderData();
+             } catch (error) {
+                 console.error("Gagal mereset data:", error);
+                 alert('Gagal menghapus data di Firestore. Cek console log.');
+             }
         };
         
         // --------------------------------------------------------------------------------
@@ -523,7 +560,9 @@
 
             try {
                 // 1. Ambil data Donatur
-                const donaturSnapshot = await getDocs(donaturCol);
+                const donaturQuery = query(donaturCol, orderBy("timestamp", "desc"));
+                const donaturSnapshot = await getDocs(donaturQuery);
+
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
                     allTransactions.push({
@@ -531,14 +570,17 @@
                         type: 'IN',
                         description: data.description,
                         amount: data.amount,
-                        timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(), // Convert Firestore Timestamp ke milidetik
+                        // Pastikan timestamp diubah dari Firestore.Timestamp ke milidetik
+                        timestamp: data.timestamp ? data.timestamp.toDate().getTime() : new Date(data.date).getTime(), 
                         date: data.date,
-                        donaturName: data.donaturName // Hanya di data donatur
+                        donaturName: data.donaturName 
                     });
                 });
 
                 // 2. Ambil data Jurnal
-                const jurnalSnapshot = await getDocs(jurnalCol);
+                const jurnalQuery = query(jurnalCol, orderBy("timestamp", "desc"));
+                const jurnalSnapshot = await getDocs(jurnalQuery);
+
                 jurnalSnapshot.forEach(doc => {
                     const data = doc.data();
                     allTransactions.push({
@@ -556,18 +598,14 @@
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
-                alert("Gagal memuat data. Periksa koneksi Firebase Anda di console log.");
+                // alert("Gagal memuat data. Periksa koneksi Firebase Anda di console log.");
             }
         };
         
-        // *** CREATE: Menambah Transaksi Jurnal (Pengeluaran/Pemasukan) ***
+        // *** CREATE: Menambah Transaksi Jurnal ***
         window.addTransaction = async () => {
-            if (!isAdminLoggedIn) {
-                alert('Akses ditolak. Silakan login sebagai Admin.');
-                return;
-            }
+            if (!isAdminLoggedIn) return;
             
-            // ... (Kode untuk mengambil nilai input seperti sebelumnya) ...
             const type = document.getElementById('jurnal-type-input').value;
             const description = document.getElementById('jurnal-description-input').value;
             let amount = parseInt(document.getElementById('jurnal-amount-input').value.replace(/\./g, ''));
@@ -578,27 +616,21 @@
                 return;
             }
             
-            // Objek data yang akan disimpan ke Firestore
             const newTransaction = {
                 type: type,
                 description: description,
                 amount: amount,
                 date: date,
-                // Gunakan serverTimestamp untuk sorting yang akurat
                 timestamp: serverTimestamp() 
             };
 
             try {
-                // Simpan ke collection 'jurnal' di Firestore
                 await addDoc(jurnalCol, newTransaction);
                 
-                // Bersihkan input
                 document.getElementById('jurnal-description-input').value = '';
                 document.getElementById('jurnal-amount-input').value = '';
-                // Biarkan type dan date tetap, pengguna mungkin menambahkan entri lain di hari yang sama
                 
                 alert('Transaksi Jurnal berhasil ditambahkan.');
-                // Muat ulang dan render data
                 await loadAndRenderData();
 
             } catch (error) {
@@ -609,10 +641,7 @@
 
         // *** CREATE: Menambah Data Donatur ***
         window.addDonatur = async () => {
-            if (!isAdminLoggedIn) {
-                alert('Akses ditolak. Silakan login sebagai Admin.');
-                return;
-            }
+            if (!isAdminLoggedIn) return;
             
             const donaturName = document.getElementById('donatur-name-input').value;
             const description = document.getElementById('donatur-description-input').value;
@@ -633,10 +662,8 @@
             };
 
             try {
-                // Simpan ke collection 'donatur' di Firestore
                 await addDoc(donaturCol, newDonatur);
                 
-                // Bersihkan input
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-description-input').value = '';
                 document.getElementById('donatur-amount-input').value = '';
@@ -650,7 +677,7 @@
         };
         
         // *** UPDATE: Mengedit Transaksi/Donatur ***
-        window.editTransaction = async (id, currentType) => {
+        window.editTransaction = async (id) => {
             if (!isAdminLoggedIn) return;
             
             const transaction = allTransactions.find(t => t.id === id);
@@ -677,9 +704,13 @@
                 description: newDescription,
                 amount: newAmount,
                 date: newDate,
-                // Jika Donatur, izinkan edit nama juga
-                ...(transaction.donaturName && { donaturName: prompt('Edit Nama Donatur:', transaction.donaturName) }) 
             };
+
+            // Jika Donatur, izinkan edit nama juga
+            if (transaction.donaturName) {
+                 const newDonaturName = prompt('Edit Nama Donatur:', transaction.donaturName);
+                 if (newDonaturName !== null) updatedData.donaturName = newDonaturName;
+            }
 
             try {
                 await updateDoc(docRef, updatedData);
@@ -714,167 +745,154 @@
             }
         };
 
-        // *** RESET: Penghapusan Semua Data ***
-        window.confirmResetData = async () => {
-             if (!isAdminLoggedIn) return;
-             
-             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi dan Jurnal? Tindakan ini tidak bisa dibatalkan.')) return;
-             
-             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua data Donatur dan Jurnal di Firebase. LANJUTKAN?')) return;
-             
-             try {
-                // Hapus semua Donatur
-                const donaturSnapshot = await getDocs(donaturCol);
-                const donaturDeletePromises = donaturSnapshot.docs.map(d => deleteDoc(doc(db, "donatur", d.id)));
-                await Promise.all(donaturDeletePromises);
 
-                // Hapus semua Jurnal
-                const jurnalSnapshot = await getDocs(jurnalCol);
-                const jurnalDeletePromises = jurnalSnapshot.docs.map(d => deleteDoc(doc(db, "jurnal", d.id)));
-                await Promise.all(jurnalDeletePromises);
-
-                alert('SEMUA DATA DONATUR DAN JURNAL BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
-                // Muat ulang data (akan menjadi kosong)
-                await loadAndRenderData();
-             } catch (error) {
-                 console.error("Gagal mereset data:", error);
-                 alert('Gagal menghapus data di Firestore. Cek console log.');
-             }
-        };
-        
         // --------------------------------------------------------------------------------
-        // 6. RENDER & PDF LOGIC (Dipertahankan)
+        // 6. RENDER DATA (Disesuaikan untuk ID dari Firestore)
         // --------------------------------------------------------------------------------
 
-        // ... (Fungsi renderDonaturTable, renderJurnalTable, exportPDFGlobal, exportPDFRingkasan, dan addSignatures tetap sama, karena mereka membaca data dari array 'allTransactions' yang kini sudah diisi oleh Firestore) ...
-        
         const renderDonaturTable = (transactions, page) => {
-            // ... (Isi fungsi renderDonaturTable lama) ...
-            const donaturBody = document.getElementById('donatur-table-body');
+            const tableBody = document.getElementById('donatur-table-body');
             const donaturTotalElement = document.getElementById('donatur-total');
-            const donaturPagination = document.getElementById('donatur-pagination');
 
-            // 1. Filter dan Hitung Total Donasi
-            const donasiTransactions = transactions.filter(t => t.type === 'IN' && t.donaturName);
-            const totalDonasi = donasiTransactions.reduce((sum, t) => sum + t.amount, 0);
-            donaturTotalElement.textContent = formatRupiah(totalDonasi);
+            // 1. Filter, Urutkan & Hitung Total
+            const donasiTransactions = transactions.filter(t => t.donaturName); // Donatur saja
+            // Data sudah diurutkan saat fetch (timestamp desc)
+            const sortedData = donasiTransactions.sort((a, b) => b.timestamp - a.timestamp); 
+            const totalDanaMasuk = sortedData.reduce((sum, t) => sum + t.amount, 0);
+            
+            const isLogged = isAdminLoggedIn;
+            const colspanPublic = 5; 
 
-            // 2. Terapkan Pagination
+            // Update Total
+            if (donaturTotalElement) donaturTotalElement.textContent = formatRupiah(totalDanaMasuk);
+            
+            // 2. Jika Data Kosong (PERBAIKAN ERROR NULL)
+            if (sortedData.length === 0) {
+                document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(0);
+                document.getElementById('total-makam-footer')?.textContent = formatRupiah(0);
+                document.getElementById('total-panitia-footer')?.textContent = formatRupiah(0);
+                document.getElementById('total-haul-footer')?.textContent = formatRupiah(0);
+
+                const colspan = isLogged ? 10 : colspanPublic;
+                tableBody.innerHTML = `<tr><td colspan="${colspan}" class="py-4 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>`;
+                createPagination(sortedData, sortedData.length, 'donatur-pagination-container', 'donatur', 1, window.changePage);
+                return totalDanaMasuk;
+            }
+
+            // 3. Hitung Persentase & Render Footer Akumulasi
+            const totalMakam = Math.round(totalDanaMasuk * PERSEN_MAKAM);
+            const totalPanitia = Math.round(totalDanaMasuk * PERSEN_PANITIA);
+            const totalHaul = Math.round(totalDanaMasuk * PERSEN_HAUL);
+
+            document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(totalDanaMasuk); 
+            document.getElementById('total-makam-footer')?.textContent = formatRupiah(totalMakam); 
+            document.getElementById('total-panitia-footer')?.textContent = formatRupiah(totalPanitia);
+            document.getElementById('total-haul-footer')?.textContent = formatRupiah(totalHaul);
+            
+            // 4. Pagination
             const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedDonasi = donasiTransactions.slice(start, end);
-            const totalPages = Math.ceil(donasiTransactions.length / itemsPerPage);
-
-            // 3. Render Tabel
-            donaturBody.innerHTML = '';
-            if (paginatedDonasi.length === 0) {
-                donaturBody.innerHTML = '<tr><td colspan="6" class="py-2 text-center text-gray-500">Belum ada data Donatur.</td></tr>';
-            } else {
-                paginatedDonasi.forEach((t, index) => {
-                    const row = donaturBody.insertRow();
-                    row.innerHTML = `
-                        <td class="py-2 px-4 border-b">${start + index + 1}</td>
-                        <td class="py-2 px-4 border-b">${t.date}</td>
-                        <td class="py-2 px-4 border-b">${t.donaturName}</td>
-                        <td class="py-2 px-4 border-b">${t.description}</td>
-                        <td class="py-2 px-4 border-b text-right">${formatRupiah(t.amount)}</td>
-                        <td class="py-2 px-4 border-b admin-only ${isAdminLoggedIn ? '' : 'hidden'}">
-                            <button onclick="editTransaction('${t.id}', '${t.type}')" class="text-blue-600 hover:text-blue-800 text-xs mr-2">Edit</button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
-                        </td>
-                    `;
-                });
-            }
-
-            // 4. Render Pagination
-            donaturPagination.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                donaturPagination.innerHTML += `
-                    <button onclick="goToPage('donatur-table', ${i})" class="mx-1 px-3 py-1 border rounded ${i === page ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-gray-100'} text-sm">${i}</button>
+            const paginatedDonasi = sortedData.slice(start, start + itemsPerPage);
+            
+            // 5. Render Tabel Body
+            tableBody.innerHTML = '';
+            paginatedDonasi.forEach((t, index) => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b">${start + index + 1}</td>
+                    <td class="py-2 px-4 border-b">${t.date}</td>
+                    <td class="py-2 px-4 border-b">${t.donaturName}</td>
+                    <td class="py-2 px-4 border-b">${t.description}</td>
+                    <td class="py-2 px-4 border-b text-right">${formatRupiah(t.amount)}</td>
+                    <td class="py-2 px-4 border-b text-right admin-only ${isLogged ? '' : 'hidden'}">${formatRupiah(Math.round(t.amount * PERSEN_MAKAM))}</td>
+                    <td class="py-2 px-4 border-b text-right admin-only ${isLogged ? '' : 'hidden'}">${formatRupiah(Math.round(t.amount * PERSEN_PANITIA))}</td>
+                    <td class="py-2 px-4 border-b text-right admin-only ${isLogged ? '' : 'hidden'}">${formatRupiah(Math.round(t.amount * PERSEN_HAUL))}</td>
+                    <td class="py-2 px-4 border-b admin-only ${isLogged ? '' : 'hidden'}">
+                        <button onclick="editTransaction('${t.id}')" class="text-blue-600 hover:text-blue-800 text-xs mr-2">Edit</button>
+                        <button onclick="deleteTransaction('${t.id}')" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
+                    </td>
                 `;
-            }
-
-            // 5. Update Kolom Admin
-            updateAdminView();
-            return totalDonasi;
+            });
+            
+            // Render Pagination
+            createPagination(sortedData, sortedData.length, 'donatur-pagination-container', 'donatur', page, window.changePage);
+            
+            return totalDanaMasuk;
         };
 
         const renderJurnalTable = (totalDonasi, page) => {
-            // ... (Isi fungsi renderJurnalTable lama) ...
             const jurnalBody = document.getElementById('jurnal-table-body');
             const jurnalTotalMasukElement = document.getElementById('jurnal-total-masuk');
             const jurnalTotalKeluarElement = document.getElementById('jurnal-total-keluar');
             const jurnalSaldoAkhirElement = document.getElementById('jurnal-saldo-akhir');
-            const jurnalPagination = document.getElementById('jurnal-pagination');
 
-            // 1. Gabungkan dan Filter Jurnal (Hanya Transaksi Jurnal, Donatur sudah dihitung di totalDonasi)
+            // 1. Filter & Urutkan
             const jurnalTransactions = allTransactions.filter(t => !t.donaturName);
-            
-            // Total Pemasukan Jurnal (selain donasi)
-            const totalMasukJurnal = jurnalTransactions.filter(t => t.type === 'IN').reduce((sum, t) => sum + t.amount, 0);
-            const totalKeluar = jurnalTransactions.filter(t => t.type === 'OUT').reduce((sum, t) => sum + t.amount, 0);
+            const sortedData = jurnalTransactions.sort((a, b) => b.timestamp - a.timestamp);
 
-            // Total Pemasukan Global = Total Donasi + Total Masuk Jurnal
+            // 2. Hitung Total
+            const totalMasukJurnal = sortedData.filter(t => t.type === 'IN').reduce((sum, t) => sum + t.amount, 0);
+            const totalKeluar = sortedData.filter(t => t.type === 'OUT').reduce((sum, t) => sum + t.amount, 0);
             const totalMasukGlobal = totalDonasi + totalMasukJurnal;
             const saldoAkhir = totalMasukGlobal - totalKeluar;
 
-            // Update Ringkasan Keuangan
-            jurnalTotalMasukElement.textContent = formatRupiah(totalMasukGlobal);
-            jurnalTotalKeluarElement.textContent = formatRupiah(totalKeluar);
-            jurnalSaldoAkhirElement.textContent = formatRupiah(saldoAkhir);
-            jurnalSaldoAkhirElement.classList.toggle('text-red-600', saldoAkhir < 0);
-            jurnalSaldoAkhirElement.classList.toggle('text-green-600', saldoAkhir >= 0);
+            // 3. Update Ringkasan Keuangan
+            if (jurnalTotalMasukElement) jurnalTotalMasukElement.textContent = formatRupiah(totalMasukGlobal);
+            if (jurnalTotalKeluarElement) jurnalTotalKeluarElement.textContent = formatRupiah(totalKeluar);
+            
+            if (jurnalSaldoAkhirElement) {
+                jurnalSaldoAkhirElement.textContent = formatRupiah(saldoAkhir);
+                jurnalSaldoAkhirElement.classList.toggle('text-red-600', saldoAkhir < 0);
+                jurnalSaldoAkhirElement.classList.toggle('text-green-600', saldoAkhir >= 0);
+            }
+            
+            const isLogged = isAdminLoggedIn;
 
-            // 2. Terapkan Pagination
+            // 4. Jika Data Kosong
+            if (sortedData.length === 0) {
+                const colspan = isLogged ? 6 : 5;
+                jurnalBody.innerHTML = `<tr><td colspan="${colspan}" class="py-4 text-center text-gray-500">Belum ada data Jurnal (Pemasukan/Pengeluaran) yang dicatat.</td></tr>`;
+                createPagination(sortedData, sortedData.length, 'jurnal-pagination-container', 'jurnal', 1, window.changePage);
+                return;
+            }
+
+            // 5. Pagination
             const start = (page - 1) * itemsPerPage;
-            const end = start + itemsPerPage;
-            const paginatedJurnal = jurnalTransactions.slice(start, end);
-            const totalPages = Math.ceil(jurnalTransactions.length / itemsPerPage);
-
-            // 3. Render Tabel
+            const paginatedJurnal = sortedData.slice(start, start + itemsPerPage);
+            
+            // 6. Render Tabel Body
             jurnalBody.innerHTML = '';
-            if (paginatedJurnal.length === 0) {
-                jurnalBody.innerHTML = '<tr><td colspan="7" class="py-2 text-center text-gray-500">Belum ada data Jurnal (Pemasukan/Pengeluaran).</td></tr>';
-            } else {
-                paginatedJurnal.forEach((t, index) => {
-                    const row = jurnalBody.insertRow();
-                    const amountClass = t.type === 'IN' ? 'text-green-600' : 'text-red-600';
-                    row.innerHTML = `
-                        <td class="py-2 px-4 border-b">${start + index + 1}</td>
-                        <td class="py-2 px-4 border-b">${t.date}</td>
-                        <td class="py-2 px-4 border-b">${t.description}</td>
-                        <td class="py-2 px-4 border-b">${t.type}</td>
-                        <td class="py-2 px-4 border-b text-right ${amountClass}">${formatRupiah(t.amount)}</td>
-                        <td class="py-2 px-4 border-b admin-only ${isAdminLoggedIn ? '' : 'hidden'}">
-                            <button onclick="editTransaction('${t.id}', '${t.type}')" class="text-blue-600 hover:text-blue-800 text-xs mr-2">Edit</button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
-                        </td>
-                    `;
-                });
-            }
-
-            // 4. Render Pagination
-            jurnalPagination.innerHTML = '';
-            for (let i = 1; i <= totalPages; i++) {
-                jurnalPagination.innerHTML += `
-                    <button onclick="goToPage('jurnal-table', ${i})" class="mx-1 px-3 py-1 border rounded ${i === page ? 'bg-blue-600 text-white' : 'bg-white text-blue-600 hover:bg-gray-100'} text-sm">${i}</button>
+            paginatedJurnal.forEach((t, index) => {
+                const row = jurnalBody.insertRow();
+                const amountClass = t.type === 'IN' ? 'text-green-600' : 'text-red-600';
+                
+                row.innerHTML = `
+                    <td class="py-2 px-4 border-b">${start + index + 1}</td>
+                    <td class="py-2 px-4 border-b">${t.date}</td>
+                    <td class="py-2 px-4 border-b">${t.description}</td>
+                    <td class="py-2 px-4 border-b admin-only ${isLogged ? '' : 'hidden'}">${t.type}</td>
+                    <td class="py-2 px-4 border-b text-right ${amountClass}">${formatRupiah(t.amount)}</td>
+                    <td class="py-2 px-4 border-b admin-only ${isLogged ? '' : 'hidden'}">
+                        <button onclick="editTransaction('${t.id}')" class="text-blue-600 hover:text-blue-800 text-xs mr-2">Edit</button>
+                        <button onclick="deleteTransaction('${t.id}')" class="text-red-600 hover:text-red-800 text-xs">Hapus</button>
+                    </td>
                 `;
-            }
-
-            // 5. Update Kolom Admin
-            updateAdminView();
+            });
+            
+            // Render Pagination
+            createPagination(sortedData, sortedData.length, 'jurnal-pagination-container', 'jurnal', page, window.changePage);
         };
 
         const renderAllTables = () => {
-            // Urutkan semua transaksi berdasarkan timestamp (paling baru di bawah)
-            allTransactions.sort((a, b) => a.timestamp - b.timestamp);
+            // Urutkan transaksi gabungan (donatur dan jurnal)
+            allTransactions.sort((a, b) => b.timestamp - a.timestamp);
             const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
             renderJurnalTable(totalDonasi, currentJurnalPage);
         };
-        
-        // ... (Fungsi exportPDFGlobal dan exportPDFRingkasan tetap di sini) ...
 
-        // Tambahkan kembali fungsi PDF Anda di sini:
+        // --------------------------------------------------------------------------------
+        // 7. PDF EXPORT LOGIC
+        // --------------------------------------------------------------------------------
+
         const addSignatures = (doc, y) => {
             doc.setFontSize(10);
             doc.text("Pati, " + new Date().toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}), 145, y + 10);
@@ -890,7 +908,6 @@
             doc.text("Sekretaris Haul", 150, y + 50);
         };
 
-        // Mengganti fungsi exportPDFGlobal agar tidak menggunakan `saveTransactions()` yang sudah dihapus
         window.exportPDFGlobal = () => {
             if (allTransactions.length === 0) {
                 alert("Tidak ada data untuk diekspor.");
@@ -907,7 +924,7 @@
             doc.text("Data Donatur", 14, 25);
             
             // 1. Tabel Donatur
-            const donasiData = allTransactions.filter(t => t.type === 'IN' && t.donaturName).map((t, index) => [
+            const donasiData = allTransactions.filter(t => t.donaturName).map((t, index) => [
                 index + 1,
                 t.date,
                 t.donaturName,
@@ -928,7 +945,6 @@
                 theme: 'striped',
                 headStyles: { fillColor: [52, 58, 64] },
                 didDrawPage: function (data) {
-                    // Footer (halaman)
                     doc.setFontSize(10);
                     doc.text("Halaman " + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 10);
                 },
@@ -1004,7 +1020,7 @@
             doc.setFontSize(16);
             doc.text("Laporan Pembukuan Keuangan Haul (Ringkasan)", 105, 15, null, null, "center");
             
-            const donasiTransactions = allTransactions.filter(t => t.type === 'IN' && t.donaturName);
+            const donasiTransactions = allTransactions.filter(t => t.donaturName);
             const jurnalTransactions = allTransactions.filter(t => !t.donaturName);
             
             const totalDonasi = donasiTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -1014,7 +1030,7 @@
             const saldoAkhir = totalMasukGlobal - totalKeluarJurnal;
 
             doc.setFontSize(12);
-            doc.text("Periode: " + (allTransactions.length > 0 ? allTransactions[0].date + " s/d " + allTransactions[allTransactions.length - 1].date : '-'), 14, 25);
+            doc.text("Periode: " + (allTransactions.length > 0 ? allTransactions[allTransactions.length - 1].date + " s/d " + allTransactions[0].date : '-'), 14, 25);
             
             const ringkasanData = [
                 ['Total Penerimaan Donasi', formatRupiah(totalDonasi)],
@@ -1031,28 +1047,28 @@
                 styles: { fontSize: 10, cellPadding: [2, 0.5, 2, 4], minCellHeight: 8 },
                 columnStyles: { 
                     1: { halign: 'right' },
-                },
-                columnWidth: ['wrap', 40]
+                }
             });
             
             addSignatures(doc, doc.lastAutoTable.finalY + 10);
             doc.save("LPJ_Global_Ringkasan.pdf");
         };
 
+
         // --------------------------------------------------------------------------------
-        // 7. INISIALISASI (Mengganti window.onload lama)
+        // 8. INISIALISASI
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            // Panggil fungsi yang akan dicek oleh onAuthStateChanged
-            // onAuthStateChanged akan otomatis memanggil updateAdminView dan loadAndRenderData setelah status login terdeteksi.
-            // Tidak perlu memanggil loadAndRenderData() atau updateAdminView() di sini.
+            // onAuthStateChanged akan otomatis dipanggil oleh Firebase SDK
+            // dan akan memanggil updateAdminView dan loadAndRenderData setelah status login terdeteksi.
             console.log("Web Siap. Menunggu status autentikasi Firebase...");
         };
         
     </script>
 </body>
 </html>
+
 
 
 
