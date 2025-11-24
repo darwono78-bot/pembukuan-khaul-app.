@@ -369,23 +369,25 @@
             const isLogged = isAdminLoggedIn;
             
             // 1. Tampilkan/Sembunyikan Panel Login/Logout
+            // Catatan: Pastikan di HTML Anda ada id='login-form-container' dan id='admin-actions-container'
             document.getElementById('login-form-container').classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container').classList.toggle('hidden', !isLogged);
             
             // --- JURNAL KAS UMUM (RAPIH PUBLIK) ---
             const thJurnalUraian = document.getElementById('th-jurnal-uraian');
             
-            // Jika TIDAK LOGIN, gabungkan Uraian dan Kategori di header (colspan=2)
+            // Logika Gabungan Header: Jika TIDAK LOGIN, gabungkan Uraian dan Kategori di header
             thJurnalUraian.setAttribute('colspan', isLogged ? '1' : '2');
             thJurnalUraian.textContent = isLogged ? 'Uraian' : 'Uraian / Keterangan'; // Ubah teks header
             
-            // Periksa keberadaan elemen sebelum manipulasi classList
+            // Lindungi dari Null: Periksa keberadaan elemen sebelum memanipulasi classList
             const thKategori = document.getElementById('th-jurnal-kategori');
             const thAksiJurnal = document.getElementById('th-jurnal-aksi');
             if (thKategori) thKategori.classList.toggle('hidden', !isLogged);
             if (thAksiJurnal) thAksiJurnal.classList.toggle('hidden', !isLogged);
             
             // Update colspan total jurnal (Footer)
+            // Catatan: Pastikan di HTML ada td-jurnal-total-col
             document.getElementById('td-jurnal-total-col').setAttribute('colspan', isLogged ? '3' : '4'); 
             const tdKategori = document.getElementById('td-jurnal-total-kategori');
             const tdAksiJurnal = document.getElementById('td-jurnal-total-aksi');
@@ -394,6 +396,7 @@
 
 
             // --- LAPORAN DONATUR (RAPIH PUBLIK) ---
+            // Catatan: Pastikan di HTML ada donatur-note-persentase
             document.getElementById('donatur-note-persentase').classList.toggle('hidden', !isLogged);
             const thPresentase = document.getElementById('th-donatur-presentase');
             const rowPresentase = document.getElementById('donatur-presentase-row');
@@ -405,8 +408,12 @@
             // Update colspan total donatur (Footer)
             
             // 1. Baris TOTAL AKUMULASI (Presentase) - Disembunyikan saat publik
-            document.getElementById('total-akumulasi-row').classList.toggle('hidden', !isLogged);
-            document.getElementById('td-donatur-total-col-1').setAttribute('colspan', isLogged ? '6' : '4'); 
+            const totalAkumulasiRow = document.getElementById('total-akumulasi-row');
+            if (totalAkumulasiRow) totalAkumulasiRow.classList.toggle('hidden', !isLogged);
+            
+            const tdCol1 = document.getElementById('td-donatur-total-col-1');
+            if (tdCol1) tdCol1.setAttribute('colspan', isLogged ? '6' : '4');
+            
             const tdCol2 = document.getElementById('td-donatur-total-col-2');
             const totalMakam = document.getElementById('total-makam-footer');
             const totalPanitia = document.getElementById('total-panitia-footer');
@@ -1043,5 +1050,6 @@
     </script>
 </body>
 </html>
+
 
 
