@@ -14,7 +14,7 @@
                     colors: {
                         // Warna diambil dari contoh gambar Anda
                         'dark-green': '#1a472a', 
-                        'medium-green': '#2b6e49', // Warna awal (sekarang di-override di CSS)
+                        'medium-green': '#2b6e49', 
                         'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
@@ -27,7 +27,7 @@
     <style>
         /* --- STYLE GLOBAL & GLOW FINAL --- */
         
-        /* 1. Body Background: HIJAU PALING GELAP */
+        /* 1. Body Background: HIJAU PALING GELAP (#052600) */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #052600; 
@@ -52,15 +52,15 @@
             /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
             filter: 
                 drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) 
-                drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
+                drop_shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
         }
         
-        /* 3. Warna Inner Content: Dibuat LEBIH GELAP LAGI (#1D4F31) */
+        /* 3. Warna Inner Content: Lebih Gelap (#1D4F31) */
         .bg-medium-green {
-            background-color: #1D4F31; /* Perubahan: Dari #245c3b menjadi #1D4F31 */
+            background-color: #1D4F31; 
         }
 
-        /* --- UTILITY CSS lainnya tetap sama --- */
+        /* --- UTILITY CSS --- */
         
         /* Menghilangkan panah pada input number */
         input[type=number]::-webkit-inner-spin-button, 
@@ -103,11 +103,6 @@
             width: 150px; 
             min-width: 150px;
         }
-        #donatur-table .kumulatif-kolom {
-            width: 170px; 
-            min-width: 170px;
-            font-weight: normal; 
-        }
         #donatur-table .kolom-no {
             width: 40px; 
             text-align: center;
@@ -120,6 +115,17 @@
         #donatur-table tfoot td {
             font-weight: bold;
             font-size: 1.125rem; /* text-lg */
+        }
+        /* Style untuk baris akumulasi persentase */
+        .akumulasi-row td {
+            font-weight: normal;
+            font-size: 1rem;
+            color: #ccc;
+        }
+        .akumulasi-row.total td {
+             font-weight: bold;
+             color: #ffeb3b;
+             border-top: 2px solid #ffeb3b;
         }
     </style>
 </head>
@@ -147,18 +153,32 @@
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-tanggal">TANGGAL</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">NAMA DONATUR</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">ALAMAT</th>
-                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th>
-                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl kumulatif-kolom">JUMLAH JARIYAH (KUMULATIF)</th>
-                        </tr>
+                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl nilai-kolom">NILAI (RP)</th> 
+                            </tr>
                     </thead>
                     <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
-                        <tr><td colspan="6" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
+                        <tr><td colspan="5" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
                     </tbody>
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
-                            <td class="px-4 py-3 text-right text-yellow-accent"></td> 
-                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                            <td id="total-donasi-input" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                        </tr>
+                         <tr class="bg-dark-green/80 akumulasi-row">
+                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Perawatan Makam (15%):</td>
+                            <td id="total-perawatan-makam" class="px-4 py-2 text-right">0</td> 
+                        </tr>
+                        <tr class="bg-dark-green/80 akumulasi-row">
+                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Bisyaroh Panitia (15%):</td>
+                            <td id="total-bisyaroh-panitia" class="px-4 py-2 text-right">0</td> 
+                        </tr>
+                        <tr class="bg-dark-green/80 akumulasi-row">
+                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Biaya Haul (70%):</td>
+                            <td id="total-biaya-haul" class="px-4 py-2 text-right">0</td> 
+                        </tr>
+                        <tr class="bg-dark-green/80 akumulasi-row total">
+                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL AKUMULASI PROSENTASE (100%):</td>
+                            <td id="total-akumulasi-persen" class="px-4 py-3 text-right text-yellow-accent">0</td> 
                         </tr>
                     </tfoot>
                 </table>
@@ -179,7 +199,7 @@
                 </div>
                 
                 <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
-                    Simpan Donasi
+                    Simpan Donasi & Alokasikan Dana
                 </button>
             </div>
             
@@ -238,6 +258,13 @@
 
         let allDonatur = []; 
         let isAdminLoggedIn = false; 
+        
+        // Konstanta Prosentase Alokasi
+        const PERSENTASE = {
+            PERAWATAN_MAKAM: 0.15, // 15%
+            BISYAROH_PANITIA: 0.15, // 15%
+            BIAYA_HAUL: 0.70     // 70%
+        };
 
         // --------------------------------------------------------------------------------
         // 2. HELPER FUNCTIONS
@@ -262,22 +289,21 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
+            // Tampilan Login/Logout
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
         // --------------------------------------------------------------------------------
-        // 3. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
+        // 3. FIREBASE AUTH & ADMIN ACTIONS
         // --------------------------------------------------------------------------------
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 isAdminLoggedIn = true;
-                console.log("Status Admin: LOGIN BERHASIL");
             } else {
                 isAdminLoggedIn = false;
-                console.log("Status Admin: LOGOUT");
             }
             updateAdminView();
             loadAndRenderDonatur(); 
@@ -344,7 +370,7 @@
                  console.error("Gagal mereset data:", error);
                  alert('Gagal menghapus data di Firestore. Cek console log.');
              }
-            }
+        };
 
 
         // --------------------------------------------------------------------------------
@@ -354,7 +380,8 @@
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
+            // Menyesuaikan colspan menjadi 5 (No, Tanggal, Nama, Alamat, Nilai)
+            tableBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
 
             try {
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
@@ -368,6 +395,8 @@
                         nama: data.nama || data.uraian || 'Tanpa Nama',
                         alamat: data.alamat || '-',
                         nilai: data.nilai || data.danaMasuk || 0, 
+                        // Tambahkan pecahan alokasi
+                        alokasi: data.alokasi || { perawatan_makam: 0, bisyaroh_panitia: 0, biaya_haul: 0 },
                         timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
@@ -378,7 +407,7 @@
                 console.error("Gagal memuat data dari Firestore:", error);
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="py-6 text-center text-red-danger">
+                        <td colspan="5" class="py-6 text-center text-red-danger">
                             🔴 GAGAL MEMUAT DATA. Cek Koneksi Internet atau Konfigurasi Firebase.
                         </td>
                     </tr>`;
@@ -397,12 +426,23 @@
                 alert('Mohon isi Tanggal, Nama Donatur, dan Nilai Donasi yang valid.');
                 return;
             }
-
+            
+            // --- LOGIC PERHITUNGAN PERSENTASE ---
+            const perawatan_makam = Math.round(nilai * PERSENTASE.PERAWATAN_MAKAM);
+            const bisyaroh_panitia = Math.round(nilai * PERSENTASE.BISYAROH_PANITIA);
+            // Sisa untuk biaya haul (untuk memastikan totalnya sama persis dengan input)
+            const biaya_haul = nilai - perawatan_makam - bisyaroh_panitia;
+            
             const newDonasi = {
                 date: date,
                 nama: nama,
                 alamat: alamat,
                 nilai: nilai,
+                alokasi: {
+                    perawatan_makam: perawatan_makam,
+                    bisyaroh_panitia: bisyaroh_panitia,
+                    biaya_haul: biaya_haul
+                },
                 timestamp: serverTimestamp() 
             };
 
@@ -414,7 +454,7 @@
                 document.getElementById('donatur-alamat-input').value = '';
                 document.getElementById('donasi-nilai-input').value = '';
                 
-                alert('Donasi berhasil ditambahkan ke Firebase!');
+                alert('Donasi berhasil ditambahkan & dana dialokasikan!');
                 await loadAndRenderDonatur(); 
             } catch (error) {
                 console.error("Gagal menambahkan Donasi:", error);
@@ -422,24 +462,32 @@
             }
         };
 
+
         // --------------------------------------------------------------------------------
-        // 5. RENDER DATA (LOGIC KUMULATIF)
+        // 5. RENDER DATA (LOGIC TOTAL & PROSENTASE)
         // --------------------------------------------------------------------------------
 
         const renderDonaturTable = () => {
             const tableBody = document.getElementById('donatur-table-body');
             tableBody.innerHTML = '';
             
-            let totalAkumulasiDonasi = 0;
+            let totalDonasiInput = 0;
+            let totalPerawatanMakam = 0;
+            let totalBisyarohPanitia = 0;
+            let totalBiayaHaul = 0;
             
             if (allDonatur.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
-                updateFooter('total-akumulasi-donasi', 0); 
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
+                updateFooter('total-donasi-input', 0); 
+                updateFooter('total-akumulasi-persen', 0); 
                 return;
             }
 
             allDonatur.forEach((d, index) => {
-                totalAkumulasiDonasi += d.nilai; 
+                totalDonasiInput += d.nilai;
+                totalPerawatanMakam += d.alokasi.perawatan_makam;
+                totalBisyarohPanitia += d.alokasi.bisyaroh_panitia;
+                totalBiayaHaul += d.alokasi.biaya_haul;
 
                 const row = tableBody.insertRow();
                 
@@ -453,12 +501,26 @@
                     <td class="px-4 py-3">${d.nama}</td>
                     <td class="px-4 py-3">${d.alamat}</td>
                     <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(d.nilai)}</td>
-                    <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
                 `;
             });
+            
+            // Hitung total akumulasi persentase
+            const totalAkumulasiPersen = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
 
-            // Update Footer Total
-            updateFooter('total-akumulasi-donasi', totalAkumulasiDonasi); 
+            // Update Footer Total Input Donasi
+            updateFooter('total-donasi-input', totalDonasiInput);
+            
+            // Update Footer Akumulasi Persentase
+            updateFooter('total-perawatan-makam', totalPerawatanMakam); 
+            updateFooter('total-bisyaroh-panitia', totalBisyarohPanitia); 
+            updateFooter('total-biaya-haul', totalBiayaHaul); 
+            updateFooter('total-akumulasi-persen', totalAkumulasiPersen); 
+            
+            // Pengecekan konsistensi: total input harus sama dengan total akumulasi persentase
+            if (totalDonasiInput !== totalAkumulasiPersen) {
+                console.error(`ERROR KONSISTENSI DATA: Total Input (${totalDonasiInput}) tidak sama dengan Total Akumulasi Persen (${totalAkumulasiPersen})`);
+                alert('Peringatan: Ada ketidaksesuaian hitungan total dana. Cek console log.');
+            }
         };
 
         // --------------------------------------------------------------------------------
