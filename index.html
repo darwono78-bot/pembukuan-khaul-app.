@@ -366,29 +366,72 @@
         };
 
         const updateAdminView = () => {
-            const adminElements = document.querySelectorAll('.admin-only');
-            const loginForm = document.getElementById('login-form-container');
-            const logoutButton = document.getElementById('logout-button');
-            const passwordInput = document.getElementById('admin-password-input');
-            const emailInput = document.getElementById('admin-email-input');
+            const isLogged = isAdminLoggedIn;
+            
+            // 1. Tampilkan/Sembunyikan Panel Login/Logout
+            document.getElementById('login-form-container').classList.toggle('hidden', isLogged);
+            document.getElementById('admin-actions-container').classList.toggle('hidden', !isLogged);
+            
+            // --- JURNAL KAS UMUM (RAPIH PUBLIK) ---
+            const thJurnalUraian = document.getElementById('th-jurnal-uraian');
+            
+            // Jika TIDAK LOGIN, gabungkan Uraian dan Kategori di header (colspan=2)
+            thJurnalUraian.setAttribute('colspan', isLogged ? '1' : '2');
+            thJurnalUraian.textContent = isLogged ? 'Uraian' : 'Uraian / Keterangan'; // Ubah teks header
+            
+            // Periksa keberadaan elemen sebelum manipulasi classList
+            const thKategori = document.getElementById('th-jurnal-kategori');
+            const thAksiJurnal = document.getElementById('th-jurnal-aksi');
+            if (thKategori) thKategori.classList.toggle('hidden', !isLogged);
+            if (thAksiJurnal) thAksiJurnal.classList.toggle('hidden', !isLogged);
+            
+            // Update colspan total jurnal (Footer)
+            document.getElementById('td-jurnal-total-col').setAttribute('colspan', isLogged ? '3' : '4'); 
+            const tdKategori = document.getElementById('td-jurnal-total-kategori');
+            const tdAksiJurnal = document.getElementById('td-jurnal-total-aksi');
+            if (tdKategori) tdKategori.classList.toggle('hidden', !isLogged);
+            if (tdAksiJurnal) tdAksiJurnal.classList.toggle('hidden', !isLogged);
 
-            if (isAdminLoggedIn) {
-                adminElements.forEach(el => el.classList.remove('hidden'));
-                loginForm.classList.add('hidden');
-                logoutButton.classList.remove('hidden');
-            } else {
-                adminElements.forEach(el => el.classList.add('hidden'));
-                loginForm.classList.remove('hidden');
-                logoutButton.classList.add('hidden');
-            }
-        };
 
-        const goToPage = (tableId, page) => {
-            if (tableId === 'donatur-table') {
-                currentDonaturPage = page;
-            } else if (tableId === 'jurnal-table') {
-                currentJurnalPage = page;
-            }
+            // --- LAPORAN DONATUR (RAPIH PUBLIK) ---
+            document.getElementById('donatur-note-persentase').classList.toggle('hidden', !isLogged);
+            const thPresentase = document.getElementById('th-donatur-presentase');
+            const rowPresentase = document.getElementById('donatur-presentase-row');
+            const thAksiDonatur = document.getElementById('th-donatur-aksi');
+            if (thPresentase) thPresentase.classList.toggle('hidden', !isLogged);
+            if (rowPresentase) rowPresentase.classList.toggle('hidden', !isLogged);
+            if (thAksiDonatur) thAksiDonatur.classList.toggle('hidden', !isLogged);
+            
+            // Update colspan total donatur (Footer)
+            
+            // 1. Baris TOTAL AKUMULASI (Presentase) - Disembunyikan saat publik
+            document.getElementById('total-akumulasi-row').classList.toggle('hidden', !isLogged);
+            document.getElementById('td-donatur-total-col-1').setAttribute('colspan', isLogged ? '6' : '4'); 
+            const tdCol2 = document.getElementById('td-donatur-total-col-2');
+            const totalMakam = document.getElementById('total-makam-footer');
+            const totalPanitia = document.getElementById('total-panitia-footer');
+            const totalHaul = document.getElementById('total-haul-footer');
+            if (tdCol2) tdCol2.classList.toggle('hidden', !isLogged); 
+            if (totalMakam) totalMakam.classList.toggle('hidden', !isLogged);
+            if (totalPanitia) totalPanitia.classList.toggle('hidden', !isLogged);
+            if (totalHaul) totalHaul.classList.toggle('hidden', !isLogged);
+            
+            // 2. Baris TOTAL KESELURUHAN DONASI
+            // Kolom 4 (Kolom kosong sisa presentase dan aksi)
+            const tdCol4 = document.getElementById('td-donatur-total-col-4');
+            if (tdCol4) tdCol4.classList.toggle('hidden', !isLogged); 
+            if (tdCol4) tdCol4.setAttribute('colspan', isLogged ? '4' : '0'); 
+
+
+            // 3. Tampilkan/Sembunyikan Input Forms
+            document.getElementById('jurnal-input-container').classList.toggle('hidden', !isLogged);
+            document.getElementById('donasi-input-container').classList.toggle('hidden', !isLogged);
+            
+            // Reset halaman ke 1 saat admin view berubah 
+            currentDonaturPage = 1;
+            currentJurnalPage = 1;
+            
+            // Render ulang tabel untuk menampilkan/menyembunyikan baris/kolom aksi
             renderAllTables();
         };
         
@@ -1000,4 +1043,5 @@
     </script>
 </body>
 </html>
+
 
