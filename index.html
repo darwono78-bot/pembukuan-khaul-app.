@@ -82,6 +82,7 @@
             font-size: 0.75rem; /* text-xs */
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
+            text-align: center; /* Rata tengah untuk header baru */
         }
         
         /* Style untuk Konten Tabel */
@@ -90,8 +91,17 @@
             vertical-align: top;
             font-weight: normal; 
             font-size: 0.875rem; /* text-sm */
+            text-align: right; /* Rata kanan untuk semua nilai uang */
         }
 
+        /* Override untuk kolom teks agar rata kiri */
+        #donatur-table .kolom-no,
+        #donatur-table .kolom-tanggal,
+        #donatur-table .kolom-nama,
+        #donatur-table .kolom-alamat {
+            text-align: left;
+        }
+        
         /* Wrapper Tabel */
         .table-wrapper {
             box-shadow: 0 0 15px rgba(255, 235, 59, 0.2); 
@@ -99,9 +109,9 @@
         }
         
         /* Penyesuaian lebar kolom agar rapi */
-        #donatur-table .nilai-kolom {
-            width: 150px; 
-            min-width: 150px;
+        #donatur-table .nilai-kolom, .alokasi-kolom {
+            width: 120px; 
+            min-width: 120px;
         }
         #donatur-table .kolom-no {
             width: 40px; 
@@ -115,17 +125,6 @@
         #donatur-table tfoot td {
             font-weight: bold;
             font-size: 1.125rem; /* text-lg */
-        }
-        /* Style untuk baris akumulasi persentase */
-        .akumulasi-row td {
-            font-weight: normal;
-            font-size: 1rem;
-            color: #ccc;
-        }
-        .akumulasi-row.total td {
-             font-weight: bold;
-             color: #ffeb3b;
-             border-top: 2px solid #ffeb3b;
         }
     </style>
 </head>
@@ -151,34 +150,24 @@
                         <tr>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl kolom-no">NO</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-tanggal">TANGGAL</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">NAMA DONATUR</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">ALAMAT</th>
-                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl nilai-kolom">NILAI (RP)</th> 
-                            </tr>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-nama">NAMA DONATUR</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-alamat">ALAMAT</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th> 
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">PERAWATAN MAKAM (15%)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider alokasi-kolom">BISYAROH PANITIA (15%)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl alokasi-kolom">BIAYA HAUL (70%)</th>
+                        </tr>
                     </thead>
                     <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
-                        <tr><td colspan="5" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
+                        <tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data...</td></tr>
                     </tbody>
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
+                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td>
                             <td id="total-donasi-input" class="px-4 py-3 text-right text-yellow-accent">0</td> 
-                        </tr>
-                         <tr class="bg-dark-green/80 akumulasi-row">
-                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Perawatan Makam (15%):</td>
-                            <td id="total-perawatan-makam" class="px-4 py-2 text-right">0</td> 
-                        </tr>
-                        <tr class="bg-dark-green/80 akumulasi-row">
-                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Bisyaroh Panitia (15%):</td>
-                            <td id="total-bisyaroh-panitia" class="px-4 py-2 text-right">0</td> 
-                        </tr>
-                        <tr class="bg-dark-green/80 akumulasi-row">
-                            <td colspan="4" class="px-4 py-2 text-right">Alokasi Biaya Haul (70%):</td>
-                            <td id="total-biaya-haul" class="px-4 py-2 text-right">0</td> 
-                        </tr>
-                        <tr class="bg-dark-green/80 akumulasi-row total">
-                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL AKUMULASI PROSENTASE (100%):</td>
-                            <td id="total-akumulasi-persen" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                            <td id="total-perawatan-makam" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                            <td id="total-biaya-haul" class="px-4 py-3 text-right text-yellow-accent">0</td> 
                         </tr>
                     </tfoot>
                 </table>
@@ -380,8 +369,8 @@
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            // Menyesuaikan colspan menjadi 5 (No, Tanggal, Nama, Alamat, Nilai)
-            tableBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
+            // Menyesuaikan colspan menjadi 8 (No, Tgl, Nama, Alamat, Nilai, 3 Alokasi)
+            tableBody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
 
             try {
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
@@ -407,7 +396,7 @@
                 console.error("Gagal memuat data dari Firestore:", error);
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="py-6 text-center text-red-danger">
+                        <td colspan="8" class="py-6 text-center text-red-danger">
                             🔴 GAGAL MEMUAT DATA. Cek Koneksi Internet atau Konfigurasi Firebase.
                         </td>
                     </tr>`;
@@ -477,9 +466,11 @@
             let totalBiayaHaul = 0;
             
             if (allDonatur.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
                 updateFooter('total-donasi-input', 0); 
-                updateFooter('total-akumulasi-persen', 0); 
+                updateFooter('total-perawatan-makam', 0); 
+                updateFooter('total-bisyaroh-panitia', 0); 
+                updateFooter('total-biaya-haul', 0); 
                 return;
             }
 
@@ -498,28 +489,25 @@
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
-                    <td class="px-4 py-3">${d.nama}</td>
-                    <td class="px-4 py-3">${d.alamat}</td>
-                    <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(d.nilai)}</td>
+                    <td class="px-4 py-3 kolom-nama">${d.nama}</td>
+                    <td class="px-4 py-3 kolom-alamat">${d.alamat}</td>
+                    <td class="px-4 py-3 text-yellow-accent">${formatRupiah(d.nilai)}</td>
+                    <td class="px-4 py-3">${formatRupiah(d.alokasi.perawatan_makam)}</td>
+                    <td class="px-4 py-3">${formatRupiah(d.alokasi.bisyaroh_panitia)}</td>
+                    <td class="px-4 py-3">${formatRupiah(d.alokasi.biaya_haul)}</td>
                 `;
             });
-            
-            // Hitung total akumulasi persentase
-            const totalAkumulasiPersen = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
 
-            // Update Footer Total Input Donasi
+            // Update Footer Total
             updateFooter('total-donasi-input', totalDonasiInput);
-            
-            // Update Footer Akumulasi Persentase
             updateFooter('total-perawatan-makam', totalPerawatanMakam); 
             updateFooter('total-bisyaroh-panitia', totalBisyarohPanitia); 
             updateFooter('total-biaya-haul', totalBiayaHaul); 
-            updateFooter('total-akumulasi-persen', totalAkumulasiPersen); 
             
-            // Pengecekan konsistensi: total input harus sama dengan total akumulasi persentase
-            if (totalDonasiInput !== totalAkumulasiPersen) {
-                console.error(`ERROR KONSISTENSI DATA: Total Input (${totalDonasiInput}) tidak sama dengan Total Akumulasi Persen (${totalAkumulasiPersen})`);
-                alert('Peringatan: Ada ketidaksesuaian hitungan total dana. Cek console log.');
+            // Pengecekan konsistensi
+            const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
+            if (totalDonasiInput !== totalAkumulasiAlokasi) {
+                console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi})`);
             }
         };
 
