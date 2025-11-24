@@ -44,22 +44,30 @@
             font-size: 0.75rem; /* text-xs */
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
-            /* Mengatur lebar kolom tanggal lebih lebar dari w-24 */
         }
-        /* Style untuk Konten Tabel */
+        /* Style untuk Konten Tabel - PADDING DIKURANGI AGAR LEBIH RAPI */
         #donatur-table td {
-            padding: 0.75rem 1.5rem; /* Tambah jarak antar kolom */
+            padding: 0.75rem 1rem; /* Padding dikurangi dari 1.5rem menjadi 1rem */
             vertical-align: top;
-            font-weight: normal; /* Pastikan isi tabel tidak tebal */
+            font-weight: normal; 
         }
         /* Style khusus untuk kolom Nilai dan Kumulatif agar rapi */
         #donatur-table .nilai-kolom {
-            width: 150px; /* Lebar kolom nilai */
+            width: 150px; 
             min-width: 150px;
         }
         #donatur-table .kumulatif-kolom {
-            width: 170px; /* Lebar kolom kumulatif */
+            width: 170px; 
             min-width: 170px;
+        }
+        /* Style untuk kolom NO dan TANGGAL agar sempit dan tidak boros ruang */
+        #donatur-table .kolom-no {
+            width: 40px; 
+            text-align: center;
+        }
+        #donatur-table .kolom-tanggal {
+            width: 100px; /* Lebar kolom tanggal diatur agar cukup untuk DD/MM/YYYY */
+            min-width: 100px;
         }
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
@@ -87,8 +95,8 @@
                 <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl w-10">NO</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-32">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl kolom-no">NO</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider kolom-tanggal">TANGGAL</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">NAMA DONATUR</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">ALAMAT</th>
                             <th class="px-4 py-3 text-right font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th>
@@ -197,7 +205,7 @@
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
-            // PERBAIKAN: Hapus awalan 'Rp '
+            // Format angka dengan titik sebagai pemisah ribuan
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             return sign + rupiah;
         };
@@ -205,7 +213,6 @@
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
-                // PERBAIKAN: Hapus 'Rp ' dari formatRupiah, hanya menampilkan angka
                 element.textContent = formatRupiah(value);
             }
         };
@@ -319,7 +326,6 @@
 
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
-                    // Menggunakan Nilai Donasi saja, mengabaikan danaKeluar
                     allDonatur.push({
                         id: doc.id, 
                         date: data.date,
@@ -403,12 +409,14 @@
                 totalAkumulasiDonasi += d.nilai; 
 
                 const row = tableBody.insertRow();
-                // Format tanggal agar lebih terbaca (Contoh: 24 Nov 2025)
-                const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+                
+                // PERBAIKAN: Format tanggal menjadi DD/MM/YYYY agar hanya 1 baris
+                const dateObj = new Date(d.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
                 row.innerHTML = `
-                    <td class="px-4 py-3 text-center">${index + 1}</td>
-                    <td class="px-4 py-3">${formattedDate}</td>
+                    <td class="px-4 py-3 kolom-no">${index + 1}</td>
+                    <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
                     <td class="px-4 py-3">${d.nama}</td>
                     <td class="px-4 py-3 text-sm">${d.alamat}</td>
                     <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(d.nilai)}</td>
