@@ -22,20 +22,26 @@
         }
     </script>
     <style>
+        /* 1. Body Background Dibuat Sangat Gelap Agar Glow Kontras */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #1a472a;
+            background-color: #0A1A1A; /* Hijau sangat gelap/hampir hitam */
             color: #e0e0e0;
         }
         
-        /* 💡 PENYESUAIAN FINAL: Efek Sinar Emas Super BLUR dan LUAS */
+        /* 2. PENYESUAIAN FINAL: Efek Sinar Emas Neon TERTUTUP (seperti gambar) */
         .max-w-6xl {
-            /* Nilai Blur dan Spread yang sangat besar untuk efek cahaya super lembut dan luas */
+            /* Warna glow dimodifikasi sedikit ke hijau neon dan opacity dinaikkan */
+            --glow-color: rgba(255, 255, 0, 0.9); /* Kuning murni dengan opacity sangat tinggi */
+            --glow-spread: 15px; /* Spread radius yang membuat batas terlihat solid */
+            
             box-shadow: 
-                0 0 100px 50px rgba(255, 235, 59, 0.5),   /* Lapisan inti, paling cerah dan sangat menyebar */
-                0 0 200px 100px rgba(255, 235, 59, 0.3),  /* Lapisan menengah, lebih lembut */
-                0 0 350px 150px rgba(255, 235, 59, 0.15); /* Lapisan terluar, super luas dan tipis */
-            border: 1px solid rgba(255, 235, 59, 0.5); /* Border tipis untuk menyatukan glow */
+                0 0 0 var(--glow-spread) rgba(255, 255, 0, 0.2), /* Lapisan luar yang memberikan ilusi tebal/ketebalan */
+                0 0 40px 10px rgba(255, 235, 59, 0.7),           /* Lapisan inti, cerah dan menyebar sedang */
+                0 0 100px 30px rgba(255, 235, 59, 0.4);          /* Lapisan terluar, sangat luas dan lembut */
+            
+            /* Border dibuat tebal dan kuning menyala */
+            border: 3px solid #FFFF00;
         }
 
         input[type=number]::-webkit-inner-spin-button, 
@@ -98,7 +104,7 @@
         }
     </style>
 </head>
-<body class="bg-dark-green p-4 sm:p-10">
+<body class="p-4 sm:p-10">
 
     <div class="max-w-6xl mx-auto rounded-xl shadow-2xl overflow-hidden">
         
