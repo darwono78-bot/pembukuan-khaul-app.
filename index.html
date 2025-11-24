@@ -25,42 +25,42 @@
     </script>
     
     <style>
-        /* --- STYLE GLOBAL & GLOW --- */
+        /* --- STYLE GLOBAL & GLOW FINAL --- */
         
-        /* 1. Body Background HIJAU GELAP (sesuai permintaan) */
+        /* 1. Body Background: HIJAU PALING GELAP (untuk efek elegan) */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #0D3D00; /* Hijau gelap, mirip dengan gambar yang Anda berikan */
+            background-color: #052600; /* Lebih gelap dari sebelumnya: #0D3D00 */
             color: #e0e0e0;
         }
         
-        /* 2. STYLE UTAMA: Kombinasi Border, Box-Shadow, dan Filter Drop-Shadow untuk Efek Glow Tebal */
+        /* 2. STYLE UTAMA: Bingkai Konten */
         .max-w-6xl {
             position: relative; 
             z-index: 10;
             background-color: #1a472a; 
             border-radius: 0.75rem;
 
-            /* A. Border Kuning Tebal sebagai Sinar Inti Terdekat */
-            border: 4px solid #fff352; 
+            /* A. Border Kuning: Dibuat lebih tipis */
+            border: 2px solid #fff352; /* Dari 4px ke 2px */
 
-            /* B. Box-Shadow untuk Glow Menengah (Lebih Terfokus ke Dalam) */
+            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) */
             box-shadow: 
-                0 0 15px rgba(255, 235, 59, 1), 
-                0 0 30px rgba(255, 235, 59, 0.7); 
+                0 0 10px rgba(255, 235, 59, 1), /* Sedikit dikurangi */
+                0 0 25px rgba(255, 235, 59, 0.7); /* Sedikit dikurangi */
 
-            /* C. Filter Drop-Shadow untuk Glow Terluar (Menyebar Lembut) */
+            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
             filter: 
-                drop-shadow(0 0 20px rgba(255, 235, 59, 0.5)) 
-                drop-shadow(0 0 40px rgba(255, 235, 59, 0.3)); 
+                drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) /* Lebih sedikit blur */
+                drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); /* Lebih sedikit blur */
         }
         
-        /* Override background-color pada inner div agar tidak mewarisi filter secara aneh */
+        /* 3. Warna Inner Content: Dibuat sedikit lebih gelap */
         .bg-medium-green {
-            background-color: #2b6e49;
+            background-color: #245c3b; /* Lebih gelap dari #2b6e49 */
         }
 
-        /* --- UTILITY CSS --- */
+        /* --- UTILITY CSS lainnya tetap sama --- */
         
         /* Menghilangkan panah pada input number */
         input[type=number]::-webkit-inner-spin-button, 
@@ -94,7 +94,7 @@
 
         /* Wrapper Tabel */
         .table-wrapper {
-            box-shadow: 0 0 20px rgba(255, 235, 59, 0.2); 
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.2); /* Shadow tabel juga diubah */
             border: 1px solid #ffeb3b; 
         }
         
