@@ -23,7 +23,8 @@
     </script>
     <style>
         body { 
-            font-family: 'Roboto', sans-serif;
+            /* PERBAIKAN: Menggunakan font sistem umum yang bagus dan mudah dibaca (Calibri/Cambria-like) */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #1a472a;
             color: #e0e0e0;
         }
@@ -50,17 +51,19 @@
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
-            font-size: 1rem; /* Ukuran Font Normal (default) */
+            /* PERBAIKAN: Mengatur semua teks di isi tabel menjadi ukuran kecil/sedang yang seragam */
+            font-size: 0.875rem; /* setara dengan Tailwind text-sm */
         }
         /* Style khusus untuk kolom Nilai dan Kumulatif agar rapi */
         #donatur-table .nilai-kolom {
             width: 150px; 
             min-width: 150px;
         }
+        /* PERBAIKAN: Kumulatif di isi tabel (tbody) dibuat NORMAL agar seragam */
         #donatur-table .kumulatif-kolom {
             width: 170px; 
             min-width: 170px;
-            font-weight: bold; /* Kumulatif di isi tabel (tbody) tetap dibuat tebal */
+            font-weight: normal; 
         }
         /* Style untuk kolom NO dan TANGGAL agar sempit dan tidak boros ruang */
         #donatur-table .kolom-no {
@@ -112,7 +115,9 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
-                            <td class="px-4 py-3 text-right text-yellow-accent text-lg"></td> <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td> </tr>
+                            <td class="px-4 py-3 text-right text-yellow-accent"></td> 
+                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent">0</td> 
+                        </tr>
                     </tfoot>
                 </table>
             </div>
@@ -387,8 +392,6 @@
             
             if (allDonatur.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
-                // Menghapus total nilai donasi di footer (permintaan no. 2)
-                // updateFooter('total-nilai-donasi', 0); // Di hapus dari sini karena ID nya sudah tidak dipakai
                 updateFooter('total-akumulasi-donasi', 0); 
                 return;
             }
@@ -407,14 +410,13 @@
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
                     <td class="px-4 py-3">${d.nama}</td>
-                    <td class="px-4 py-3 text-sm">${d.alamat}</td>
-                    <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(d.nilai)}</td>
+                    <td class="px-4 py-3">${d.alamat}</td>
+                    <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(d.nilai)}</td>
                     <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
                 `;
             });
 
             // Update Footer Total: Hanya Kumulatif yang diisi
-            // Tidak perlu updateFooter('total-nilai-donasi') karena sudah tidak digunakan di HTML
             updateFooter('total-akumulasi-donasi', totalAkumulasiDonasi); 
         };
 
