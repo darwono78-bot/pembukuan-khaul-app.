@@ -193,11 +193,18 @@
                         <th id="th-donatur-presentase" class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider bg-yellow-700 hidden" colspan="3">Presentase Donasi</th>
                         <th id="th-donatur-aksi" class="sticky-col-right px-4 py-3 text-center text-xs font-medium uppercase tracking-wider hidden" rowspan="2">Aksi</th>
                     </tr>
-                    <tr id="donatur-presentase-row" class="bg-yellow-600 text-white hidden">
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Perawatan Makam (15%)</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Ongkos Panitia (15%)</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider">Biaya Haul (70%)</th>
-                    </tr>
+                    <tr id="donatur-presentase-row" class="total-row-bold admin-only hidden">
+                    <td id="td-donatur-total-col-1" colspan="6" class="px-4 py-3 text-right text-sm border-t-2 border-gray-900">
+                    TOTAL AKUMULASI JARIYAH:
+                    </td>
+                    <td id="total-jariyah-footer" class="px-4 py-3 text-right text-green-600 border-t-2 border-gray-900">
+                    Rp 0
+                    </td>
+                    <td id="total-makam-footer" class="px-4 py-3 text-right text-blue-600 border-t-2 border-gray-900 hidden">Rp 0</td>
+                    <td id="total-panitia-footer" class="px-4 py-3 text-right text-blue-600 border-t-2 border-gray-900 hidden">Rp 0</td>
+                    <td id="total-haul-footer" class="px-4 py-3 text-right text-blue-600 border-t-2 border-gray-900 hidden">Rp 0</td>
+                    <td id="td-donatur-total-col-2" class="px-4 py-3 border-t-2 border-gray-900 hidden"></td>
+                </tr>
                 </thead>
                 <tbody id="donatur-table-body" class="bg-white divide-y divide-gray-200">
                     <tr><td colspan="10" class="py-4 text-center text-gray-500">Belum ada data donasi yang dicatat.</td></tr>
@@ -727,7 +734,8 @@
 
         const renderDonaturTable = (transactions, page) => {
             const tableBody = document.getElementById('donatur-table-body');
-            const donaturTotalElement = document.getElementById('donatur-total');
+            // ID ini (donatur-total) ada di footer TOTAL KESELURUHAN DONASI
+            const donaturTotalElement = document.getElementById('donatur-total'); 
 
             // 1. Filter, Urutkan & Hitung Total
             const donasiTransactions = transactions.filter(t => t.donaturName); 
@@ -742,6 +750,7 @@
             
             // 2. Jika Data Kosong
             if (sortedData.length === 0) {
+                // Perhatikan penggunaan '?.textContent' yang sudah aman (optional chaining)
                 document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(0);
                 document.getElementById('total-makam-footer')?.textContent = formatRupiah(0);
                 document.getElementById('total-panitia-footer')?.textContent = formatRupiah(0);
@@ -758,6 +767,7 @@
             const totalPanitia = Math.round(totalDanaMasuk * PERSEN_PANITIA);
             const totalHaul = Math.round(totalDanaMasuk * PERSEN_HAUL);
 
+            // Perhatikan di sini, menggunakan '?.textContent' yang sudah aman (optional chaining)
             document.getElementById('total-jariyah-footer')?.textContent = formatRupiah(totalDanaMasuk); 
             document.getElementById('total-makam-footer')?.textContent = formatRupiah(totalMakam); 
             document.getElementById('total-panitia-footer')?.textContent = formatRupiah(totalPanitia);
@@ -1033,11 +1043,13 @@
 
         window.onload = () => {
             console.log("Web Siap. Menunggu status autentikasi Firebase...");
+            // onAuthStateChanged di atas akan memicu updateAdminView dan loadAndRenderData secara otomatis
         };
         
     </script>    
 </body>
 </html>
+
 
 
 
