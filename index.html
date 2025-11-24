@@ -65,29 +65,10 @@
         
         <div class="bg-medium-green p-8 text-text-light">
 
-            <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                    Input Data Donatur Baru
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
-                    
-                    <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Nama Donatur (Contoh: Saripin)" required>
-                    
-                    <input type="text" id="donatur-alamat-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Alamat (Contoh: Ngablak)" required>
-                    
-                    <input type="number" id="donasi-nilai-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Donasi (Rp)" required>
-                </div>
-                
-                <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
-                    Simpan Donasi
-                </button>
-            </div>
-
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Ringkasan Data Transaksi
             </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl border border-text-light/20 mb-6">
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl border border-text-light/20 mb-10">
                 <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
@@ -110,6 +91,25 @@
                         </tr>
                     </tfoot>
                 </table>
+            </div>
+
+            <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
+                    Input Data Donatur Baru
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="date" id="donatur-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                    
+                    <input type="text" id="donatur-name-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Nama Donatur (Contoh: Saripin)" required>
+                    
+                    <input type="text" id="donatur-alamat-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Alamat (Contoh: Ngablak)" required>
+                    
+                    <input type="number" id="donasi-nilai-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Donasi (Rp)" required>
+                </div>
+                
+                <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
+                    Simpan Donasi
+                </button>
             </div>
             
             <div class="p-4 rounded-xl bg-dark-green/50 shadow-inner">
@@ -202,7 +202,7 @@
             // Tampilkan/Sembunyikan Admin Actions (Reset/Logout) di bawah tabel
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
-            // Tampilkan/Sembunyikan Input Donasi Baru form
+            // Tampilkan/Sembunyikan Input Donasi Baru form (SEKARANG DI BAWAH TABEL)
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
@@ -386,6 +386,7 @@
                 totalAkumulasiDonasi += d.nilai; 
 
                 const row = tableBody.insertRow();
+                // Format tanggal agar lebih terbaca (Contoh: 24 Nov 2025)
                 const formattedDate = new Date(d.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 
                 row.innerHTML = `
