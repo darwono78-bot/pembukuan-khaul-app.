@@ -18,7 +18,7 @@
                         'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
-                        'green-rupiah': '#85e096' // Warna hijau khusus untuk rupiah
+                        'green-rupiah': '#85e096' 
                     }
                 }
             }
@@ -86,14 +86,22 @@
             text-align: center; 
         }
         
-        /* Style untuk Konten Tabel */
+        /* Style untuk Konten Tabel (Baris Data) */
         #donatur-table td {
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
-            font-size: 0.875rem; /* text-sm */
+            font-size: 0.875rem; /* Ukuran default untuk teks data lain */
             text-align: right; /* Default rata kanan untuk semua kolom data */
         }
+        
+        /* >>> PERUBAHAN KRITIS 1: Ukuran & Warna Angka Rupiah di Baris Data <<< */
+        #donatur-table .angka-rupiah-data {
+            font-size: 1rem; /* Naik sedikit dari 0.875rem, jadi 16px */
+            color: var(--tw-colors-yellow-accent); /* Kembali ke warna kuning */
+            font-weight: 500; /* Sedikit tebal */
+        }
+
 
         /* Override untuk kolom teks agar rata kiri/tengah */
         #donatur-table .kolom-no {
@@ -124,21 +132,19 @@
             min-width: 100px;
         }
         
-        /* --- STYLE KHUSUS UNTUK ANGKAT RUPIAH --- */
-        .rupiah-text {
-            font-size: 0.8rem; /* Lebih kecil sedikit */
-            color: #a0a0a0; /* Abu-abu terang atau bisa 'green-rupiah' yang baru */
-        }
-
+        /* --- STYLE KHUSUS UNTUK FOOTER TOTAL --- */
+        
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.125rem; /* text-lg */
+            font-size: 1.125rem; /* Ukuran default untuk label TOTAL KESELURUHAN */
         }
-        /* Override untuk angka rupiah di footer, biar lebih besar sedikit tapi tetap berwarna */
-        #donatur-table tfoot .rupiah-text {
-            font-size: 1.125rem; /* sama dengan text-lg footer */
-            color: #ffeb3b; /* Kembali ke kuning untuk total keseluruhan */
+
+        /* >>> PERUBAHAN KRITIS 2: Ukuran & Warna Angka Rupiah di Baris Total (Footer) <<< */
+        #donatur-table tfoot .angka-rupiah-total {
+            font-size: 1.25rem; /* Lebih besar dari angka data, tapi lebih kecil dari sebelumnya (1.125rem) */
+            color: var(--tw-colors-yellow-accent); /* Tetap kuning */
+            font-weight: bolder; /* Sangat tebal */
         }
     </style>
 </head>
@@ -178,10 +184,10 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td>
-                            <td id="total-donasi-input" class="px-4 py-3 text-right rupiah-text">0</td> 
-                            <td id="total-perawatan-makam" class="px-4 py-3 text-right rupiah-text">0</td> 
-                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right rupiah-text">0</td> 
-                            <td id="total-biaya-haul" class="px-4 py-3 text-right rupiah-text">0</td> 
+                            <td id="total-donasi-input" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
+                            <td id="total-perawatan-makam" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
+                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
+                            <td id="total-biaya-haul" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
                         </tr>
                     </tfoot>
                 </table>
@@ -281,7 +287,7 @@
             const numberString = absoluteAngka.toString();
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             // Untuk footer total, tidak perlu ditambahkan prefix 'Rp' karena sudah ada di label
-            return (isFooterTotal ? '' : '') + sign + rupiah;
+            return sign + rupiah;
         };
         
         // Fungsi untuk menghitung alokasi dana dari nilai donasi
@@ -302,7 +308,6 @@
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
-                // Gunakan true untuk isFooterTotal agar tidak ada 'Rp' prefix di footer
                 element.textContent = formatRupiah(value, true); 
             }
         };
@@ -413,15 +418,13 @@
 
                     let alokasiData = data.alokasi;
                     
-                    // --- PERBAIKAN KRITIS: Hitung ulang alokasi jika data lama atau tidak lengkap ---
                     if (!alokasiData || 
                         alokasiData.perawatan_makam === undefined || 
                         alokasiData.bisyaroh_panitia === undefined ||
-                        alokasiData.biaya_haul === undefined) // Tambah pengecekan biaya_haul juga
+                        alokasiData.biaya_haul === undefined) 
                     {
                         alokasiData = calculateAlokasi(nilaiDonasi);
                     }
-                    // ------------------------------------------------------------------------------
 
                     allDonatur.push({
                         id: doc.id, 
@@ -512,9 +515,7 @@
             }
 
             allDonatur.forEach((d, index) => {
-                // Pastikan semua nilai adalah angka, jika tidak, anggap 0
                 const nilaiDonasi = parseFloat(d.nilai) || 0;
-                // Ambil nilai alokasi dari data yang sudah dipastikan lengkap di loadAndRenderDonatur
                 const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
                 const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
                 const bh = parseFloat(d.alokasi.biaya_haul) || 0;
@@ -526,19 +527,19 @@
 
                 const row = tableBody.insertRow();
                 
-                // Format tanggal DD/MM/YYYY
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
+                // Menggunakan kelas `angka-rupiah-data` untuk baris data
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
                     <td class="px-4 py-3 kolom-nama">${d.nama}</td>
                     <td class="px-4 py-3 kolom-alamat">${d.alamat}</td>
-                    <td class="px-4 py-3 text-yellow-accent rupiah-text">${formatRupiah(nilaiDonasi)}</td>
-                    <td class="px-4 py-3 rupiah-text">${formatRupiah(pm)}</td>
-                    <td class="px-4 py-3 rupiah-text">${formatRupiah(bp)}</td>
-                    <td class="px-4 py-3 rupiah-text">${formatRupiah(bh)}</td>
+                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(nilaiDonasi)}</td>
+                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(pm)}</td>
+                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(bp)}</td>
+                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(bh)}</td>
                 `;
             });
 
@@ -552,7 +553,6 @@
             const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
             if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
                 console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi}). Selisih Pembulatan: ${totalDonasiInput - totalAkumulasiAlokasi}`);
-                // Memberi tahu admin jika ada perbedaan
                 if (isAdminLoggedIn) {
                      alert(`Peringatan: Total Donasi (${formatRupiah(totalDonasiInput)}) tidak sama dengan Total Alokasi (${formatRupiah(totalAkumulasiAlokasi)}). Selisih Pembulatan: ${formatRupiah(totalDonasiInput - totalAkumulasiAlokasi)}`);
                 }
@@ -564,7 +564,6 @@
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            // Set input tanggal ke tanggal hari ini secara default
             const today = new Date().toLocaleDateString('en-CA');
             const dateInput = document.getElementById('donatur-date-input');
             if (dateInput) {
