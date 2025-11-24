@@ -224,8 +224,20 @@
                 </table>
             </div>
             
-            <div id="jurnal-kas-pagination" class="flex justify-center mt-4 mb-10 space-x-2">
+            <div id="jurnal-kas-pagination" class="flex justify-center mt-4 mb-4 space-x-2">
                 </div>
+            
+            <div id="pdf-export-container" class="mt-4 p-4 rounded-xl bg-dark-green/50 shadow-lg flex flex-wrap justify-center gap-4 hidden">
+                <button onclick="exportPdfListDonatur()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
+                    ⬇️ Unduh PDF List Donatur
+                </button>
+                <button onclick="exportPdfLaporanDetailJurnal()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
+                    ⬇️ Unduh PDF Laporan Detail Jurnal
+                </button>
+                <button onclick="exportPdfLaporanGlobal()" class="bg-yellow-accent/90 text-dark-green py-2 px-4 rounded-lg hover:bg-yellow-accent font-bold transition duration-150 shadow-md text-sm">
+                    ⬇️ Unduh PDF Laporan Global (LPJ)
+                </button>
+            </div>
 
             
             <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
@@ -347,6 +359,10 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, writeBatch, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        // Import jsPDF dan autotable
+        import { jsPDF } from "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+        import "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.20/jspdf.plugin.autotable.min.js";
+
         
         // Konfigurasi Firebase Anda
         const firebaseConfig = {
@@ -421,6 +437,7 @@
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('pdf-export-container')?.classList.toggle('hidden', !isLogged); // Tambah tombol PDF
         };
         
         // Fungsi Generik untuk Membuat Tombol Pagination
@@ -919,8 +936,255 @@
             setupPagination(kasEntries, currentJurnalKasPage, 'jurnal-kas-pagination', renderJurnalKasTable);
         };
 
+
         // --------------------------------------------------------------------------------
-        // 6. INISIALISASI
+        // 6. PDF EXPORT FUNCTIONS
+        // --------------------------------------------------------------------------------
+
+        // Helper untuk menambah header dan footer tanda tangan di PDF
+        const addHeaderAndSignature = (doc, title, startY) => {
+            doc.setFontSize(16);
+            doc.setTextColor(30, 71, 42); // Warna Dark Green
+            doc.text(title, 105, 20, { align: 'center' }); 
+            
+            doc.setFontSize(10);
+            doc.setTextColor(50, 50, 50); 
+            const date = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            doc.text(`Pati, ${date}`, 175, startY + 5, { align: 'right' }); 
+
+            doc.setFontSize(10);
+            const signatureY = startY + 40;
+            doc.text("Mengetahui,", 35, signatureY);
+            doc.text("Ketua Panitia Haul", 35, signatureY + 5);
+            doc.text("Bendahara Haul", 105, signatureY + 5, { align: 'center' });
+            doc.text("Sekretaris", 175, signatureY + 5, { align: 'right' });
+
+            doc.text(".................................................", 35, signatureY + 25, { align: 'center' }); 
+            doc.text(".................................................", 105, signatureY + 25, { align: 'center' }); 
+            doc.text(".................................................", 175, signatureY + 25, { align: 'right' });
+        };
+
+
+        // FUNGSI 1: Unduh PDF List Donatur (Kolom 1-5)
+        window.exportPdfListDonatur = () => {
+            if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
+
+            const doc = new jsPDF();
+            const headers = [
+                ["NO", "TANGGAL", "NAMA DONATUR", "ALAMAT", "NILAI (RP)"]
+            ];
+            
+            // Siapkan data Donatur
+            let totalNilai = 0;
+            const bodyData = allDonatur.map((d, index) => {
+                const dateObj = new Date(d.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                totalNilai += d.nilai;
+                return [
+                    index + 1,
+                    formattedDate,
+                    d.nama,
+                    d.alamat,
+                    formatRupiah(d.nilai) 
+                ];
+            });
+
+            // Tambahkan Baris Total
+            bodyData.push([
+                { content: "TOTAL DONASI KESELURUHAN:", colSpan: 4, styles: { fillColor: '#1a472a', textColor: '#ffeb3b', fontStyle: 'bold', halign: 'right', fontSize: 11 } },
+                { content: formatRupiah(totalNilai), styles: { fillColor: '#1a472a', textColor: '#ffeb3b', fontStyle: 'bold', halign: 'right', fontSize: 11 } }
+            ]);
+
+            addHeaderAndSignature(doc, "Laporan Detail Donasi Haul", 200);
+
+            doc.autoTable({
+                head: headers,
+                body: bodyData,
+                startY: 30,
+                theme: 'striped',
+                headStyles: { fillColor: '#1a472a', textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 9 },
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 10 },
+                    1: { halign: 'left', cellWidth: 20 },
+                    2: { halign: 'left', cellWidth: 50 },
+                    3: { halign: 'left', cellWidth: 50 },
+                    4: { halign: 'right', cellWidth: 35 }
+                }
+            });
+            
+            doc.save(`PDF_List_Donatur_${new Date().toLocaleDateString('id-ID')}.pdf`);
+        };
+
+
+        // FUNGSI 2: Unduh PDF Laporan Detail Jurnal (Tanpa Kategori)
+        window.exportPdfLaporanDetailJurnal = () => {
+            if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
+
+            const doc = new jsPDF();
+            const headers = [
+                ["NO", "TANGGAL", "URAIAN TRANSAKSI", "DANA MASUK (RP)", "DANA KELUAR (RP)", "SALDO AKHIR (RP)"]
+            ];
+            
+            // Siapkan data Jurnal Kas
+            const totalDonasi = allDonatur.reduce((sum, d) => sum + d.nilai, 0);
+
+            const kasEntries = [];
+            if (totalDonasi > 0) {
+                kasEntries.push({
+                    date: new Date().toLocaleDateString('en-CA'), 
+                    uraian: 'TOTAL SELURUH DONASI (Awal Kas)',
+                    masuk: totalDonasi,
+                    keluar: 0,
+                    timestamp: 0 
+                });
+            }
+
+            allPengeluaran.forEach(p => {
+                kasEntries.push({
+                    date: p.date,
+                    uraian: p.uraian,
+                    masuk: 0,
+                    keluar: p.nilai_keluar,
+                    timestamp: p.timestamp 
+                });
+            });
+
+            kasEntries.sort((a, b) => {
+                if (a.timestamp === 0 && b.timestamp !== 0) return -1; 
+                if (b.timestamp === 0 && a.timestamp !== 0) return 1;
+                return a.timestamp - b.timestamp;
+            });
+
+            let saldo = 0;
+            const bodyData = kasEntries.map((entry, index) => {
+                saldo += entry.masuk - entry.keluar;
+                const dateObj = new Date(entry.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                return [
+                    index + 1,
+                    formattedDate,
+                    entry.uraian,
+                    entry.masuk > 0 ? formatRupiah(entry.masuk) : '-',
+                    entry.keluar > 0 ? formatRupiah(entry.keluar) : '-',
+                    formatRupiah(saldo)
+                ];
+            });
+
+            // Tambahkan Baris Total Saldo Akhir
+            bodyData.push([
+                { content: "TOTAL SALDO AKHIR:", colSpan: 5, styles: { fillColor: '#1a472a', textColor: '#ffeb3b', fontStyle: 'bold', halign: 'right', fontSize: 11 } },
+                { content: formatRupiah(saldo), styles: { fillColor: saldo >= 0 ? '#1a472a' : '#ef5350', textColor: '#ffeb3b', fontStyle: 'bold', halign: 'right', fontSize: 11 } }
+            ]);
+
+            addHeaderAndSignature(doc, "Laporan Detail Jurnal Kas Haul", 200);
+
+            doc.autoTable({
+                head: headers,
+                body: bodyData,
+                startY: 30,
+                theme: 'striped',
+                headStyles: { fillColor: '#1a472a', textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 9 },
+                styles: { fontSize: 8, cellPadding: 2 },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 10 },
+                    1: { halign: 'left', cellWidth: 20 },
+                    2: { halign: 'left' },
+                    3: { halign: 'right', cellWidth: 30 },
+                    4: { halign: 'right', cellWidth: 30 },
+                    5: { halign: 'right', cellWidth: 30 }
+                }
+            });
+
+            doc.save(`PDF_Laporan_Detail_Jurnal_${new Date().toLocaleDateString('id-ID')}.pdf`);
+        };
+
+
+        // FUNGSI 3: Unduh PDF Laporan Global (LPJ) - Ringkasan Per Kategori
+        window.exportPdfLaporanGlobal = () => {
+            if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mengunduh laporan.');
+
+            const doc = new jsPDF();
+            const headers = [
+                ["URAIAN", "JUMLAH (Rp)"]
+            ];
+
+            // 1. Hitung Total Dana Masuk
+            const totalDonasi = allDonatur.reduce((sum, d) => sum + d.nilai, 0);
+            
+            // 2. Hitung Total Dana Keluar per Kategori
+            const categoryTotals = allPengeluaran.reduce((acc, p) => {
+                const key = p.kategori || 'Pengeluaran Lain';
+                acc[key] = (acc[key] || 0) + p.nilai_keluar;
+                return acc;
+            }, {});
+            
+            const totalDanaKeluar = Object.values(categoryTotals).reduce((sum, val) => sum + val, 0);
+            const saldoAkhir = totalDonasi - totalDanaKeluar;
+
+            // 3. Susun Data LPJ
+            const bodyData = [];
+            let startY = 30; // Posisi Awal Tabel
+
+            // --- DANA MASUK ---
+            bodyData.push([
+                { content: "DANA MASUK", colSpan: 2, styles: { fillColor: [147, 197, 253], textColor: [30, 71, 42], fontStyle: 'bold', halign: 'left' } }
+            ]);
+            bodyData.push(["Donatur (Total Donasi)", formatRupiah(totalDonasi)]);
+
+            bodyData.push([
+                { content: "TOTAL DANA MASUK", colSpan: 1, styles: { fillColor: [100, 220, 100], textColor: [30, 71, 42], fontStyle: 'bold' } },
+                { content: formatRupiah(totalDonasi), colSpan: 1, styles: { fillColor: [100, 220, 100], textColor: [30, 71, 42], fontStyle: 'bold', halign: 'right' } }
+            ]);
+
+            // --- DANA KELUAR ---
+            bodyData.push([
+                { content: "DANA KELUAR", colSpan: 2, styles: { fillColor: [255, 192, 203], textColor: [30, 71, 42], fontStyle: 'bold', halign: 'left' } }
+            ]);
+            
+            Object.keys(categoryTotals).forEach(category => {
+                bodyData.push([category, formatRupiah(categoryTotals[category])]);
+            });
+
+            bodyData.push([
+                { content: "TOTAL DANA KELUAR", colSpan: 1, styles: { fillColor: [255, 100, 100], textColor: [30, 71, 42], fontStyle: 'bold' } },
+                { content: formatRupiah(totalDanaKeluar), colSpan: 1, styles: { fillColor: [255, 100, 100], textColor: [30, 71, 42], fontStyle: 'bold', halign: 'right' } }
+            ]);
+
+            // --- SALDO AKHIR ---
+            bodyData.push([
+                { content: "SALDO AKHIR", colSpan: 1, styles: { fillColor: [255, 255, 100], textColor: [30, 71, 42], fontStyle: 'bold' } },
+                { content: formatRupiah(saldoAkhir), colSpan: 1, styles: { fillColor: [255, 255, 100], textColor: [30, 71, 42], fontStyle: 'bold', halign: 'right' } }
+            ]);
+
+
+            // Render Tabel Utama
+            doc.autoTable({
+                head: headers,
+                body: bodyData,
+                startY: startY,
+                theme: 'plain',
+                headStyles: { fillColor: [74, 56, 175], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 10 },
+                styles: { fontSize: 9, cellPadding: 2 },
+                columnStyles: {
+                    0: { halign: 'left', cellWidth: 100 },
+                    1: { halign: 'right', cellWidth: 80 }
+                },
+                didDrawPage: (data) => {
+                    startY = data.cursor.y;
+                }
+            });
+
+            // Tambahkan Tanda Tangan
+            addHeaderAndSignature(doc, "Laporan Pertanggungjawaban Keuangan Haul", startY + 5);
+
+            doc.save(`PDF_Laporan_Global_LPJ_${new Date().toLocaleDateString('id-ID')}.pdf`);
+        };
+
+
+        // --------------------------------------------------------------------------------
+        // 7. INISIALISASI
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
