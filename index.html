@@ -44,11 +44,26 @@
             font-size: 0.75rem; /* text-xs */
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
+            /* Mengatur lebar kolom tanggal lebih lebar dari w-24 */
         }
         /* Style untuk Konten Tabel */
         #donatur-table td {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1.5rem; /* Tambah jarak antar kolom */
             vertical-align: top;
+            font-weight: normal; /* Pastikan isi tabel tidak tebal */
+        }
+        /* Style khusus untuk kolom Nilai dan Kumulatif agar rapi */
+        #donatur-table .nilai-kolom {
+            width: 150px; /* Lebar kolom nilai */
+            min-width: 150px;
+        }
+        #donatur-table .kumulatif-kolom {
+            width: 170px; /* Lebar kolom kumulatif */
+            min-width: 170px;
+        }
+        /* Style untuk footer agar tetap tebal dan menonjol */
+        #donatur-table tfoot td {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -73,11 +88,11 @@
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider rounded-tl-xl w-10">NO</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-24">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-32">TANGGAL</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">NAMA DONATUR</th>
                             <th class="px-4 py-3 text-left font-bold uppercase tracking-wider">ALAMAT</th>
-                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider w-32">NILAI (RP)</th>
-                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl w-40">JUMLAH JARIYAH (KUMULATIF)</th>
+                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider nilai-kolom">NILAI (RP)</th>
+                            <th class="px-4 py-3 text-right font-bold uppercase tracking-wider rounded-tr-xl kumulatif-kolom">JUMLAH JARIYAH (KUMULATIF)</th>
                         </tr>
                     </thead>
                     <tbody id="donatur-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
@@ -86,8 +101,8 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
-                            <td id="total-nilai-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">Rp 0</td>
-                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">Rp 0</td>
+                            <td id="total-nilai-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td>
+                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -178,17 +193,19 @@
         // --------------------------------------------------------------------------------
 
         const formatRupiah = (angka) => {
-            if (typeof angka !== 'number') return 'Rp 0';
+            if (typeof angka !== 'number') return '0';
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
+            // PERBAIKAN: Hapus awalan 'Rp '
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            return sign + 'Rp ' + rupiah;
+            return sign + rupiah;
         };
 
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
+                // PERBAIKAN: Hapus 'Rp ' dari formatRupiah, hanya menampilkan angka
                 element.textContent = formatRupiah(value);
             }
         };
@@ -196,13 +213,13 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Tampilkan/Sembunyikan Login Form di bawah tabel
+            // Tampilkan/Sembunyikan Login Form
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             
-            // Tampilkan/Sembunyikan Admin Actions (Reset/Logout) di bawah tabel
+            // Tampilkan/Sembunyikan Admin Actions (Reset/Logout)
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
-            // Tampilkan/Sembunyikan Input Donasi Baru form (SEKARANG DI BAWAH TABEL)
+            // Tampilkan/Sembunyikan Input Donasi Baru form (DI BAWAH TABEL)
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
@@ -306,9 +323,9 @@
                     allDonatur.push({
                         id: doc.id, 
                         date: data.date,
-                        nama: data.nama || data.uraian || 'Tanpa Nama', // Menggunakan 'nama' atau fallback ke 'uraian'
-                        alamat: data.alamat || '-', // Menggunakan 'alamat'
-                        nilai: data.nilai || data.danaMasuk || 0, // Menggunakan 'nilai' atau fallback ke 'danaMasuk'
+                        nama: data.nama || data.uraian || 'Tanpa Nama',
+                        alamat: data.alamat || '-',
+                        nilai: data.nilai || data.danaMasuk || 0, 
                         timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
@@ -392,10 +409,10 @@
                 row.innerHTML = `
                     <td class="px-4 py-3 text-center">${index + 1}</td>
                     <td class="px-4 py-3">${formattedDate}</td>
-                    <td class="px-4 py-3 font-medium">${d.nama}</td>
+                    <td class="px-4 py-3">${d.nama}</td>
                     <td class="px-4 py-3 text-sm">${d.alamat}</td>
                     <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(d.nilai)}</td>
-                    <td class="px-4 py-3 text-right font-bold text-lg text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
+                    <td class="px-4 py-3 text-right text-lg text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
                 `;
             });
 
