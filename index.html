@@ -189,7 +189,7 @@
         
         <div class="bg-dark-green text-text-light py-4 px-6 flex justify-center items-center">
             <h1 class="text-3xl font-bold text-center text-yellow-accent">
-                Catatan Pembukuan Donatur Haul
+                Catatan Pembukuan Haul - Bendahara
             </h1>
         </div>
 
@@ -197,6 +197,61 @@
         <div class="bg-medium-green p-8 text-text-light">
 
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
+                Jurnal Kas Umum (Dana Masuk & Keluar)
+            </h2>
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
+                <table id="jurnal-kas-table" class="min-w-full divide-y divide-text-light/20">
+                    <thead class="bg-dark-green/80 text-text-light">
+                        <tr>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tl-xl w-12 kolom-no">NO</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-24 kolom-tanggal">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">URAIAN</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">KATEGORI</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA MASUK (RP)</th> 
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA KELUAR (RP)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl w-32">SALDO (RP)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jurnal-kas-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
+                        <tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat Jurnal Kas...</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
+                            <td colspan="4" class="px-4 py-3 text-right">TOTAL SALDO AKHIR:</td>
+                            <td colspan="3" id="total-saldo-akhir" class="px-4 py-3 text-right total-angka-rupiah">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            
+            <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-red-danger border-b border-red-danger/50 pb-3">
+                    Input Pengeluaran / Dana Keluar
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="date" id="kas-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                    
+                    <input type="text" id="kas-uraian-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Uraian (Contoh: Bayar listrik tenda)" required>
+                    
+                    <select id="kas-kategori-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                        <option value="" disabled selected>-- Pilih Kategori --</option>
+                        <option value="Ongkos Kiai">Ongkos Kiai</option>
+                        <option value="Bayar Khataman">Bayar Khataman</option>
+                        <option value="Bayar Konsumsi">Bayar Konsumsi</option>
+                        <option value="Bayar Persewaan">Bayar Persewaan</option>
+                        <option value="Bayar Pekerja">Bayar Pekerja</option>
+                        <option value="Lain-Lain">Lain-Lain</option>
+                    </select>
+                    
+                    <input type="number" id="kas-nilai-keluar-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Pengeluaran (Rp)" required>
+                </div>
+                
+                <button onclick="addPengeluaran()" class="bg-red-danger text-white py-3 px-6 rounded-lg hover:bg-red-danger/90 w-full font-bold transition duration-150 shadow-md mt-6">
+                    Simpan Dana Keluar
+                </button>
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Ringkasan Data Transaksi Donatur (Dana Masuk)
             </h2>
             <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
@@ -229,35 +284,6 @@
                 </table>
             </div>
 
-
-            <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                Jurnal Kas Umum (Dana Masuk & Keluar)
-            </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
-                <table id="jurnal-kas-table" class="min-w-full divide-y divide-text-light/20">
-                    <thead class="bg-dark-green/80 text-text-light">
-                        <tr>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tl-xl w-12 kolom-no">NO</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-24 kolom-tanggal">TANGGAL</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">URAIAN</th>
-                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">KATEGORI</th>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA MASUK (RP)</th> 
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA KELUAR (RP)</th>
-                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl w-32">SALDO (RP)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="jurnal-kas-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
-                        <tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat Jurnal Kas...</td></tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right">TOTAL SALDO AKHIR:</td>
-                            <td colspan="3" id="total-saldo-akhir" class="px-4 py-3 text-right total-angka-rupiah">0</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
             <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                     Input Data Donatur Baru
@@ -274,33 +300,6 @@
                 
                 <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
                     Simpan Donasi & Alokasikan Dana
-                </button>
-            </div>
-
-            <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
-                <h2 class="text-2xl font-bold mb-6 text-red-danger border-b border-red-danger/50 pb-3">
-                    Input Pengeluaran / Dana Keluar
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <input type="date" id="kas-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
-                    
-                    <input type="text" id="kas-uraian-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Uraian (Contoh: Bayar listrik tenda)" required>
-                    
-                    <select id="kas-kategori-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
-                        <option value="" disabled selected>-- Pilih Kategori --</option>
-                        <option value="Ongkos Kiai">Ongkos Kiai</option>
-                        <option value="Bayar Khataman">Bayar Khataman</option>
-                        <option value="Bayar Konsumsi">Bayar Konsumsi</option>
-                        <option value="Bayar Persewaan">Bayar Persewaan</option>
-                        <option value="Bayar Pekerja">Bayar Pekerja</option>
-                        <option value="Lain-Lain">Lain-Lain</option>
-                    </select>
-                    
-                    <input type="number" id="kas-nilai-keluar-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Pengeluaran (Rp)" required>
-                </div>
-                
-                <button onclick="addPengeluaran()" class="bg-red-danger text-white py-3 px-6 rounded-lg hover:bg-red-danger/90 w-full font-bold transition duration-150 shadow-md mt-6">
-                    Simpan Dana Keluar
                 </button>
             </div>
             
@@ -356,10 +355,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const donaturCol = collection(db, "transaksi_haul"); 
-        const pengeluaranCol = collection(db, "transaksi_keluar"); // KOLEKSI BARU UNTUK PENGELUARAN
+        const pengeluaranCol = collection(db, "transaksi_keluar"); 
 
         let allDonatur = []; 
-        let allPengeluaran = []; // ARRAY BARU UNTUK PENGELUARAN
+        let allPengeluaran = []; 
         let isAdminLoggedIn = false; 
         
         // Konstanta Prosentase Alokasi
@@ -409,7 +408,7 @@
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
-            document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged); // BARU
+            document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
         // --------------------------------------------------------------------------------
@@ -423,7 +422,7 @@
                 isAdminLoggedIn = false;
             }
             updateAdminView();
-            loadAndRenderData(); // MEMUAT KEDUA TABEL SAAT LOGIN/LOGOUT BERUBAH
+            loadAndRenderData(); 
         });
 
 
@@ -473,21 +472,21 @@
              
              try {
                 const donaturSnapshot = await getDocs(donaturCol);
-                const pengeluaranSnapshot = await getDocs(pengeluaranCol); // BARU
+                const pengeluaranSnapshot = await getDocs(pengeluaranCol); 
                 const batch = writeBatch(db); 
                 
                 donaturSnapshot.docs.forEach((d) => {
                     batch.delete(doc(db, "transaksi_haul", d.id));
                 });
                 
-                pengeluaranSnapshot.docs.forEach((d) => { // BARU
+                pengeluaranSnapshot.docs.forEach((d) => { 
                     batch.delete(doc(db, "transaksi_keluar", d.id));
                 });
                 
                 await batch.commit();
 
                 alert('SEMUA DATA DONASI DAN PENGELUARAN BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
-                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
+                await loadAndRenderData(); 
              } catch (error) {
                  console.error("Gagal mereset data:", error);
                  alert('Gagal menghapus data di Firestore. Cek console log.');
@@ -501,7 +500,7 @@
 
         const loadAndRenderData = async () => {
             allDonatur = [];
-            allPengeluaran = []; // BARU
+            allPengeluaran = []; 
 
             const tableBodyDonasi = document.getElementById('donatur-table-body');
             const tableBodyKas = document.getElementById('jurnal-kas-table-body');
@@ -555,7 +554,7 @@
                     });
                 });
 
-                renderTables(); // Panggil fungsi render utama
+                renderTables(); 
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
@@ -606,7 +605,7 @@
                 document.getElementById('donasi-nilai-input').value = '';
                 
                 alert('Donasi berhasil ditambahkan & dana dialokasikan!');
-                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
+                await loadAndRenderData(); 
             } catch (error) {
                 console.error("Gagal menambahkan Donasi:", error);
                 alert("Gagal menyimpan donasi. Cek console log.");
@@ -642,7 +641,7 @@
                 document.getElementById('kas-kategori-input').value = '';
                 
                 alert('Pengeluaran berhasil dicatat!');
-                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
+                await loadAndRenderData(); 
             } catch (error) {
                 console.error("Gagal menambahkan Pengeluaran:", error);
                 alert("Gagal menyimpan pengeluaran. Cek console log.");
@@ -715,9 +714,6 @@
             const totalAkumulasiAlokasi = totalPerawatanMakam + totalBisyarohPanitia + totalBiayaHaul;
             if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
                 console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi}). Selisih Pembulatan: ${totalDonasiInput - totalAkumulasiAlokasi}`);
-                if (isAdminLoggedIn) {
-                     // Ini hanya error konsol/log, tidak perlu pop-up yang mengganggu
-                }
             }
         };
 
@@ -725,6 +721,7 @@
             const tableBody = document.getElementById('jurnal-kas-table-body');
             tableBody.innerHTML = '';
             
+            // Ambil total Donasi dari footer tabel donatur
             const totalDonasi = parseFloat(document.getElementById('total-donasi-input').textContent.replace(/\./g, '')) || 0;
             let saldo = 0;
             let no = 1;
@@ -732,10 +729,9 @@
             const kasEntries = [];
 
             // 1. Tambahkan Total Donasi sebagai BARIS PERTAMA JURNAL (Dana Masuk)
-            // Ini mengambil total dari tabel donatur
             if (totalDonasi > 0) {
                 kasEntries.push({
-                    date: new Date().toLocaleDateString('en-CA'), // Tanggal hari ini
+                    date: new Date().toLocaleDateString('en-CA'), 
                     uraian: 'TOTAL SELURUH DONASI (Awal Kas)',
                     kategori: 'Donatur',
                     masuk: totalDonasi,
