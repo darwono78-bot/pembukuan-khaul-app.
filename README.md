@@ -1,2 +1,2 @@
-# pembukuan-khaul-app.
+# pembukuan-haul.
 web pengelolaankeuangan dana khaul
