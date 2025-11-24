@@ -365,11 +365,11 @@
             return 'Rp ' + rupiah;
         };
 
-        const updateAdminView = () => {
+            const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // 1. Tampilkan/Sembunyikan Panel Login/Logout
-            // Catatan: Pastikan di HTML Anda ada id='login-form-container' dan id='admin-actions-container'
+            // 1. Tampilkan/Sembunyikan Panel Login/Logout dan Aksi Admin
+            // (Pastikan ID ini ada di HTML: login-form-container, admin-actions-container)
             document.getElementById('login-form-container').classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container').classList.toggle('hidden', !isLogged);
             
@@ -381,13 +381,14 @@
             thJurnalUraian.textContent = isLogged ? 'Uraian' : 'Uraian / Keterangan'; // Ubah teks header
             
             // Lindungi dari Null: Periksa keberadaan elemen sebelum memanipulasi classList
+            // (th-jurnal-kategori dan th-jurnal-aksi hanya ditampilkan saat Admin)
             const thKategori = document.getElementById('th-jurnal-kategori');
             const thAksiJurnal = document.getElementById('th-jurnal-aksi');
             if (thKategori) thKategori.classList.toggle('hidden', !isLogged);
             if (thAksiJurnal) thAksiJurnal.classList.toggle('hidden', !isLogged);
             
             // Update colspan total jurnal (Footer)
-            // Catatan: Pastikan di HTML ada td-jurnal-total-col
+            // (td-jurnal-total-col akan bertambah lebar jika kolom kategori dan aksi hilang)
             document.getElementById('td-jurnal-total-col').setAttribute('colspan', isLogged ? '3' : '4'); 
             const tdKategori = document.getElementById('td-jurnal-total-kategori');
             const tdAksiJurnal = document.getElementById('td-jurnal-total-aksi');
@@ -396,8 +397,10 @@
 
 
             // --- LAPORAN DONATUR (RAPIH PUBLIK) ---
-            // Catatan: Pastikan di HTML ada donatur-note-persentase
+            // Catatan Donatur (Persentase)
             document.getElementById('donatur-note-persentase').classList.toggle('hidden', !isLogged);
+            
+            // Kolom Header Persentase dan Aksi
             const thPresentase = document.getElementById('th-donatur-presentase');
             const rowPresentase = document.getElementById('donatur-presentase-row');
             const thAksiDonatur = document.getElementById('th-donatur-aksi');
@@ -438,12 +441,12 @@
             currentDonaturPage = 1;
             currentJurnalPage = 1;
             
+            // !!! BARIS PANGGILAN goToPage YANG SEBELUMNYA ERROR KINI SUDAH DIHAPUS DARI SINI !!!
+            
             // Render ulang tabel untuk menampilkan/menyembunyikan baris/kolom aksi
             renderAllTables();
         };
-        
-        window.goToPage = goToPage; // Agar bisa dipanggil dari HTML
-        
+
         // --------------------------------------------------------------------------------
         // 4. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
         // --------------------------------------------------------------------------------
@@ -1050,6 +1053,7 @@
     </script>
 </body>
 </html>
+
 
 
 
