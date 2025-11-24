@@ -106,7 +106,7 @@
     </div>
 
     <script type="module">
-       // --------------------------------------------------------------------------------
+        // --------------------------------------------------------------------------------
         // 1. FIREBASE SETUP DAN KONFIGURASI
         // --------------------------------------------------------------------------------
         
@@ -116,26 +116,15 @@
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
         // !!! HARAP GANTI TOTAL DENGAN KONFIGURASI FIREBASE ASLI ANDA !!!
-            <script type="module">
-              // Import the functions you need from the SDKs you need
-              import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-              // TODO: Add SDKs for Firebase products that you want to use
-              // https://firebase.google.com/docs/web/setup#available-libraries
-            
-              // Your web app's Firebase configuration
-              const firebaseConfig = {
-                apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
-                authDomain: "catatan-keuangan-haul.firebaseapp.com",
-                projectId: "catatan-keuangan-haul",
-                storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-                messagingSenderId: "955355049778",
-                appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
-              };
-            
-              // Initialize Firebase
-              const app = initializeApp(firebaseConfig);
-            </script>
-       
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
+            authDomain: "catatan-keuangan-haul.firebaseapp.com",
+            projectId: "catatan-keuangan-haul",
+            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+            messagingSenderId: "955355049778",
+            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+        };
+        
         // Initialize Firebase dan dapatkan referensi Auth & Firestore
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -382,4 +371,3 @@
     </script>
 </body>
 </html>
-
