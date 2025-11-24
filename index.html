@@ -45,11 +45,12 @@
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
-        /* Style untuk Konten Tabel - PADDING DIKURANGI AGAR LEBIH RAPI */
+        /* Style untuk Konten Tabel - FONT SAMA RATA & PADDING */
         #donatur-table td {
-            padding: 0.75rem 1rem; /* Padding dikurangi dari 1.5rem menjadi 1rem */
+            padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
+            font-size: 1rem; /* Ukuran Font Normal (default) */
         }
         /* Style khusus untuk kolom Nilai dan Kumulatif agar rapi */
         #donatur-table .nilai-kolom {
@@ -59,6 +60,7 @@
         #donatur-table .kumulatif-kolom {
             width: 170px; 
             min-width: 170px;
+            font-weight: bold; /* Kumulatif di isi tabel (tbody) tetap dibuat tebal */
         }
         /* Style untuk kolom NO dan TANGGAL agar sempit dan tidak boros ruang */
         #donatur-table .kolom-no {
@@ -66,12 +68,13 @@
             text-align: center;
         }
         #donatur-table .kolom-tanggal {
-            width: 100px; /* Lebar kolom tanggal diatur agar cukup untuk DD/MM/YYYY */
+            width: 100px; 
             min-width: 100px;
         }
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
             font-weight: bold;
+            font-size: 1.125rem; /* text-lg untuk footer (total) */
         }
     </style>
 </head>
@@ -109,9 +112,7 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL DONASI KESELURUHAN:</td>
-                            <td id="total-nilai-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td>
-                            <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td>
-                        </tr>
+                            <td class="px-4 py-3 text-right text-yellow-accent text-lg"></td> <td id="total-akumulasi-donasi" class="px-4 py-3 text-right text-yellow-accent text-lg">0</td> </tr>
                     </tfoot>
                 </table>
             </div>
@@ -169,12 +170,10 @@
         // 1. FIREBASE SETUP DAN KONFIGURASI
         // --------------------------------------------------------------------------------
         
-        // Import fungsi-fungsi yang diperlukan dari Firebase SDK (Versi 9 modular)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // KONFIGURASI FIREBASE FINAL
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -184,15 +183,11 @@
             appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
         
-        // Initialize Firebase dan dapatkan referensi Auth & Firestore
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        // Definisikan Collection (Menggunakan nama koleksi yang sudah disepakati)
         const donaturCol = collection(db, "transaksi_haul"); 
 
-        // Global State
         let allDonatur = []; 
         let isAdminLoggedIn = false; 
 
@@ -220,13 +215,8 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Tampilkan/Sembunyikan Login Form
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
-            
-            // Tampilkan/Sembunyikan Admin Actions (Reset/Logout)
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
-            
-            // Tampilkan/Sembunyikan Input Donasi Baru form (DI BAWAH TABEL)
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
@@ -320,7 +310,6 @@
             tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
 
             try {
-                // Urutkan data berdasarkan timestamp/tanggal
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
                 const donaturSnapshot = await getDocs(donaturQuery);
 
@@ -373,7 +362,6 @@
             try {
                 await addDoc(donaturCol, newDonasi);
                 
-                // Reset form setelah sukses
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-alamat-input').value = '';
                 document.getElementById('donasi-nilai-input').value = '';
@@ -399,7 +387,8 @@
             
             if (allDonatur.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-text-light/70">Belum ada data donasi yang dicatat.</td></tr>`;
-                updateFooter('total-nilai-donasi', 0);
+                // Menghapus total nilai donasi di footer (permintaan no. 2)
+                // updateFooter('total-nilai-donasi', 0); // Di hapus dari sini karena ID nya sudah tidak dipakai
                 updateFooter('total-akumulasi-donasi', 0); 
                 return;
             }
@@ -410,7 +399,7 @@
 
                 const row = tableBody.insertRow();
                 
-                // PERBAIKAN: Format tanggal menjadi DD/MM/YYYY agar hanya 1 baris
+                // Format tanggal DD/MM/YYYY
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
@@ -420,12 +409,12 @@
                     <td class="px-4 py-3">${d.nama}</td>
                     <td class="px-4 py-3 text-sm">${d.alamat}</td>
                     <td class="px-4 py-3 text-right font-mono text-yellow-accent">${formatRupiah(d.nilai)}</td>
-                    <td class="px-4 py-3 text-right text-lg text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
+                    <td class="px-4 py-3 text-right text-yellow-accent">${formatRupiah(totalAkumulasiDonasi)}</td>
                 `;
             });
 
-            // Update Footer Total
-            updateFooter('total-nilai-donasi', totalNilaiDonasi);
+            // Update Footer Total: Hanya Kumulatif yang diisi
+            // Tidak perlu updateFooter('total-nilai-donasi') karena sudah tidak digunakan di HTML
             updateFooter('total-akumulasi-donasi', totalAkumulasiDonasi); 
         };
 
@@ -434,7 +423,6 @@
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            // Set tanggal hari ini di input
             const today = new Date().toLocaleDateString('en-CA');
             const dateInput = document.getElementById('donatur-date-input');
             if (dateInput) {
