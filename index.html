@@ -23,26 +23,22 @@
     </script>
     <style>
         body { 
-            font-family: 'Roboto', sans-serif; /* Menggunakan font yang umum dan bersih */
-            background-color: #1a472a; /* Warna hijau gelap untuk background */
-            color: #e0e0e0; /* Warna teks default */
+            font-family: 'Roboto', sans-serif;
+            background-color: #1a472a;
+            color: #e0e0e0;
         }
-        /* Hilangkan panah pada input type=number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none;
           margin: 0;
         }
-        /* Style untuk placeholder */
         ::placeholder {
             color: #a0a0a0;
-            opacity: 1; /* Override default opacity */
+            opacity: 1;
         }
-        /* Style untuk input date */
         input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1); /* Membuat ikon kalender putih */
+            filter: invert(1);
         }
-        /* Style untuk select (dropdown) */
         select {
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -59,25 +55,14 @@
 
     <div class="max-w-6xl mx-auto rounded-xl shadow-2xl overflow-hidden">
         
-        <div class="bg-dark-green text-text-light py-3 px-6 flex justify-end items-center border-b border-text-light/20">
-            <div id="login-form-container" class="flex flex-grow justify-end items-center gap-4">
-                <input type="email" id="admin-email-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Email Admin" value="darwono78@gmail.com" required>
-                <input type="password" id="admin-password-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Password Admin" value="haul2025" required>
-                <button onclick="adminLogin()" class="bg-yellow-accent text-dark-green py-2 px-4 rounded hover:bg-yellow-accent/90 font-semibold transition duration-150 shadow-md">
-                    Login Admin
-                </button>
-            </div>
-            
-            <div id="admin-status-container" class="hidden">
-                 <span class="text-sm font-semibold text-text-light">Selamat datang, Bendahara!</span>
-            </div>
+        <div class="bg-dark-green text-text-light py-3 px-6 flex justify-center items-center border-b border-text-light/20">
+            <h1 class="text-3xl font-bold text-center text-yellow-accent">
+                Catatan Pembukuan Donatur Haul
+            </h1>
         </div>
 
         
         <div class="bg-medium-green p-8 text-text-light">
-            <h1 class="text-3xl font-bold mb-6 text-center text-yellow-accent">
-                Catatan Pembukuan Donatur Haul
-            </h1>
 
             <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
@@ -114,7 +99,7 @@
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                 Ringkasan Data Transaksi
             </h2>
-            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl border border-text-light/20">
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl border border-text-light/20 mb-6">
                 <table class="min-w-full divide-y divide-text-light/20">
                     <thead class="bg-dark-green/80 text-text-light">
                         <tr>
@@ -140,16 +125,31 @@
                     </tfoot>
                 </table>
             </div>
-        </div>
-        
-        <div id="admin-actions-container" class="bg-dark-green/80 text-text-light p-4 flex justify-between items-center hidden">
-            <button onclick="confirmResetData()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
-                Reset Data (Hapus Permanen)
-            </button>
             
-            <button onclick="adminLogout()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
-                Logout
-            </button>
+            <div class="p-4 rounded-xl bg-dark-green/50 shadow-inner">
+                
+                <div id="login-form-container" class="flex flex-grow justify-end items-center gap-4 mb-4">
+                    <input type="email" id="admin-email-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Email Admin" value="darwono78@gmail.com" required>
+                    <input type="password" id="admin-password-input" class="p-2 border border-text-light/30 rounded bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Password Admin" value="haul2025" required>
+                    <button onclick="adminLogin()" class="bg-yellow-accent text-dark-green py-2 px-4 rounded hover:bg-yellow-accent/90 font-semibold transition duration-150 shadow-md">
+                        Login Admin
+                    </button>
+                </div>
+                
+                <div id="admin-actions-container" class="hidden">
+                    <p class="text-sm font-semibold mb-3 text-yellow-accent/80">Selamat datang, Bendahara! Mode Admin Aktif.</p>
+                    <div class="flex justify-between items-center gap-4">
+                        <button onclick="confirmResetData()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
+                            Reset Data (Hapus Permanen)
+                        </button>
+                        
+                        <button onclick="adminLogout()" class="bg-red-danger text-white py-2 px-4 rounded hover:bg-red-danger/90 text-sm transition duration-150 shadow-md">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
         </div>
         
     </div>
@@ -165,7 +165,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
-        // KONFIGURASI FIREBASE FINAL (Sesuai Konfirmasi Anda)
+        // KONFIGURASI FIREBASE FINAL
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -210,14 +210,13 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Toggle login form in the top bar
+            // Login Form di bawah tabel (Muncul saat BELUM Login)
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
-            document.getElementById('admin-status-container')?.classList.toggle('hidden', !isLogged);
             
-            // Toggle Admin Actions (Reset/Logout) below the table
+            // Admin Actions (Reset/Logout) di bawah tabel (Muncul setelah LOGIN)
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             
-            // Toggle Input Transaksi Baru form
+            // Input Transaksi Baru form (Muncul setelah LOGIN)
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
         };
 
@@ -225,7 +224,6 @@
         // 3. FIREBASE AUTH LOGIC (LOGIN/LOGOUT)
         // --------------------------------------------------------------------------------
 
-        // Mengelola perubahan status login: Ini akan dipanggil setiap kali status auth berubah
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 isAdminLoggedIn = true;
@@ -419,7 +417,6 @@
                 const row = tableBody.insertRow();
                 const formattedDate = new Date(t.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                 
-                // Menentukan warna teks berdasarkan jenis dana
                 const danaMasukText = t.danaMasuk > 0 ? 'text-yellow-accent' : 'text-text-light/50';
                 const danaKeluarText = t.danaKeluar > 0 ? 'text-red-danger' : 'text-text-light/50';
 
