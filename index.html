@@ -44,15 +44,15 @@
             /* A. Border Kuning: Tipis */
             border: 2px solid #fff352; 
 
-            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) */
+            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) - KEMBALI DITAMBAHKAN */
             box-shadow: 
                 0 0 10px rgba(255, 235, 59, 1), 
                 0 0 25px rgba(255, 235, 59, 0.7); 
 
-            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
+            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) - KEMBALI DITAMBAHKAN */
             filter: 
                 drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) 
-                drop_shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
+                drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
         }
         
         /* 3. Warna Inner Content: Lebih Gelap (#1D4F31) */
@@ -146,15 +146,15 @@
         /* Style untuk Label "TOTAL KESELURUHAN:" (KUNING) */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.005rem; 
+            font-size: 1.125rem; 
             color: #ffeb3b; /* KUNING (yellow-accent) */
         }
 
-        /* >>> PERBAIKAN: Angka Rupiah di Baris Total (Footer) DIKEMBALIKAN KE KUNING <<< */
+        /* Angka Rupiah di Baris Total (Footer) KUNING */
         #donatur-table tfoot .total-angka-rupiah { 
             font-size: 1.25rem; 
             color: #ffeb3b; /* KUNING (yellow-accent) */
-            font-weight: normal; /* TIDAK TEBAL */
+            font-weight: normal; 
         }
     </style>
 </head>
@@ -577,5 +577,3 @@
     </script>
 </body>
 </html>
-
-
