@@ -444,14 +444,18 @@
                     // Tombol Non-Aktif (Warna Hijau Gelap dengan Border Kuning)
                     button.classList.add('bg-dark-green', 'text-yellow-accent', 'hover:bg-dark-green/70', 'border', 'border-yellow-accent');
                     button.onclick = () => {
+                        // *** PERUBAHAN INTI LOGIKA PAGINATION ***
                         if (containerId === 'donatur-pagination') {
                             currentDonaturPage = page;
                         } else {
                             currentJurnalKasPage = page;
                         }
+                        
+                        // Panggil fungsi render ulang yang SPESIFIK untuk tabel ini
+                        renderFunction(); 
+                        
                         // Scroll ke atas tabel setelah pindah halaman
                         document.getElementById(containerId).previousElementSibling.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        renderFunction(); // Panggil fungsi render ulang
                     };
                 }
                 
@@ -638,7 +642,7 @@
                     });
                 });
 
-                renderTables(); 
+                renderAllDataInitial(); // Panggil fungsi render awal
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
@@ -741,7 +745,9 @@
         // 5. RENDER DATA (LOGIC TOTAL & SALDO)
         // --------------------------------------------------------------------------------
 
-        const renderTables = () => {
+        const renderAllDataInitial = () => {
+            // PENTING: Donatur harus di-render duluan agar total donasi terhitung, 
+            // karena total donasi dipakai oleh Jurnal Kas.
             renderDonaturTable();
             renderJurnalKasTable();
         };
@@ -823,7 +829,9 @@
             tableBody.innerHTML = '';
             
             // Ambil total Donasi dari footer tabel donatur
-            const totalDonasi = parseFloat(document.getElementById('total-donasi-input').textContent.replace(/\./g, '')) || 0;
+            // Ini PENTING: harus ambil dari DOM karena ini adalah total dari SEMUA data donasi.
+            const totalDonasiText = document.getElementById('total-donasi-input').textContent;
+            const totalDonasi = parseFloat(totalDonasiText.replace(/\./g, '')) || 0;
             
             const kasEntries = [];
 
