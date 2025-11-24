@@ -3,57 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Donasi Haul</title>
+    <title>Catatan Pembukuan Donatur Haul (Final)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
+        // Konfigurasi Tailwind CSS
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        'dark-green': '#1a472a', // Main background green
-                        'medium-green': '#2b6e49', // Card background green
-                        'yellow-accent': '#ffeb3b', // Yellow for buttons/highlights
-                        'red-danger': '#ef5350', // Red for danger actions
-                        'text-light': '#e0e0e0', // Light text color
+                        // Warna diambil dari contoh gambar Anda
+                        'dark-green': '#1a472a', 
+                        'medium-green': '#2b6e49', 
+                        'yellow-accent': '#ffeb3b', 
+                        'red-danger': '#ef5350', 
+                        'text-light': '#e0e0e0', 
                     }
                 }
             }
         }
     </script>
+    
     <style>
-        /* Body Background Hitam Pekat */
+        /* --- STYLE GLOBAL & GLOW --- */
+        
+        /* 1. Body Background Hitam Pekat Agar Glow Sangat Kontras */
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #000000; /* Hitam pekat agar glow sangat kontras */
+            background-color: #000000; 
             color: #e0e0e0;
         }
         
-        /* 💡 TEKNIK TERAKHIR: Menggunakan Tumpukan filter: drop-shadow() */
+        /* 2. STYLE UTAMA: Kombinasi Border, Box-Shadow, dan Filter Drop-Shadow untuk Efek Glow Tebal */
         .max-w-6xl {
-            /* Hapus semua properti glow sebelumnya */
-            
             position: relative; 
             z-index: 10;
-            background-color: #1a472a; /* Latar belakang hijau gelap untuk bingkai utama */
+            background-color: #1a472a; 
             border-radius: 0.75rem;
-            border: none; /* Hapus border fisik, biarkan glow saja */
 
-            /* Tumpukan Filter Drop-Shadow untuk Glow yang Super Blur dan Tebal */
+            /* A. Border Kuning Tebal sebagai Sinar Inti Terdekat */
+            border: 4px solid #fff352; 
+
+            /* B. Box-Shadow untuk Glow Menengah (Lebih Terfokus ke Dalam) */
+            box-shadow: 
+                0 0 15px rgba(255, 235, 59, 1), 
+                0 0 30px rgba(255, 235, 59, 0.7); 
+
+            /* C. Filter Drop-Shadow untuk Glow Terluar (Menyebar Lembut) */
             filter: 
-                drop-shadow(0 0 50px rgba(255, 255, 0, 1)) /* Inti cahaya terang */
-                drop-shadow(0 0 80px rgba(255, 235, 59, 0.7)) /* Lapisan menengah, lebih lembut */
-                drop-shadow(0 0 120px rgba(255, 235, 59, 0.5)) /* Lapisan luar, menyebar luas */
-                drop-shadow(0 0 150px rgba(255, 235, 59, 0.3)); /* Lapisan terluas, sangat blur */
+                drop-shadow(0 0 20px rgba(255, 235, 59, 0.5)) 
+                drop-shadow(0 0 40px rgba(255, 235, 59, 0.3)); 
         }
         
-        /* Mengganti background-color elemen di dalamnya agar tidak kena filter: drop-shadow() secara tidak sengaja */
+        /* Override background-color pada inner div agar tidak mewarisi filter secara aneh */
         .bg-medium-green {
             background-color: #2b6e49;
         }
 
-        /* Karena kita tidak bisa pakai pseudo-element, kita harus pastikan konten tidak terpotong */
+        /* --- UTILITY CSS --- */
         
+        /* Menghilangkan panah pada input number */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none;
@@ -63,6 +72,7 @@
             color: #a0a0a0;
             opacity: 1;
         }
+        /* Mengubah warna ikon kalender pada input date menjadi putih */
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
@@ -74,22 +84,21 @@
             padding-bottom: 0.75rem;
         }
         
-        /* Style untuk Konten Tabel - FONT SAMA RATA & PADDING */
+        /* Style untuk Konten Tabel */
         #donatur-table td {
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
-            font-size: 0.875rem; /* Ukuran seragam (text-sm) */
+            font-size: 0.875rem; /* text-sm */
         }
 
         /* Wrapper Tabel */
         .table-wrapper {
-            /* Tetap berikan shadow dan border pada tabel untuk menonjolkan kontennya */
             box-shadow: 0 0 20px rgba(255, 235, 59, 0.2); 
             border: 1px solid #ffeb3b; 
         }
         
-        /* Style khusus untuk kolom agar rapi */
+        /* Penyesuaian lebar kolom agar rapi */
         #donatur-table .nilai-kolom {
             width: 150px; 
             min-width: 150px;
@@ -110,7 +119,7 @@
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.125rem; /* text-lg untuk footer (total) */
+            font-size: 1.125rem; /* text-lg */
         }
     </style>
 </head>
@@ -210,15 +219,16 @@
         
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp, writeBatch, doc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
         
+        // Konfigurasi Firebase Anda
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
             projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.appspot.com",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+            storageBucket: "catatan-keuangan-haul.appspot.com", // Diambil dari data di image_73a0a3.png
+            messagingSenderId: "955355049778", // Diambil dari data di image_73a0a3.png
+            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b" // Diambil dari data di image_73a0a3.png
         };
         
         const app = initializeApp(firebaseConfig);
@@ -238,7 +248,6 @@
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
-            // Format angka dengan titik sebagai pemisah ribuan
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
             return sign + rupiah;
         };
@@ -400,6 +409,7 @@
             try {
                 await addDoc(donaturCol, newDonasi);
                 
+                // Clear inputs
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-alamat-input').value = '';
                 document.getElementById('donasi-nilai-input').value = '';
@@ -420,7 +430,6 @@
             const tableBody = document.getElementById('donatur-table-body');
             tableBody.innerHTML = '';
             
-            let totalNilaiDonasi = 0;
             let totalAkumulasiDonasi = 0;
             
             if (allDonatur.length === 0) {
@@ -430,7 +439,6 @@
             }
 
             allDonatur.forEach((d, index) => {
-                totalNilaiDonasi += d.nilai;
                 totalAkumulasiDonasi += d.nilai; 
 
                 const row = tableBody.insertRow();
@@ -439,7 +447,6 @@
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                // Hapus semua class font spesifik di dalam <td> untuk memastikan seragam
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
@@ -450,7 +457,7 @@
                 `;
             });
 
-            // Update Footer Total: Hanya Kumulatif yang diisi
+            // Update Footer Total
             updateFooter('total-akumulasi-donasi', totalAkumulasiDonasi); 
         };
 
@@ -459,6 +466,7 @@
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
+            // Set input tanggal ke tanggal hari ini secara default
             const today = new Date().toLocaleDateString('en-CA');
             const dateInput = document.getElementById('donatur-date-input');
             if (dateInput) {
