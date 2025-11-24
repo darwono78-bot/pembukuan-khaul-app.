@@ -18,7 +18,6 @@
                         'yellow-accent': '#ffeb3b', 
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
-                        'green-rupiah': '#85e096' 
                     }
                 }
             }
@@ -95,11 +94,17 @@
             text-align: right; /* Default rata kanan untuk semua kolom data */
         }
         
-        /* >>> PERUBAHAN KRITIS 1: Ukuran & Warna Angka Rupiah di Baris Data <<< */
-        #donatur-table .angka-rupiah-data {
+        /* >>> PERUBAHAN 1: Ukuran & Warna Angka Rupiah di Baris Data <<< */
+        #donatur-table .kolom-nilai-alokasi { /* Kelas baru untuk nilai dan alokasi */
             font-size: 1rem; /* Naik sedikit dari 0.875rem, jadi 16px */
-            color: var(--tw-colors-yellow-accent); /* Kembali ke warna kuning */
-            font-weight: 500; /* Sedikit tebal */
+            color: var(--tw-colors-text-light); /* Kembali ke warna putih */
+            font-weight: normal; /* Tidak tebal */
+        }
+        
+        /* >>> PERUBAHAN 2: Ukuran & Warna Teks Nama Donatur & Alamat <<< */
+        #donatur-table .kolom-nama-alamat { /* Kelas baru untuk nama & alamat */
+            font-size: 1rem; /* Sama dengan angka Rupiah */
+            color: var(--tw-colors-text-light); /* Warna putih */
         }
 
 
@@ -107,8 +112,12 @@
         #donatur-table .kolom-no {
             text-align: center;
         }
-        #donatur-table .kolom-tanggal,
-        #donatur-table .kolom-nama,
+        #donatur-table .kolom-tanggal {
+            text-align: left;
+        }
+        #donatur-table .kolom-nama {
+            text-align: left;
+        }
         #donatur-table .kolom-alamat {
             text-align: left;
         }
@@ -140,11 +149,11 @@
             font-size: 1.125rem; /* Ukuran default untuk label TOTAL KESELURUHAN */
         }
 
-        /* >>> PERUBAHAN KRITIS 2: Ukuran & Warna Angka Rupiah di Baris Total (Footer) <<< */
-        #donatur-table tfoot .angka-rupiah-total {
-            font-size: 1.25rem; /* Lebih besar dari angka data, tapi lebih kecil dari sebelumnya (1.125rem) */
-            color: var(--tw-colors-yellow-accent); /* Tetap kuning */
-            font-weight: bolder; /* Sangat tebal */
+        /* >>> PERUBAHAN 3: Ukuran & Warna Angka Rupiah di Baris Total (Footer) <<< */
+        #donatur-table tfoot .total-angka-rupiah { /* Kelas baru untuk angka total */
+            font-size: 1.25rem; /* Lebih besar dari angka data */
+            color: var(--tw-colors-text-light); /* Kembali ke putih */
+            font-weight: normal; /* Tidak tebal */
         }
     </style>
 </head>
@@ -184,10 +193,10 @@
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
                             <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td>
-                            <td id="total-donasi-input" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
-                            <td id="total-perawatan-makam" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
-                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
-                            <td id="total-biaya-haul" class="px-4 py-3 text-right angka-rupiah-total">0</td> 
+                            <td id="total-donasi-input" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-perawatan-makam" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
+                            <td id="total-biaya-haul" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
                         </tr>
                     </tfoot>
                 </table>
@@ -279,14 +288,13 @@
         // 2. HELPER FUNCTIONS
         // --------------------------------------------------------------------------------
 
-        const formatRupiah = (angka, isFooterTotal = false) => {
+        const formatRupiah = (angka) => {
             // Pastikan angka adalah tipe number dan bukan NaN
             if (typeof angka !== 'number' || isNaN(angka)) return '0'; 
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
             const rupiah = numberString.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-            // Untuk footer total, tidak perlu ditambahkan prefix 'Rp' karena sudah ada di label
             return sign + rupiah;
         };
         
@@ -308,7 +316,7 @@
         const updateFooter = (id, value) => {
             const element = document.getElementById(id);
             if (element) {
-                element.textContent = formatRupiah(value, true); 
+                element.textContent = formatRupiah(value); 
             }
         };
         
@@ -530,17 +538,10 @@
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                // Menggunakan kelas `angka-rupiah-data` untuk baris data
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
-                    <td class="px-4 py-3 kolom-nama">${d.nama}</td>
-                    <td class="px-4 py-3 kolom-alamat">${d.alamat}</td>
-                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(nilaiDonasi)}</td>
-                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(pm)}</td>
-                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(bp)}</td>
-                    <td class="px-4 py-3 text-right angka-rupiah-data">${formatRupiah(bh)}</td>
-                `;
+                    <td class="px-4 py-3 kolom-nama kolom-nama-alamat">${d.nama}</td> <td class="px-4 py-3 kolom-alamat kolom-nama-alamat">${d.alamat}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(nilaiDonasi)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(pm)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bp)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bh)}</td> `;
             });
 
             // Update Footer Total
