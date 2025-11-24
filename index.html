@@ -15,7 +15,7 @@
                         // Warna diambil dari contoh gambar Anda
                         'dark-green': '#1a472a', 
                         'medium-green': '#2b6e49', 
-                        'yellow-accent': '#ffeb3b', 
+                        'yellow-accent': '#ffeb3b', // Nilai ini adalah #ffeb3b
                         'red-danger': '#ef5350', 
                         'text-light': '#e0e0e0', 
                     }
@@ -97,14 +97,14 @@
         /* >>> PERUBAHAN 1: Ukuran & Warna Angka Rupiah di Baris Data <<< */
         #donatur-table .kolom-nilai-alokasi { /* Kelas baru untuk nilai dan alokasi */
             font-size: 1rem; /* Naik sedikit dari 0.875rem, jadi 16px */
-            color: var(--tw-colors-text-light); /* Kembali ke warna putih */
+            color: #e0e0e0; /* Warna putih (text-light) */
             font-weight: normal; /* Tidak tebal */
         }
         
         /* >>> PERUBAHAN 2: Ukuran & Warna Teks Nama Donatur & Alamat <<< */
         #donatur-table .kolom-nama-alamat { /* Kelas baru untuk nama & alamat */
             font-size: 1rem; /* Sama dengan angka Rupiah */
-            color: var(--tw-colors-text-light); /* Warna putih */
+            color: #e0e0e0; /* Warna putih (text-light) */
         }
 
 
@@ -146,13 +146,15 @@
         /* Style untuk footer agar tetap tebal dan menonjol */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.120rem; /* Ukuran default untuk label TOTAL KESELURUHAN */
+            font-size: 1.110rem; /* Ukuran default untuk label TOTAL KESELURUHAN */
+            /* KARENA ANDA INGIN LABELNYA KUNING: */
+            color: #ffeb3b; /* Menggunakan nilai Hex code yellow-accent */
         }
 
         /* >>> PERUBAHAN 3: Ukuran & Warna Angka Rupiah di Baris Total (Footer) <<< */
-        #donatur-table tfoot .total-angka-rupiah { /* Kelas baru untuk angka total */
-            font-size: 1.10rem; /* Lebih besar dari angka data */
-            color: var(--tw-colors-text-yellow); /* Kembali ke putih */
+        #donatur-table tfoot .total-angka-rupiah { /* Kelas untuk angka total */
+            font-size: 1.25rem; /* Lebih besar dari angka data */
+            color: #e0e0e0; /* Warna putih (text-light) */
             font-weight: normal; /* Tidak tebal */
         }
     </style>
@@ -192,7 +194,8 @@
                     </tbody>
                     <tfoot>
                         <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
-                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td>
+                            <td colspan="4" class="px-4 py-3 text-right text-yellow-accent">TOTAL KESELURUHAN:</td> 
+                            
                             <td id="total-donasi-input" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
                             <td id="total-perawatan-makam" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
                             <td id="total-bisyaroh-panitia" class="px-4 py-3 text-right total-angka-rupiah">0</td> 
@@ -289,7 +292,6 @@
         // --------------------------------------------------------------------------------
 
         const formatRupiah = (angka) => {
-            // Pastikan angka adalah tipe number dan bukan NaN
             if (typeof angka !== 'number' || isNaN(angka)) return '0'; 
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
@@ -307,7 +309,6 @@
             
             const perawatan_makam = Math.round(nilaiDonasi * PERSENTASE.PERAWATAN_MAKAM);
             const bisyaroh_panitia = Math.round(nilaiDonasi * PERSENTASE.BISYAROH_PANITIA);
-            // Sisa untuk biaya haul (untuk memastikan totalnya sama persis dengan input)
             const biaya_haul = nilaiDonasi - perawatan_makam - bisyaroh_panitia;
             
             return { perawatan_makam, bisyaroh_panitia, biaya_haul };
@@ -323,7 +324,6 @@
         const updateAdminView = () => {
             const isLogged = isAdminLoggedIn;
             
-            // Tampilan Login/Logout
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
@@ -471,14 +471,13 @@
                 return;
             }
             
-            // --- LOGIC PERHITUNGAN PERSENTASE ---
             const alokasiHitungan = calculateAlokasi(nilai);
             
             const newDonasi = {
                 date: date,
                 nama: nama,
                 alamat: alamat,
-                nilai: nilai, // Pastikan nilai disimpan sebagai angka
+                nilai: nilai, 
                 alokasi: alokasiHitungan,
                 timestamp: serverTimestamp() 
             };
@@ -486,7 +485,6 @@
             try {
                 await addDoc(donaturCol, newDonasi);
                 
-                // Clear inputs
                 document.getElementById('donatur-name-input').value = '';
                 document.getElementById('donatur-alamat-input').value = '';
                 document.getElementById('donasi-nilai-input').value = '';
@@ -541,7 +539,13 @@
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
-                    <td class="px-4 py-3 kolom-nama kolom-nama-alamat">${d.nama}</td> <td class="px-4 py-3 kolom-alamat kolom-nama-alamat">${d.alamat}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(nilaiDonasi)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(pm)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bp)}</td> <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bh)}</td> `;
+                    <td class="px-4 py-3 kolom-nama kolom-nama-alamat">${d.nama}</td> 
+                    <td class="px-4 py-3 kolom-alamat kolom-nama-alamat">${d.alamat}</td> 
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(nilaiDonasi)}</td> 
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(pm)}</td> 
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bp)}</td> 
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bh)}</td> 
+                `;
             });
 
             // Update Footer Total
@@ -574,5 +578,3 @@
     </script>
 </body>
 </html>
-
-
