@@ -23,7 +23,7 @@
     </script>
     <style>
         body { 
-            /* PERBAIKAN: Menggunakan font sistem umum yang bagus dan mudah dibaca (Calibri/Cambria-like) */
+            /* Menggunakan font sistem umum yang bagus dan mudah dibaca (Calibri/Cambria-like) */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background-color: #1a472a;
             color: #e0e0e0;
@@ -51,15 +51,14 @@
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
-            /* PERBAIKAN: Mengatur semua teks di isi tabel menjadi ukuran kecil/sedang yang seragam */
-            font-size: 0.875rem; /* setara dengan Tailwind text-sm */
+            /* FINAL FIX: Mengatur semua teks di isi tabel ke ukuran seragam (text-sm) */
+            font-size: 0.875rem; 
         }
         /* Style khusus untuk kolom Nilai dan Kumulatif agar rapi */
         #donatur-table .nilai-kolom {
             width: 150px; 
             min-width: 150px;
         }
-        /* PERBAIKAN: Kumulatif di isi tabel (tbody) dibuat NORMAL agar seragam */
         #donatur-table .kumulatif-kolom {
             width: 170px; 
             min-width: 170px;
@@ -406,6 +405,7 @@
                 const dateObj = new Date(d.date + 'T00:00:00');
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
+                // FINAL FIX: Hapus semua class font spesifik di dalam <td> untuk memastikan seragam
                 row.innerHTML = `
                     <td class="px-4 py-3 kolom-no">${index + 1}</td>
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
