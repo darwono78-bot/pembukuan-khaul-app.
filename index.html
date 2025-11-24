@@ -873,8 +873,8 @@ const renderDonaturTable = (transactions, page) => {
         };
 
         const renderAllTables = () => {
-            // Urutkan transaksi sebelum merender (Firebase code sudah mengurutkan di loadAndRenderData, tapi ini aman)
-            allTransactions.sort((a, b) => b.timestamp - a.timestamp); // Urutkan terbaru ke terlama
+            // Urutkan transaksi sebelum merender (terbaru ke terlama)
+            allTransactions.sort((a, b) => b.timestamp - a.timestamp); 
             const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
             renderJurnalTable(totalDonasi, currentJurnalPage);
         };
@@ -1050,16 +1050,15 @@ const renderDonaturTable = (transactions, page) => {
         // --------------------------------------------------------------------------------
 
         window.onload = () => {
-            // Karena kita menggunakan Firebase, kita cukup panggil fungsi utamanya:
-            // loadAndRenderData() akan memuat data dari Firebase, dan
-            // onAuthStateChanged() akan memicu updateAdminView() dan loadAndRenderData() saat status login diketahui.
             console.log("Web Siap. Menunggu status autentikasi Firebase...");
-            // Catatan: Jika ada data yang tampil, itu karena onAuthStateChanged sudah jalan.
+            // onAuthStateChanged (di bagian atas) akan memicu updateAdminView dan loadAndRenderData secara otomatis.
+            // Tidak perlu memanggil fungsi apapun lagi di sini.
         };
         
     </script>    
 </body>
 </html>
+
 
 
 
