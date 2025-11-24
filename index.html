@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catatan Pembukuan Donatur Haul (Final)</title>
+    <title>Catatan Pembukuan Haul - Bendahara</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script>
@@ -44,12 +44,12 @@
             /* A. Border Kuning: Tipis */
             border: 2px solid #fff352; 
 
-            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) - KEMBALI DITAMBAHKAN */
+            /* B. Box-Shadow untuk Glow Menengah (Inti Sinar) */
             box-shadow: 
                 0 0 10px rgba(255, 235, 59, 1), 
                 0 0 25px rgba(255, 235, 59, 0.7); 
 
-            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) - KEMBALI DITAMBAHKAN */
+            /* C. Filter Drop-Shadow untuk Glow Terluar (Sinar Menyebar) */
             filter: 
                 drop-shadow(0 0 15px rgba(255, 235, 59, 0.5)) 
                 drop-shadow(0 0 30px rgba(255, 235, 59, 0.3)); 
@@ -78,7 +78,7 @@
         }
         
         /* Style untuk Tabel Header */
-        #donatur-table th {
+        #donatur-table th, #jurnal-kas-table th {
             font-size: 0.75rem; /* text-xs */
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
@@ -86,7 +86,7 @@
         }
         
         /* Style untuk Konten Tabel (Baris Data) */
-        #donatur-table td {
+        #donatur-table td, #jurnal-kas-table td {
             padding: 0.75rem 1rem; 
             vertical-align: top;
             font-weight: normal; 
@@ -109,10 +109,10 @@
 
 
         /* Override untuk kolom teks agar rata kiri/tengah */
-        #donatur-table .kolom-no {
+        #donatur-table .kolom-no, #jurnal-kas-table .kolom-no {
             text-align: center;
         }
-        #donatur-table .kolom-tanggal {
+        #donatur-table .kolom-tanggal, #jurnal-kas-table .kolom-tanggal {
             text-align: left;
         }
         #donatur-table .kolom-nama {
@@ -141,20 +141,45 @@
             min-width: 100px;
         }
         
-        /* --- STYLE KHUSUS UNTUK FOOTER TOTAL --- */
+        /* --- STYLE KHUSUS UNTUK FOOTER TOTAL (KUNING) --- */
         
         /* Style untuk Label "TOTAL KESELURUHAN:" (KUNING) */
         #donatur-table tfoot td {
             font-weight: bold;
-            font-size: 1.20rem; 
+            font-size: 1.125rem; 
             color: #ffeb3b; /* KUNING (yellow-accent) */
         }
 
-        /* Angka Rupiah di Baris Total (Footer) KUNING */
+        /* Angka Rupiah di Baris Total (Footer Donasi) KUNING */
         #donatur-table tfoot .total-angka-rupiah { 
-            font-size: 1.05rem; 
+            font-size: 1.25rem; 
             color: #ffeb3b; /* KUNING (yellow-accent) */
             font-weight: normal; 
+        }
+
+        /* Style untuk Footer Jurnal Kas (KUNING) */
+        #jurnal-kas-table tfoot td {
+            font-weight: bold;
+            font-size: 1.125rem; 
+            color: #ffeb3b; /* KUNING (yellow-accent) */
+        }
+
+        /* Angka Saldo Akhir (Footer Jurnal Kas) KUNING */
+        #jurnal-kas-table tfoot .total-angka-rupiah { 
+            font-size: 1.25rem; 
+            color: #ffeb3b; /* KUNING (yellow-accent) */
+            font-weight: bold; /* Dibuat lebih tebal untuk Saldo Akhir */
+        }
+
+        /* Warna untuk Dana Masuk di Jurnal Kas (Kuning) */
+        #jurnal-kas-table .text-yellow-accent {
+            color: #ffeb3b; 
+            font-weight: bold;
+        }
+        /* Warna untuk Dana Keluar di Jurnal Kas (Merah) */
+        #jurnal-kas-table .text-red-danger {
+            color: #ef5350; 
+            font-weight: bold;
         }
     </style>
 </head>
@@ -172,7 +197,7 @@
         <div class="bg-medium-green p-8 text-text-light">
 
             <h2 class="text-2xl font-bold mb-4 text-yellow-accent border-b border-yellow-accent/50 pb-3">
-                Ringkasan Data Transaksi
+                Ringkasan Data Transaksi Donatur (Dana Masuk)
             </h2>
             <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
                 <table id="donatur-table" class="min-w-full divide-y divide-text-light/20">
@@ -204,6 +229,35 @@
                 </table>
             </div>
 
+
+            <h2 class="text-2xl font-bold mb-4 mt-12 text-yellow-accent border-b border-yellow-accent/50 pb-3">
+                Jurnal Kas Umum (Dana Masuk & Keluar)
+            </h2>
+            <div class="table-wrapper overflow-x-auto shadow-lg rounded-xl mb-10">
+                <table id="jurnal-kas-table" class="min-w-full divide-y divide-text-light/20">
+                    <thead class="bg-dark-green/80 text-text-light">
+                        <tr>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tl-xl w-12 kolom-no">NO</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-24 kolom-tanggal">TANGGAL</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">URAIAN</th>
+                            <th class="px-4 py-3 text-left font-bold uppercase tracking-wider w-48">KATEGORI</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA MASUK (RP)</th> 
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider w-32">DANA KELUAR (RP)</th>
+                            <th class="px-4 py-3 font-bold uppercase tracking-wider rounded-tr-xl w-32">SALDO (RP)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jurnal-kas-table-body" class="bg-medium-green/50 divide-y divide-text-light/10">
+                        <tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat Jurnal Kas...</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-dark-green/80 font-extrabold border-t-2 border-yellow-accent">
+                            <td colspan="4" class="px-4 py-3 text-right">TOTAL SALDO AKHIR:</td>
+                            <td colspan="3" id="total-saldo-akhir" class="px-4 py-3 text-right total-angka-rupiah">0</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
             <div id="donasi-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
                 <h2 class="text-2xl font-bold mb-6 text-yellow-accent border-b border-yellow-accent/50 pb-3">
                     Input Data Donatur Baru
@@ -220,6 +274,33 @@
                 
                 <button onclick="addDonatur()" class="bg-yellow-accent text-dark-green py-3 px-6 rounded-lg hover:bg-yellow-accent/90 w-full font-bold transition duration-150 shadow-md mt-6">
                     Simpan Donasi & Alokasikan Dana
+                </button>
+            </div>
+
+            <div id="pengeluaran-input-container" class="p-6 rounded-xl bg-dark-green/50 shadow-lg mb-10 hidden">
+                <h2 class="text-2xl font-bold mb-6 text-red-danger border-b border-red-danger/50 pb-3">
+                    Input Pengeluaran / Dana Keluar
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <input type="date" id="kas-date-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                    
+                    <input type="text" id="kas-uraian-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent" placeholder="Uraian (Contoh: Bayar listrik tenda)" required>
+                    
+                    <select id="kas-kategori-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light focus:ring-yellow-accent focus:border-yellow-accent" required>
+                        <option value="" disabled selected>-- Pilih Kategori --</option>
+                        <option value="Ongkos Kiai">Ongkos Kiai</option>
+                        <option value="Bayar Khataman">Bayar Khataman</option>
+                        <option value="Bayar Konsumsi">Bayar Konsumsi</option>
+                        <option value="Bayar Persewaan">Bayar Persewaan</option>
+                        <option value="Bayar Pekerja">Bayar Pekerja</option>
+                        <option value="Lain-Lain">Lain-Lain</option>
+                    </select>
+                    
+                    <input type="number" id="kas-nilai-keluar-input" class="p-3 border border-text-light/30 rounded-lg w-full bg-medium-green/50 text-text-light placeholder:text-text-light/60 focus:ring-yellow-accent focus:border-yellow-accent text-right" placeholder="Nilai Pengeluaran (Rp)" required>
+                </div>
+                
+                <button onclick="addPengeluaran()" class="bg-red-danger text-white py-3 px-6 rounded-lg hover:bg-red-danger/90 w-full font-bold transition duration-150 shadow-md mt-6">
+                    Simpan Dana Keluar
                 </button>
             </div>
             
@@ -275,8 +356,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         const donaturCol = collection(db, "transaksi_haul"); 
+        const pengeluaranCol = collection(db, "transaksi_keluar"); // KOLEKSI BARU UNTUK PENGELUARAN
 
         let allDonatur = []; 
+        let allPengeluaran = []; // ARRAY BARU UNTUK PENGELUARAN
         let isAdminLoggedIn = false; 
         
         // Konstanta Prosentase Alokasi
@@ -326,6 +409,7 @@
             document.getElementById('login-form-container')?.classList.toggle('hidden', isLogged);
             document.getElementById('admin-actions-container')?.classList.toggle('hidden', !isLogged);
             document.getElementById('donasi-input-container')?.classList.toggle('hidden', !isLogged);
+            document.getElementById('pengeluaran-input-container')?.classList.toggle('hidden', !isLogged); // BARU
         };
 
         // --------------------------------------------------------------------------------
@@ -339,7 +423,7 @@
                 isAdminLoggedIn = false;
             }
             updateAdminView();
-            loadAndRenderDonatur(); 
+            loadAndRenderData(); // MEMUAT KEDUA TABEL SAAT LOGIN/LOGOUT BERUBAH
         });
 
 
@@ -383,22 +467,27 @@
         window.confirmResetData = async () => {
              if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat mereset data.');
              
-             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi? Tindakan ini tidak bisa dibatalkan.')) return;
+             if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi dan Pengeluaran? Tindakan ini tidak bisa dibatalkan.')) return;
              
-             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua donasi di Firebase. LANJUTKAN?')) return;
+             if (!confirm('KONFIRMASI TERAKHIR: Ini akan menghapus PERMANEN semua data di Firebase. LANJUTKAN?')) return;
              
              try {
                 const donaturSnapshot = await getDocs(donaturCol);
+                const pengeluaranSnapshot = await getDocs(pengeluaranCol); // BARU
                 const batch = writeBatch(db); 
                 
                 donaturSnapshot.docs.forEach((d) => {
                     batch.delete(doc(db, "transaksi_haul", d.id));
                 });
                 
+                pengeluaranSnapshot.docs.forEach((d) => { // BARU
+                    batch.delete(doc(db, "transaksi_keluar", d.id));
+                });
+                
                 await batch.commit();
 
-                alert('SEMUA DATA DONASI BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
-                await loadAndRenderDonatur();
+                alert('SEMUA DATA DONASI DAN PENGELUARAN BERHASIL DIHAPUS PERMANEN DARI FIREBASE.');
+                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
              } catch (error) {
                  console.error("Gagal mereset data:", error);
                  alert('Gagal menghapus data di Firestore. Cek console log.');
@@ -410,15 +499,20 @@
         // 4. FIRESTORE CRUD (CREATE & READ)
         // --------------------------------------------------------------------------------
 
-        const loadAndRenderDonatur = async () => {
+        const loadAndRenderData = async () => {
             allDonatur = [];
-            const tableBody = document.getElementById('donatur-table-body');
-            tableBody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
+            allPengeluaran = []; // BARU
+
+            const tableBodyDonasi = document.getElementById('donatur-table-body');
+            const tableBodyKas = document.getElementById('jurnal-kas-table-body');
+            
+            tableBodyDonasi.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data donasi...</td></tr>`;
+            tableBodyKas.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Memuat Jurnal Kas...</td></tr>`;
 
             try {
+                // --- 1. LOAD DONASI (DANA MASUK) ---
                 const donaturQuery = query(donaturCol, orderBy("timestamp", "asc")); 
                 const donaturSnapshot = await getDocs(donaturQuery);
-
                 donaturSnapshot.forEach(doc => {
                     const data = doc.data();
                     const nilaiDonasi = parseFloat(data.nilai || data.danaMasuk || 0);
@@ -444,19 +538,42 @@
                     });
                 });
                 
-                renderDonaturTable();
+                // --- 2. LOAD PENGELUARAN (DANA KELUAR) ---
+                const pengeluaranQuery = query(pengeluaranCol, orderBy("timestamp", "asc")); 
+                const pengeluaranSnapshot = await getDocs(pengeluaranQuery);
+                pengeluaranSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const nilaiKeluar = parseFloat(data.nilai_keluar) || 0;
+                    
+                    allPengeluaran.push({
+                        id: doc.id,
+                        date: data.date,
+                        uraian: data.uraian,
+                        kategori: data.kategori,
+                        nilai_keluar: nilaiKeluar,
+                        timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
+                    });
+                });
+
+                renderTables(); // Panggil fungsi render utama
                 
             } catch (error) {
                 console.error("Gagal memuat data dari Firestore:", error);
-                tableBody.innerHTML = `
+                tableBodyDonasi.innerHTML = `
                     <tr>
                         <td colspan="8" class="py-6 text-center text-red-danger">
-                            🔴 GAGAL MEMUAT DATA. Cek Koneksi Internet atau Konfigurasi Firebase.
+                            🔴 GAGAL MEMUAT DATA DONASI.
+                        </td>
+                    </tr>`;
+                tableBodyKas.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-6 text-center text-red-danger">
+                            🔴 GAGAL MEMUAT DATA JURNAL.
                         </td>
                     </tr>`;
             }
         };
-        
+
         window.addDonatur = async () => {
             if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat menginput data. Mohon Login terlebih dahulu.');
 
@@ -489,17 +606,58 @@
                 document.getElementById('donasi-nilai-input').value = '';
                 
                 alert('Donasi berhasil ditambahkan & dana dialokasikan!');
-                await loadAndRenderDonatur(); 
+                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
             } catch (error) {
                 console.error("Gagal menambahkan Donasi:", error);
                 alert("Gagal menyimpan donasi. Cek console log.");
             }
         };
 
+        window.addPengeluaran = async () => {
+            if (!isAdminLoggedIn) return alert('Hanya Bendahara yang dapat menginput data. Mohon Login terlebih dahulu.');
+
+            const date = document.getElementById('kas-date-input').value;
+            const uraian = document.getElementById('kas-uraian-input').value; 
+            const kategori = document.getElementById('kas-kategori-input').value;
+            let nilai_keluar = parseInt(document.getElementById('kas-nilai-keluar-input').value) || 0;
+            
+            if (!date || !uraian || !kategori || nilai_keluar <= 0) {
+                alert('Mohon isi Tanggal, Uraian, Kategori, dan Nilai Pengeluaran yang valid.');
+                return;
+            }
+            
+            const newPengeluaran = {
+                date: date,
+                uraian: uraian,
+                kategori: kategori,
+                nilai_keluar: nilai_keluar, 
+                timestamp: serverTimestamp() 
+            };
+
+            try {
+                await addDoc(pengeluaranCol, newPengeluaran);
+                
+                document.getElementById('kas-uraian-input').value = '';
+                document.getElementById('kas-nilai-keluar-input').value = '';
+                document.getElementById('kas-kategori-input').value = '';
+                
+                alert('Pengeluaran berhasil dicatat!');
+                await loadAndRenderData(); // PANGGIL FUNGSI UTAMA
+            } catch (error) {
+                console.error("Gagal menambahkan Pengeluaran:", error);
+                alert("Gagal menyimpan pengeluaran. Cek console log.");
+            }
+        };
+
 
         // --------------------------------------------------------------------------------
-        // 5. RENDER DATA (LOGIC TOTAL & PROSENTASE)
+        // 5. RENDER DATA (LOGIC TOTAL & SALDO)
         // --------------------------------------------------------------------------------
+
+        const renderTables = () => {
+            renderDonaturTable();
+            renderJurnalKasTable();
+        };
 
         const renderDonaturTable = () => {
             const tableBody = document.getElementById('donatur-table-body');
@@ -536,10 +694,10 @@
                 const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
                 row.innerHTML = `
-                    <td class="px-4 py-3 kolom-no">${index + 1}</td>
-                    <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
-                    <td class="px-4 py-3 kolom-nama kolom-nama-alamat">${d.nama}</td> 
-                    <td class="px-4 py-3 kolom-alamat kolom-nama-alamat">${d.alamat}</td> 
+                    <td class="px-4 py-3 kolom-no text-center">${index + 1}</td>
+                    <td class="px-4 py-3 kolom-tanggal text-left">${formattedDate}</td>
+                    <td class="px-4 py-3 kolom-nama kolom-nama-alamat text-left">${d.nama}</td> 
+                    <td class="px-4 py-3 kolom-alamat kolom-nama-alamat text-left">${d.alamat}</td> 
                     <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(nilaiDonasi)}</td> 
                     <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(pm)}</td> 
                     <td class="px-4 py-3 text-right kolom-nilai-alokasi">${formatRupiah(bp)}</td> 
@@ -558,9 +716,83 @@
             if (Math.round(totalDonasiInput) !== Math.round(totalAkumulasiAlokasi)) {
                 console.error(`ERROR KONSISTENSI TOTAL: Total Input (${totalDonasiInput}) tidak sama dengan Total Alokasi (${totalAkumulasiAlokasi}). Selisih Pembulatan: ${totalDonasiInput - totalAkumulasiAlokasi}`);
                 if (isAdminLoggedIn) {
-                     alert(`Peringatan: Total Donasi (${formatRupiah(totalDonasiInput)}) tidak sama dengan Total Alokasi (${formatRupiah(totalAkumulasiAlokasi)}). Selisih Pembulatan: ${formatRupiah(totalDonasiInput - totalAkumulasiAlokasi)}`);
+                     // Ini hanya error konsol/log, tidak perlu pop-up yang mengganggu
                 }
             }
+        };
+
+        const renderJurnalKasTable = () => {
+            const tableBody = document.getElementById('jurnal-kas-table-body');
+            tableBody.innerHTML = '';
+            
+            const totalDonasi = parseFloat(document.getElementById('total-donasi-input').textContent.replace(/\./g, '')) || 0;
+            let saldo = 0;
+            let no = 1;
+            
+            const kasEntries = [];
+
+            // 1. Tambahkan Total Donasi sebagai BARIS PERTAMA JURNAL (Dana Masuk)
+            // Ini mengambil total dari tabel donatur
+            if (totalDonasi > 0) {
+                kasEntries.push({
+                    date: new Date().toLocaleDateString('en-CA'), // Tanggal hari ini
+                    uraian: 'TOTAL SELURUH DONASI (Awal Kas)',
+                    kategori: 'Donatur',
+                    masuk: totalDonasi,
+                    keluar: 0,
+                    timestamp: 0 // Agar selalu di urutan pertama
+                });
+            }
+
+            // 2. Tambahkan Semua Pengeluaran (Dana Keluar)
+            allPengeluaran.forEach(p => {
+                kasEntries.push({
+                    date: p.date,
+                    uraian: p.uraian,
+                    kategori: p.kategori,
+                    masuk: 0,
+                    keluar: p.nilai_keluar,
+                    timestamp: p.timestamp 
+                });
+            });
+
+            // 3. Urutkan Jurnal Kas berdasarkan Tanggal/Timestamp
+            kasEntries.sort((a, b) => {
+                if (a.timestamp === 0 && b.timestamp !== 0) return -1; // Pastikan total donasi selalu di urutan pertama
+                if (b.timestamp === 0 && a.timestamp !== 0) return 1;
+                return a.timestamp - b.timestamp;
+            });
+
+            // 4. Render Jurnal Kas & Hitung Saldo
+            if (kasEntries.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-text-light/70">Jurnal Kas kosong. Silakan catat donasi atau pengeluaran.</td></tr>`;
+                updateFooter('total-saldo-akhir', 0);
+                return;
+            }
+
+            kasEntries.forEach(entry => {
+                saldo += entry.masuk - entry.keluar;
+
+                const dateObj = new Date(entry.date + 'T00:00:00');
+                const formattedDate = dateObj.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                // Menentukan warna saldo (Kuning untuk Saldo Positif, Merah untuk Negatif)
+                const saldoClass = saldo >= 0 ? 'text-yellow-accent' : 'text-red-danger';
+                
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td class="px-4 py-3 kolom-no text-center">${no++}</td>
+                    <td class="px-4 py-3 kolom-tanggal text-left">${formattedDate}</td>
+                    <td class="px-4 py-3 text-left">${entry.uraian}</td>
+                    <td class="px-4 py-3 text-left">${entry.kategori}</td>
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi text-yellow-accent">${entry.masuk > 0 ? formatRupiah(entry.masuk) : ''}</td>
+                    <td class="px-4 py-3 text-right kolom-nilai-alokasi text-red-danger">${entry.keluar > 0 ? formatRupiah(entry.keluar) : ''}</td>
+                    <td class="px-4 py-3 text-right total-angka-rupiah ${saldoClass}">${formatRupiah(saldo)}</td> 
+                `;
+            });
+            
+            // Update Saldo Akhir
+            updateFooter('total-saldo-akhir', saldo);
         };
 
         // --------------------------------------------------------------------------------
@@ -569,15 +801,16 @@
 
         window.onload = () => {
             const today = new Date().toLocaleDateString('en-CA');
-            const dateInput = document.getElementById('donatur-date-input');
-            if (dateInput) {
-                dateInput.value = today;
+            const dateInputDonatur = document.getElementById('donatur-date-input');
+            const dateInputKas = document.getElementById('kas-date-input'); 
+            
+            if (dateInputDonatur) {
+                dateInputDonatur.value = today;
+            }
+            if (dateInputKas) { 
+                dateInputKas.value = today;
             }
         };
     </script>
 </body>
 </html>
-
-
-
-
