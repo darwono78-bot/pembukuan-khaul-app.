@@ -82,7 +82,7 @@
             font-size: 0.75rem; /* text-xs */
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
-            text-align: center; /* Rata tengah untuk header baru */
+            text-align: center; 
         }
         
         /* Style untuk Konten Tabel */
@@ -91,11 +91,13 @@
             vertical-align: top;
             font-weight: normal; 
             font-size: 0.875rem; /* text-sm */
-            text-align: right; /* Rata kanan untuk semua nilai uang */
+            text-align: right; /* Default rata kanan untuk semua kolom data */
         }
 
-        /* Override untuk kolom teks agar rata kiri */
-        #donatur-table .kolom-no,
+        /* Override untuk kolom teks agar rata kiri/tengah */
+        #donatur-table .kolom-no {
+            text-align: center;
+        }
         #donatur-table .kolom-tanggal,
         #donatur-table .kolom-nama,
         #donatur-table .kolom-alamat {
@@ -115,7 +117,6 @@
         }
         #donatur-table .kolom-no {
             width: 40px; 
-            text-align: center;
         }
         #donatur-table .kolom-tanggal {
             width: 100px; 
@@ -260,7 +261,7 @@
         // --------------------------------------------------------------------------------
 
         const formatRupiah = (angka) => {
-            if (typeof angka !== 'number') return '0';
+            if (typeof angka !== 'number' || isNaN(angka)) return '0'; // Pengecekan NaN
             const sign = angka < 0 ? '-' : '';
             const absoluteAngka = Math.abs(Math.floor(angka));
             const numberString = absoluteAngka.toString();
@@ -369,7 +370,6 @@
         const loadAndRenderDonatur = async () => {
             allDonatur = [];
             const tableBody = document.getElementById('donatur-table-body');
-            // Menyesuaikan colspan menjadi 8 (No, Tgl, Nama, Alamat, Nilai, 3 Alokasi)
             tableBody.innerHTML = `<tr><td colspan="8" class="py-6 text-center text-text-light/70">Memuat data dari Firebase...</td></tr>`;
 
             try {
@@ -384,8 +384,12 @@
                         nama: data.nama || data.uraian || 'Tanpa Nama',
                         alamat: data.alamat || '-',
                         nilai: data.nilai || data.danaMasuk || 0, 
-                        // Tambahkan pecahan alokasi
-                        alokasi: data.alokasi || { perawatan_makam: 0, bisyaroh_panitia: 0, biaya_haul: 0 },
+                        // Pastikan alokasi diinisialisasi dengan nilai 0 jika belum ada
+                        alokasi: {
+                            perawatan_makam: data.alokasi?.perawatan_makam || 0,
+                            bisyaroh_panitia: data.alokasi?.bisyaroh_panitia || 0,
+                            biaya_haul: data.alokasi?.biaya_haul || 0
+                        },
                         timestamp: data.timestamp ? data.timestamp.toMillis() : new Date(data.date).getTime(), 
                     });
                 });
@@ -409,6 +413,7 @@
             const date = document.getElementById('donatur-date-input').value;
             const nama = document.getElementById('donatur-name-input').value; 
             const alamat = document.getElementById('donatur-alamat-input').value;
+            // Gunakan parseFloat dan pastikan hasilnya angka, jika NaN, gunakan 0
             let nilai = parseInt(document.getElementById('donasi-nilai-input').value) || 0;
             
             if (!date || !nama || !nilai || nilai <= 0) {
@@ -417,6 +422,7 @@
             }
             
             // --- LOGIC PERHITUNGAN PERSENTASE ---
+            // Gunakan Math.round untuk pembulatan yang lebih akurat
             const perawatan_makam = Math.round(nilai * PERSENTASE.PERAWATAN_MAKAM);
             const bisyaroh_panitia = Math.round(nilai * PERSENTASE.BISYAROH_PANITIA);
             // Sisa untuk biaya haul (untuk memastikan totalnya sama persis dengan input)
@@ -426,7 +432,7 @@
                 date: date,
                 nama: nama,
                 alamat: alamat,
-                nilai: nilai,
+                nilai: nilai, // Pastikan nilai disimpan sebagai angka
                 alokasi: {
                     perawatan_makam: perawatan_makam,
                     bisyaroh_panitia: bisyaroh_panitia,
@@ -475,10 +481,16 @@
             }
 
             allDonatur.forEach((d, index) => {
-                totalDonasiInput += d.nilai;
-                totalPerawatanMakam += d.alokasi.perawatan_makam;
-                totalBisyarohPanitia += d.alokasi.bisyaroh_panitia;
-                totalBiayaHaul += d.alokasi.biaya_haul;
+                // Pastikan semua nilai adalah angka, jika tidak, anggap 0
+                const nilaiDonasi = parseFloat(d.nilai) || 0;
+                const pm = parseFloat(d.alokasi.perawatan_makam) || 0;
+                const bp = parseFloat(d.alokasi.bisyaroh_panitia) || 0;
+                const bh = parseFloat(d.alokasi.biaya_haul) || 0;
+                
+                totalDonasiInput += nilaiDonasi;
+                totalPerawatanMakam += pm;
+                totalBisyarohPanitia += bp;
+                totalBiayaHaul += bh;
 
                 const row = tableBody.insertRow();
                 
@@ -491,10 +503,10 @@
                     <td class="px-4 py-3 kolom-tanggal">${formattedDate}</td>
                     <td class="px-4 py-3 kolom-nama">${d.nama}</td>
                     <td class="px-4 py-3 kolom-alamat">${d.alamat}</td>
-                    <td class="px-4 py-3 text-yellow-accent">${formatRupiah(d.nilai)}</td>
-                    <td class="px-4 py-3">${formatRupiah(d.alokasi.perawatan_makam)}</td>
-                    <td class="px-4 py-3">${formatRupiah(d.alokasi.bisyaroh_panitia)}</td>
-                    <td class="px-4 py-3">${formatRupiah(d.alokasi.biaya_haul)}</td>
+                    <td class="px-4 py-3 text-yellow-accent">${formatRupiah(nilaiDonasi)}</td>
+                    <td class="px-4 py-3">${formatRupiah(pm)}</td>
+                    <td class="px-4 py-3">${formatRupiah(bp)}</td>
+                    <td class="px-4 py-3">${formatRupiah(bh)}</td>
                 `;
             });
 
