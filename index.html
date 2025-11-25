@@ -68,6 +68,13 @@
             color: #4f46e5;
             font-weight: 600;
         }
+        /* Style for Edit button */
+        .edit-btn {
+            color: #2563eb; /* Blue 600 */
+        }
+        .edit-btn:hover {
+            color: #1e40af; /* Blue 800 */
+        }
     </style>
 </head>
 <body>
@@ -121,16 +128,18 @@
 
         <!-- Data Entry Form Jariyah -->
         <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
-            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Input Data Jariyah Baru</h2>
+            <h2 id="jariyah-form-title" class="text-xl font-semibold mb-4 text-indigo-700">Input Data Jariyah Baru</h2>
             <form id="jariyah-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="hidden" id="jariyah-doc-id"> <!-- Hidden field for document ID during edit -->
                 <input type="date" id="jariyah-tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Tanggal">
                 <input type="text" id="jariyah-nama" placeholder="Nama Donatur (Wajib)" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Nama Donatur">
                 <input type="text" id="jariyah-alamat" placeholder="Alamat (Opsional)" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Alamat">
                 <input type="number" id="jariyah-jumlah" placeholder="Jumlah Jariyah (Wajib)" required min="1" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Jumlah Jariyah">
-                <button type="submit" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                <button type="submit" id="jariyah-submit-btn" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
                     Tambah Catatan
                 </button>
             </form>
+            <button id="jariyah-cancel-btn" class="mt-2 w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Batal Edit</button>
         </div>
 
         <!-- Data Table Jariyah -->
@@ -146,7 +155,7 @@
                             <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[120px] bg-indigo-800 border-r border-gray-600">JARIYAH (RP)</th>
                             <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider min-w-[150px] bg-green-700 border-r border-gray-600">TOTAL JARIYAH (RP)</th>
                             <th colspan="3" class="px-3 py-2 text-center text-xs uppercase tracking-wider bg-amber-700 rounded-tr-lg">PRESENTASE DONASI</th>
-                            <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 bg-indigo-800">AKSI</th>
+                            <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider w-32 bg-indigo-800">AKSI</th>
                         </tr>
                         <tr>
                             <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">PERAWATAN MAKAM (15%)</th>
@@ -174,8 +183,9 @@
 
         <!-- Data Entry Form Kas Umum -->
         <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
-            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Input Jurnal Kas Baru</h2>
+            <h2 id="kasumum-form-title" class="text-xl font-semibold mb-4 text-indigo-700">Input Jurnal Kas Baru</h2>
             <form id="kasumum-form" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <input type="hidden" id="kasumum-doc-id"> <!-- Hidden field for document ID during edit -->
                 <input type="date" id="kasumum-tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Tanggal">
                 
                 <input type="text" id="kasumum-uraian" placeholder="Uraian (Contoh: Beli konsumsi panitia)" required class="col-span-2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Uraian Transaksi">
@@ -198,10 +208,11 @@
 
                 <input type="number" id="kasumum-jumlah" placeholder="Jumlah (RP) (Wajib)" required min="1" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Jumlah Uang">
                 
-                <button type="submit" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                <button type="submit" id="kasumum-submit-btn" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
                     Catat Jurnal
                 </button>
             </form>
+            <button id="kasumum-cancel-btn" class="mt-2 w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Batal Edit</button>
             <p class="mt-4 text-sm text-gray-500 italic">
                 * Catatan: Dana Masuk dari Donatur (Jariyah) otomatis dicatat sebagai baris pertama di tabel di bawah.
             </p>
@@ -220,7 +231,7 @@
                             <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[120px] bg-green-700">DANA MASUK (RP)</th>
                             <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[120px] bg-red-700">DANA KELUAR (RP)</th>
                             <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[150px] bg-indigo-700">SALDO (RP)</th>
-                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 rounded-tr-lg">AKSI</th>
+                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider w-28 rounded-tr-lg">AKSI</th>
                         </tr>
                     </thead>
                     <tbody id="kasumum-list" class="bg-white divide-y divide-gray-200">
@@ -282,7 +293,8 @@
         onSnapshot, 
         getDocs, 
         writeBatch,
-        serverTimestamp 
+        serverTimestamp,
+        updateDoc // Added updateDoc for editing
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-lite.js";
 
@@ -310,6 +322,11 @@
     let isAuthReady = false;
     let currentTab = 'jariyah'; // State untuk tab aktif saat ini
     let globalTotalJariyah = 0; // Variabel global untuk menyimpan total Jariyah
+    
+    // Variabel state untuk mode edit
+    let jariyahEditMode = { id: null };
+    let kasUmumEditMode = { id: null };
+
 
     // --- Elemen DOM ---
     const appContent = document.getElementById('app-content');
@@ -329,13 +346,27 @@
 
     // Elemen Jariyah
     const jariyahForm = document.getElementById('jariyah-form');
+    const jariyahFormTitle = document.getElementById('jariyah-form-title');
+    const jariyahDocId = document.getElementById('jariyah-doc-id'); // Added
+    const jariyahSubmitBtn = document.getElementById('jariyah-submit-btn'); // Added
+    const jariyahCancelBtn = document.getElementById('jariyah-cancel-btn'); // Added
     const jariyahList = document.getElementById('jariyah-list');
     const totalJumlahJariyahElement = document.getElementById('total-jumlah-jariyah');
+    const jariyahTanggalInput = document.getElementById('jariyah-tanggal'); 
+    const jariyahNamaInput = document.getElementById('jariyah-nama');
+    const jariyahAlamatInput = document.getElementById('jariyah-alamat');
+    const jariyahJumlahInput = document.getElementById('jariyah-jumlah');
     
     // Elemen Kas Umum
     const kasumumForm = document.getElementById('kasumum-form');
+    const kasumumFormTitle = document.getElementById('kasumum-form-title');
+    const kasumumDocId = document.getElementById('kasumum-doc-id'); // Added
+    const kasumumSubmitBtn = document.getElementById('kasumum-submit-btn'); // Added
+    const kasumumCancelBtn = document.getElementById('kasumum-cancel-btn'); // Added
     const kasumumList = document.getElementById('kasumum-list');
     const totalSaldoKasUmumElement = document.getElementById('total-saldo-kasumum');
+    const kasumumTanggalInput = document.getElementById('kasumum-tanggal');
+    const kasumumUraianInput = document.getElementById('kasumum-uraian');
     const kasumumKategoriSelect = document.getElementById('kasumum-kategori'); 
     const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); 
 
@@ -416,6 +447,34 @@
             modalContainer.classList.add('hidden');
         }, 300);
     };
+    
+    // --- Logika Mode Edit/Batal ---
+    const resetJariyahForm = () => {
+        jariyahForm.reset();
+        jariyahDocId.value = '';
+        jariyahEditMode.id = null;
+        jariyahFormTitle.textContent = 'Input Data Jariyah Baru';
+        jariyahSubmitBtn.textContent = 'Tambah Catatan';
+        jariyahSubmitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        jariyahSubmitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        jariyahCancelBtn.classList.add('hidden');
+        jariyahTanggalInput.valueAsDate = new Date(); 
+    }
+    jariyahCancelBtn.addEventListener('click', resetJariyahForm);
+
+    const resetKasUmumForm = () => {
+        kasumumForm.reset();
+        kasumumDocId.value = '';
+        kasUmumEditMode.id = null;
+        kasumumFormTitle.textContent = 'Input Jurnal Kas Baru';
+        kasumumSubmitBtn.textContent = 'Catat Jurnal';
+        kasumumSubmitBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        kasumumSubmitBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        kasumumCancelBtn.classList.add('hidden');
+        kasumumTanggalInput.valueAsDate = new Date(); 
+    }
+    kasumumCancelBtn.addEventListener('click', resetKasUmumForm);
+
 
     // --- Logika Pergantian Tab ---
     const switchTab = (targetId) => {
@@ -434,11 +493,11 @@
             }
         });
         
-        // Atur ulang formulir Kas Umum saat berpindah tab
-        if (currentTab === 'kasumum') {
-            kasumumForm.reset();
-            kasumumJumlahInput.readOnly = false;
-            kasumumJumlahInput.classList.remove('bg-gray-100');
+        // Reset formulir saat berpindah tab
+        if (currentTab === 'jariyah') {
+            resetKasUmumForm(); // Pastikan form Kas Umum di-reset
+        } else if (currentTab === 'kasumum') {
+            resetJariyahForm(); // Pastikan form Jariyah di-reset
         }
     }
 
@@ -515,6 +574,19 @@
         }
     });
 
+    logoutButton.addEventListener('click', async () => {
+        showModal("Konfirmasi Log Out", "Apakah Anda yakin ingin keluar?", true, async () => {
+            try {
+                if (unsubscribeJariyah) { unsubscribeJariyah(); }
+                if (unsubscribeKasUmum) { unsubscribeKasUmum(); }
+                await signOut(auth);
+            } catch (error) {
+                console.error("Error signing out: ", error);
+                showModal("Gagal Log Out", "Terjadi kesalahan saat keluar. Coba lagi.");
+            }
+        });
+    });
+
 
     // --- 3. Fungsi Firestore ---
 
@@ -528,80 +600,130 @@
         return collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
     };
 
-    // --- Handler Jariyah ---
+    // --- Handler Jariyah (Tambah & Edit) ---
     jariyahForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
-            showModal("Gagal", "Anda harus login untuk menambah data.");
+            showModal("Gagal", "Anda harus login untuk menambah/mengedit data.");
             return;
         }
         const ref = getCollectionRef('jariyah_records');
         if (!ref) return;
 
-        // Gunakan toValidNumber untuk memastikan jumlah adalah angka
-        const jumlahInput = toValidNumber(document.getElementById('jariyah-jumlah').value);
+        const jumlahInput = toValidNumber(jariyahJumlahInput.value);
         if (jumlahInput <= 0) {
             showModal("Peringatan", "Jumlah Jariyah harus lebih dari 0.");
             return;
         }
 
         const data = {
-            tanggal: document.getElementById('jariyah-tanggal').value,
-            nama: document.getElementById('jariyah-nama').value,
-            alamat: document.getElementById('jariyah-alamat').value || '-',
+            tanggal: jariyahTanggalInput.value,
+            nama: jariyahNamaInput.value,
+            alamat: jariyahAlamatInput.value || '-',
             jumlah: jumlahInput,
             timestamp: serverTimestamp() 
         };
+        
+        const docId = jariyahDocId.value;
+
         try {
-            await addDoc(ref, data);
-            jariyahForm.reset();
-            document.getElementById('jariyah-tanggal').valueAsDate = new Date(); 
+            if (docId && jariyahEditMode.id === docId) {
+                // Mode Edit: Perbarui dokumen
+                await updateDoc(doc(ref, docId), data);
+                showModal("Sukses", "Data Jariyah berhasil diperbarui!", false);
+            } else {
+                // Mode Tambah: Tambah dokumen baru
+                await addDoc(ref, data);
+            }
+            resetJariyahForm();
         } catch (e) {
-            console.error("Error adding jariyah document: ", e);
-            showModal("Gagal Menambah Data Jariyah", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
+            console.error("Error saving jariyah document: ", e);
+            showModal("Gagal Menyimpan Data Jariyah", "Terjadi kesalahan saat menyimpan data. Coba lagi.");
         }
     });
     
-    // --- Handler Kas Umum ---
+    // Fungsi Edit Jariyah: Memuat data ke form
+    window.editJariyah = (record) => {
+        jariyahDocId.value = record.id;
+        jariyahEditMode.id = record.id;
+        jariyahTanggalInput.value = record.tanggal;
+        jariyahNamaInput.value = record.nama;
+        jariyahAlamatInput.value = record.alamat === '-' ? '' : record.alamat;
+        jariyahJumlahInput.value = record.jumlah;
+
+        jariyahFormTitle.textContent = `Edit Data Jariyah: ${record.nama}`;
+        jariyahSubmitBtn.textContent = 'Simpan Perubahan';
+        // Ubah warna tombol submit menjadi hijau
+        jariyahSubmitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+        jariyahSubmitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        jariyahCancelBtn.classList.remove('hidden');
+    };
+
+
+    // --- Handler Kas Umum (Tambah & Edit) ---
     kasumumForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
-            showModal("Gagal", "Anda harus login untuk menambah data.");
+            showModal("Gagal", "Anda harus login untuk menambah/mengedit data.");
             return;
         }
         const ref = getCollectionRef('kas_umum_records');
         if (!ref) return;
 
-        const kategori = document.getElementById('kasumum-kategori').value;
+        const kategori = kasumumKategoriSelect.value;
         if (!kategori) {
              showModal("Peringatan", "Kategori wajib dipilih.");
              return;
         }
         
-        // Gunakan toValidNumber untuk memastikan jumlah adalah angka
-        const jumlahInput = toValidNumber(document.getElementById('kasumum-jumlah').value);
+        const jumlahInput = toValidNumber(kasumumJumlahInput.value);
         if (jumlahInput <= 0) {
             showModal("Peringatan", "Jumlah uang harus lebih dari 0.");
             return;
         }
 
         const data = {
-            tanggal: document.getElementById('kasumum-tanggal').value,
-            uraian: document.getElementById('kasumum-uraian').value,
+            tanggal: kasumumTanggalInput.value,
+            uraian: kasumumUraianInput.value,
             kategori: kategori,
             jumlah: jumlahInput,
             timestamp: serverTimestamp() 
         };
+        
+        const docId = kasumumDocId.value;
+
         try {
-            await addDoc(ref, data);
-            kasumumForm.reset();
-            document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
-            
+            if (docId && kasUmumEditMode.id === docId) {
+                 // Mode Edit: Perbarui dokumen
+                await updateDoc(doc(ref, docId), data);
+                showModal("Sukses", "Jurnal Kas Umum berhasil diperbarui!", false);
+            } else {
+                // Mode Tambah: Tambah dokumen baru
+                await addDoc(ref, data);
+            }
+            resetKasUmumForm();
         } catch (e) {
-            console.error("Error adding kas umum document: ", e);
-            showModal("Gagal Mencatat Kas Umum", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
+            console.error("Error saving kas umum document: ", e);
+            showModal("Gagal Mencatat Kas Umum", "Terjadi kesalahan saat menyimpan data. Coba lagi.");
         }
     });
+
+    // Fungsi Edit Kas Umum: Memuat data ke form
+    window.editKasUmum = (record) => {
+        kasumumDocId.value = record.id;
+        kasUmumEditMode.id = record.id;
+        kasumumTanggalInput.value = record.tanggal;
+        kasumumUraianInput.value = record.uraian;
+        kasumumKategoriSelect.value = record.kategori;
+        kasumumJumlahInput.value = record.jumlah;
+
+        kasumumFormTitle.textContent = `Edit Jurnal Kas: ${record.uraian}`;
+        kasumumSubmitBtn.textContent = 'Simpan Perubahan';
+        // Ubah warna tombol submit menjadi hijau
+        kasumumSubmitBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+        kasumumSubmitBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        kasumumCancelBtn.classList.remove('hidden');
+    };
 
     const deleteRecord = async (docId, type) => {
         if (!isAuthReady || !userId) {
@@ -646,7 +768,16 @@
             records.sort((a, b) => {
                 const timeA = a.timestamp?.toMillis() || 0;
                 const timeB = b.timestamp?.toMillis() || 0;
-                return timeA - timeB; 
+                // Urutkan berdasarkan tanggal (Ascending)
+                const dateA = new Date(a.tanggal + 'T00:00:00').getTime();
+                const dateB = new Date(b.tanggal + 'T00:00:00').getTime();
+
+                if (dateA !== dateB) {
+                    return dateA - dateB;
+                } else {
+                    // Jika tanggal sama, gunakan timestamp dari server
+                    return timeA - timeB; 
+                }
             });
 
             if (type === 'jariyah') {
@@ -663,7 +794,7 @@
         if (type === 'kasumum') { unsubscribeKasUmum = unsubscribe; }
     };
     
-    // --- Logika Rendering Jariyah (Diperbaiki untuk Urutan NO 1, 2, 3...) ---
+    // --- Logika Rendering Jariyah (Sudah Termasuk Tombol Edit) ---
     const calculateAndRenderJariyah = (records) => {
         let runningTotal = 0;
         let totalJumlahGlobal = 0;
@@ -722,23 +853,33 @@
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.perawatanMakam)}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.ongkosPanitia)}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.biayaHaul)}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
-                    <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="jariyah" title="Hapus Catatan">
+                <td class="px-3 py-3 whitespace-nowrap text-center text-sm flex justify-center items-center space-x-2">
+                    <button class="edit-btn font-semibold p-1 rounded-full hover:bg-blue-100 transition" data-id="${record.id}" data-type="jariyah" title="Edit Catatan">
+                        Edit
+                    </button>
+                    <button class="delete-btn text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="jariyah" title="Hapus Catatan">
                         Hapus
                     </button>
                 </td>
             `;
 
+            // Event Listener untuk Hapus
             row.querySelector('.delete-btn').addEventListener('click', (e) => {
                 const docId = e.currentTarget.dataset.id;
                 showModal("Konfirmasi Hapus Jariyah", `Apakah Anda yakin ingin menghapus catatan Jariyah dari ${record.nama}?`, true, () => deleteRecord(docId, 'jariyah'));
+            });
+            
+            // Event Listener untuk Edit
+            row.querySelector('.edit-btn').addEventListener('click', () => {
+                // Panggil fungsi edit dengan data lengkap
+                window.editJariyah(record);
             });
 
             jariyahList.appendChild(row);
         });
     };
     
-    // --- Logika Rendering Kas Umum (Diperbaiki untuk Urutan NO 1, 2, 3...) ---
+    // --- Logika Rendering Kas Umum (Sudah Termasuk Tombol Edit) ---
     const calculateAndRenderKasUmum = (dbRecords) => {
         let saldo = 0;
         let records = [];
@@ -754,7 +895,8 @@
                 danaMasuk: globalTotalJariyah,
                 danaKeluar: 0,
                 isInitial: true, 
-                timestamp: { toMillis: () => 0 } // Timestamp paling awal (0)
+                // Set timestamp virtual agar selalu di paling atas saat diurutkan.
+                timestamp: { toMillis: () => 0 } 
             });
             saldo += globalTotalJariyah;
         }
@@ -818,18 +960,32 @@
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-green-700">${record.danaMasuk > 0 ? formatRupiah(record.danaMasuk) : '-'}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-red-700">${record.danaKeluar > 0 ? formatRupiah(record.danaKeluar) : '-'}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right running-saldo-cell-kas">${formatRupiah(record.saldo)}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
+                <td class="px-3 py-3 whitespace-nowrap text-center text-sm flex justify-center items-center space-x-2">
                     ${record.isInitial 
                         ? '<span class="text-xs text-orange-500 font-bold">Otomatis</span>' 
-                        : `<button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="kasumum" title="Hapus Catatan">Hapus</button>`
+                        : `
+                            <button class="edit-btn font-semibold p-1 rounded-full hover:bg-blue-100 transition" data-id="${record.id}" data-type="kasumum" title="Edit Jurnal">
+                                Edit
+                            </button>
+                            <button class="delete-btn text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="kasumum" title="Hapus Jurnal">
+                                Hapus
+                            </button>
+                          `
                     }
                 </td>
             `;
             
             if (!record.isInitial) {
+                // Event Listener untuk Hapus
                 row.querySelector('.delete-btn').addEventListener('click', (e) => {
                     const docId = e.currentTarget.dataset.id;
                     showModal("Konfirmasi Hapus Jurnal", `Apakah Anda yakin ingin menghapus jurnal: ${record.uraian}?`, true, () => deleteRecord(docId, 'kasumum'));
+                });
+                
+                // Event Listener untuk Edit
+                row.querySelector('.edit-btn').addEventListener('click', () => {
+                    // Panggil fungsi edit dengan data lengkap
+                    window.editKasUmum(record);
                 });
             }
 
@@ -839,18 +995,7 @@
 
 
     // --- 4. Aksi Panel Kontrol ---
-    logoutButton.addEventListener('click', async () => {
-        showModal("Konfirmasi Log Out", "Apakah Anda yakin ingin keluar?", true, async () => {
-            try {
-                if (unsubscribeJariyah) { unsubscribeJariyah(); }
-                if (unsubscribeKasUmum) { unsubscribeKasUmum(); }
-                await signOut(auth);
-            } catch (error) {
-                console.error("Error signing out: ", error);
-                showModal("Gagal Log Out", "Terjadi kesalahan saat keluar. Coba lagi.");
-            }
-        });
-    });
+    // (Listener Log Out dipindahkan ke bagian atas setelah deklarasi)
 
     resetButton.addEventListener('click', () => {
         const activeCollection = currentTab === 'jariyah' ? 'jariyah_records' : 'kas_umum_records';
