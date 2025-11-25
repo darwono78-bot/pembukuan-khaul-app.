@@ -214,7 +214,30 @@
 
             <div id="donatur-pagination-container" class="flex justify-center gap-2 py-4 mb-12">
             </div>
-        </div>
+
+            <hr class="my-8" id="donasi-hr">
+            <div id="donasi-input-container" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Input Data Donasi Jariyah</h2>
+                <form id="form-donasi" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-lg border mb-8">
+                    
+                    <input type="hidden" id="donatur-id-input" value="">
+
+                    <div class="md:col-span-2"><label for="tanggal-input-donasi" class="block text-sm font-medium text-gray-700">Tanggal</label><input type="date" id="tanggal-input-donasi" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    <div class="md:col-span-2"><label for="nama-donatur-input" class="block text-sm font-medium text-gray-700">Nama Donatur</label><input type="text" id="nama-donatur-input" required placeholder="Nama lengkap donatur" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    <div class="md:col-span-2"><label for="alamat-input" class="block text-sm font-medium text-gray-700">Alamat</label><input type="text" id="alamat-input" required placeholder="Alamat donatur" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    <div class="md:col-span-2"><label for="jariyah-input" class="block text-sm font-medium text-gray-700">Jariyah (Nominal Rupiah)</label><input type="number" id="jariyah-input" required min="1" placeholder="Masukkan jumlah donasi (misal: 100000)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    
+                    <div class="col-span-full mt-4 flex gap-4">
+                        <button type="submit" id="donasi-submit-btn" class="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
+                            Catat Donasi
+                        </button>
+                        <button type="button" id="donasi-cancel-btn" class="hidden py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150" onclick="resetDonasiForm()">
+                            Batal Edit
+                        </button>
+                    </div>
+                </form>
+            </div>
+            </div>
 
         <div id="tab-content-jurnal" class="tab-content hidden">
             <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Jurnal Kas Umum (Dana Masuk & Keluar)</h2>
@@ -250,7 +273,43 @@
             
             <div id="jurnal-pagination-container" class="flex justify-center gap-2 py-4 mb-12">
             </div>
-        </div>
+
+            <hr class="my-8" id="jurnal-hr">
+            <div id="jurnal-input-container" class="hidden">
+                <h2 class="text-xl font-semibold mb-4 text-gray-700">Input Jurnal Kas Umum (Dana Keluar)</h2>
+                <form id="form-jurnal" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-lg border mb-8">
+                    
+                    <input type="hidden" id="jurnal-id-input" value="">
+
+                    <div><label for="tanggal-input-jurnal" class="block text-sm font-medium text-gray-700">Tanggal</label><input type="date" id="tanggal-input-jurnal" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    <div><label for="uraian-input" class="block text-sm font-medium text-gray-700">Uraian / Keterangan</label><input type="text" id="uraian-input" required placeholder="Contoh: Pembayaran Konsumsi" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    
+                    <div>
+                        <label for="kategori-input" class="block text-sm font-medium text-gray-700">Kategori Dana Keluar</label>
+                        <select id="kategori-input" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            <option value="">Pilih Kategori Pengeluaran</option>
+                            <option value="Ongkos Kiai">1. Ongkos Kiai</option>
+                            <option value="Bayar Khataman">2. Bayar Khataman</option>
+                            <option value="Bayar Konsumsi">3. Bayar Konsumsi</option>
+                            <option value="Bayar Persewaan">4. Bayar Persewaan</option>
+                            <option value="Bayar Pekerja">5. Bayar Pekerja</option>
+                            <option value="Lain-lain">6. Lain-lain</option>
+                        </select>
+                    </div>
+
+                    <div><label for="dana-keluar-input" class="block text-sm font-medium text-gray-700">Dana Keluar (Rp)</label><input type="number" id="dana-keluar-input" required min="1" placeholder="Masukkan jumlah pengeluaran" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
+                    
+                    <div class="col-span-full mt-4 flex gap-4">
+                        <button type="submit" id="jurnal-submit-btn" class="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150">
+                            Catat Pengeluaran
+                        </button>
+                        <button type="button" id="jurnal-cancel-btn" class="hidden py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150" onclick="resetJurnalForm()">
+                            Batal Edit
+                        </button>
+                    </div>
+                </form>
+            </div>
+            </div>
 
 
         <div id="login-form-container" class="flex flex-col md:flex-row justify-center items-center gap-2 py-4 border-t border-b mb-8"> 
@@ -261,67 +320,6 @@
             </button>
         </div>
 
-        <hr class="my-8">
-
-        <div id="jurnal-input-container" class="hidden">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">3. Input Jurnal Kas Umum (Dana Keluar)</h2>
-            <form id="form-jurnal" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-lg border mb-8">
-                
-                <input type="hidden" id="jurnal-id-input" value="">
-
-                <div><label for="tanggal-input-jurnal" class="block text-sm font-medium text-gray-700">Tanggal</label><input type="date" id="tanggal-input-jurnal" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                <div><label for="uraian-input" class="block text-sm font-medium text-gray-700">Uraian / Keterangan</label><input type="text" id="uraian-input" required placeholder="Contoh: Pembayaran Konsumsi" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                
-                <div>
-                    <label for="kategori-input" class="block text-sm font-medium text-gray-700">Kategori Dana Keluar</label>
-                    <select id="kategori-input" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
-                        <option value="">Pilih Kategori Pengeluaran</option>
-                        <option value="Ongkos Kiai">1. Ongkos Kiai</option>
-                        <option value="Bayar Khataman">2. Bayar Khataman</option>
-                        <option value="Bayar Konsumsi">3. Bayar Konsumsi</option>
-                        <option value="Bayar Persewaan">4. Bayar Persewaan</option>
-                        <option value="Bayar Pekerja">5. Bayar Pekerja</option>
-                        <option value="Lain-lain">6. Lain-lain</option>
-                    </select>
-                </div>
-
-                <div><label for="dana-keluar-input" class="block text-sm font-medium text-gray-700">Dana Keluar (Rp)</label><input type="number" id="dana-keluar-input" required min="1" placeholder="Masukkan jumlah pengeluaran" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                
-                <div class="col-span-full mt-4 flex gap-4">
-                    <button type="submit" id="jurnal-submit-btn" class="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150">
-                        Catat Pengeluaran
-                    </button>
-                    <button type="button" id="jurnal-cancel-btn" class="hidden py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150" onclick="resetJurnalForm()">
-                        Batal Edit
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <hr class="my-8">
-
-        <div id="donasi-input-container" class="hidden">
-            <h2 class="text-xl font-semibold mb-4 text-gray-700">4. Input Data Donasi Jariyah</h2>
-            <form id="form-donasi" class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-lg border mb-8">
-                
-                <input type="hidden" id="donatur-id-input" value="">
-
-                <div class="md:col-span-2"><label for="tanggal-input-donasi" class="block text-sm font-medium text-gray-700">Tanggal</label><input type="date" id="tanggal-input-donasi" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                <div class="md:col-span-2"><label for="nama-donatur-input" class="block text-sm font-medium text-gray-700">Nama Donatur</label><input type="text" id="nama-donatur-input" required placeholder="Nama lengkap donatur" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                <div class="md:col-span-2"><label for="alamat-input" class="block text-sm font-medium text-gray-700">Alamat</label><input type="text" id="alamat-input" required placeholder="Alamat donatur" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                <div class="md:col-span-2"><label for="jariyah-input" class="block text-sm font-medium text-gray-700">Jariyah (Nominal Rupiah)</label><input type="number" id="jariyah-input" required min="1" placeholder="Masukkan jumlah donasi (misal: 100000)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></div>
-                
-                <div class="col-span-full mt-4 flex gap-4">
-                    <button type="submit" id="donasi-submit-btn" class="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150">
-                        Catat Donasi
-                    </button>
-                    <button type="button" id="donasi-cancel-btn" class="hidden py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150" onclick="resetDonasiForm()">
-                        Batal Edit
-                    </button>
-                </div>
-            </form>
-        </div>
-        
         <div id="admin-actions-container" class="hidden flex justify-end items-center mt-4 pt-4 border-t gap-4">
             <button onclick="confirmResetData()" class="btn-admin-small bg-yellow-600 text-white font-bold rounded hover:bg-yellow-700 transition duration-150">
                 Reset Semua Data
@@ -344,13 +342,12 @@
         // ====================================================================================
         const firebaseConfig = {
           // HARUS DIGANTI DENGAN DATA PROYEK FIREBASE KAKAK
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
-            authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+          apiKey: "YOUR_API_KEY", 
+          authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+          projectId: "YOUR_PROJECT_ID",
+          storageBucket: "YOUR_PROJECT_ID.appspot.com",
+          messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+          appId: "YOUR_APP_ID"
         };
         // ====================================================================================
 
@@ -377,15 +374,29 @@
             tabs.forEach(name => {
                 const content = document.getElementById(`tab-content-${name}`);
                 const button = document.getElementById(`tab-${name}`);
+                
+                // Tambahan: Elemen input dan HR dipindahkan ke dalam tab-content
+                const inputContainer = document.getElementById(`${name}-input-container`);
+                const hrElement = document.getElementById(`${name}-hr`);
 
                 if (name === tabName) {
                     // Tampilkan konten yang dipilih
                     content.classList.remove('hidden');
                     button.classList.add('active');
+                    
+                    // Tampilkan form input jika admin sedang login
+                    if (isAdminLoggedIn) {
+                         inputContainer?.classList.remove('hidden');
+                         hrElement?.classList.remove('hidden');
+                    }
                 } else {
                     // Sembunyikan konten lainnya
                     content.classList.add('hidden');
                     button.classList.remove('active');
+                    
+                    // Sembunyikan form input lainnya
+                    inputContainer?.classList.add('hidden');
+                    hrElement?.classList.add('hidden');
                 }
             });
             
@@ -524,7 +535,7 @@
         // 2. AUTENTIKASI DAN GLOBAL RENDER CONTROL 
         // --------------------------------------------------------------------------------
         
-        const updateAdminView = () => {
+        const updateAdminView = (currentTab) => {
             const isLogged = isAdminLoggedIn;
             
             // 1. Tampilkan/Sembunyikan Panel Login/Logout
@@ -543,6 +554,11 @@
             // Update colspan total jurnal (Footer)
             document.getElementById('td-jurnal-total-col').setAttribute('colspan', isLogged ? '3' : '4'); 
             document.getElementById('td-jurnal-total-aksi').classList.toggle('hidden', !isLogged);
+            
+            // Tampilkan/Sembunyikan Input Jurnal hanya jika di tab Jurnal
+            const isJurnalActive = currentTab === 'jurnal';
+            document.getElementById('jurnal-input-container').classList.toggle('hidden', !(isLogged && isJurnalActive));
+            document.getElementById('jurnal-hr').classList.toggle('hidden', !(isLogged && isJurnalActive));
 
 
             // --- LAPORAN DONATUR (RAPIH PUBLIK) ---
@@ -567,9 +583,11 @@
             document.getElementById('td-donatur-total-col-4').setAttribute('colspan', isLogged ? '4' : '0'); 
 
 
-            // 3. Tampilkan/Sembunyikan Input Forms
-            document.getElementById('jurnal-input-container').classList.toggle('hidden', !isLogged);
-            document.getElementById('donasi-input-container').classList.toggle('hidden', !isLogged);
+            // Tampilkan/Sembunyikan Input Donasi hanya jika di tab Donatur
+            const isDonaturActive = currentTab === 'donatur';
+            document.getElementById('donasi-input-container').classList.toggle('hidden', !(isLogged && isDonaturActive));
+            document.getElementById('donasi-hr').classList.toggle('hidden', !(isLogged && isDonaturActive));
+
             
             // Reset halaman ke 1 saat admin view berubah
             currentDonaturPage = 1;
@@ -581,10 +599,13 @@
 
         const handleAuthStateChange = (user) => {
             isAdminLoggedIn = !!user; 
-            updateAdminView();
+            // Tentukan tab aktif saat ini untuk mengatur visibilitas form
+            const activeTab = document.querySelector('.tab-button.active').id.replace('tab-', '');
+            updateAdminView(activeTab);
             if (isAdminLoggedIn) {
-                 // Pindah ke Input Jurnal jika login berhasil
-                 window.scrollTo({ top: document.getElementById('jurnal-input-container').offsetTop - 50, behavior: 'smooth' });
+                 // Pindah ke Input form yang aktif
+                 const activeFormId = activeTab === 'jurnal' ? 'jurnal-input-container' : 'donasi-input-container';
+                 window.scrollTo({ top: document.getElementById(activeFormId).offsetTop - 50, behavior: 'smooth' });
             }
         };
 
@@ -1363,4 +1384,3 @@
 
 </body>
 </html>
-
