@@ -425,15 +425,15 @@
         button.addEventListener('click', () => switchTab(button.dataset.target));
     });
     
-    // NEW: Handle automatic fill when category changes
+    // LOGIC BARU: Mengisi Jumlah Kas Umum secara otomatis saat Kategori = Donatur
     kasumumKategoriSelect.addEventListener('change', (e) => {
         if (e.target.value === 'Donatur') {
-            // Automatically fill with the global total Jariyah
+            // Otomatis isi dengan total Jariyah Global
             kasumumJumlahInput.value = globalTotalJariyah;
             kasumumJumlahInput.readOnly = true;
             kasumumJumlahInput.title = 'Terisi otomatis dari Total Akhir Semua Jariyah';
         } else {
-            // Clear and allow editing for other categories
+            // Kosongkan dan izinkan pengeditan untuk kategori lain
             kasumumJumlahInput.value = '';
             kasumumJumlahInput.readOnly = false;
             kasumumJumlahInput.title = 'Jumlah Uang';
@@ -674,6 +674,12 @@
         
         // NEW: Update global total variable
         globalTotalJariyah = totalJumlahGlobal;
+        
+        // Cek jika Kas Umum sedang dalam mode 'Donatur' saat ini, update angkanya.
+        if (kasumumKategoriSelect.value === 'Donatur') {
+             kasumumJumlahInput.value = globalTotalJariyah;
+        }
+
 
         // Reverse back to descending order (newest first) for display
         records.reverse();
