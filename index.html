@@ -1,534 +1,587 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pembukuan Transparansi Publik</title>
+import React, { useState, useEffect, useMemo } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, collection, query, addDoc, onSnapshot, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { ArrowPathIcon, PlusIcon, TrashIcon, ExclamationTriangleIcon, ScaleIcon, ArrowUpIcon, ArrowDownIcon, PowerIcon, CurrencyDollarIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+
+// --- Konfigurasi Firebase dan Global Variables ---
+// Menggunakan variabel global yang disediakan oleh environment Canvas
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+// --- Fungsi Utilitas ---
+
+// Fungsi untuk memformat nominal ke Rupiah
+const formatRupiah = (number) => {
+  if (number === null || number === undefined || isNaN(number)) return 'Rp 0';
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(number);
+};
+
+// Fungsi untuk memformat tanggal ke format lokal
+const formatDate = (timestamp) => {
+  if (!timestamp) return '-';
+  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+// Path Collection Firestore
+const getCollectionPath = (currentUserId) => {
+  // Jalur data pribadi: /artifacts/{appId}/users/{userId}/transactions
+  if (!currentUserId) return null;
+  return `artifacts/${appId}/users/${currentUserId}/transactions`;
+};
+
+// --- Komponen Utama Aplikasi ---
+const App = () => {
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState(null);
+  
+  // State untuk menyimpan instance Firebase
+  const [dbInstance, setDbInstance] = useState(null);
+  const [authInstance, setAuthInstance] = useState(null);
+
+  // State untuk Form Input
+  const initialFormState = {
+    tanggal: new Date().toISOString().substring(0, 10), // Format YYYY-MM-DD
+    deskripsi: '',
+    nominal: '',
+    jenis: 'pemasukan', // 'pemasukan' atau 'pengeluaran'
+  };
+  const [formData, setFormData] = useState(initialFormState);
+
+  // --- Inisialisasi Firebase dan Autentikasi (FIXED) ---
+  useEffect(() => {
+    if (!firebaseConfig.projectId) {
+        setError("Error: Konfigurasi Firebase tidak lengkap.");
+        setIsLoading(false);
+        return;
+    }
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
     
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-        
-        header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1em 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        header h1 {
-            margin: 0;
-        }
-        
-        .container {
-            width: 90%;
-            max-width: 1000px; 
-            margin: 40px auto;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        input, select, button {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
+    setDbInstance(db);
+    setAuthInstance(auth);
 
-        /* --- STYLING FORM INPUT (1 BARIS, 4 KOLOM) --- */
+    // 1. Siapkan listener untuk memantau perubahan status autentikasi
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUserId(user ? user.uid : null);
+      setIsAuthReady(true); // Setelah status auth diketahui, set isAuthReady true
+    });
 
-        #input-fields-container {
-            display: flex;
-            flex-wrap: nowrap; 
-            gap: 0; 
-            margin-bottom: 10px;
-            width: 100%;
+    // 2. Lakukan sign-in awal
+    const performInitialSignIn = async () => {
+      try {
+        if (initialAuthToken) {
+          await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+          // Jika tidak ada token khusus, gunakan sign-in anonim
+          await signInAnonymously(auth);
         }
+        // Listener onAuthStateChanged akan otomatis terpicu setelah sign-in berhasil
+      } catch (e) {
+        console.error("Kesalahan saat sign-in:", e);
+        setError(`Kesalahan saat sign-in: ${e.message}`);
+        setIsLoading(false);
+      }
+    };
 
-        /* Setiap input diatur tepat 25% */
-        #input-fields-container input, 
-        #input-fields-container select {
-            width: 25%; 
-            flex-grow: 0; 
-            flex-shrink: 0; 
-            box-sizing: border-box; 
-            margin: 0 2px; /* Jarak minimal antar kolom */
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        /* Tombol dan input di luar container input tetap 100% */
-        #transaksi-form button {
-            width: 100%;
-            clear: both;
-            margin-top: 5px; 
-        }
-
-        #transaksi-form input:not(#input-fields-container input) {
-            width: 100%;
-        }
-
-        
-        button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        button:hover {
-            background-color: #0056b3;
-        }
-        
-        .hidden {
-            display: none !important; 
-        }
-        
-        .error-message {
-            color: red;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        #logout-btn-header {
-            background-color: #dc3545;
-            width: auto;
-            padding: 8px 15px;
-            margin-bottom: 0;
-        }
-        #logout-btn-header:hover {
-            background-color: #c82333;
-        }
-
-        /* --- STYLING TABEL (DISEIMBANGKAN DENGAN INPUT) --- */
-        #data-transaksi {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            table-layout: fixed; /* PENTING: Memastikan lebar kolom dihormati */
-        }
-
-        /* Atur lebar kolom tabel agar seimbang dengan 4 kolom input */
-        #data-transaksi thead tr th:nth-child(1) { width: 5%; }    /* No */
-        #data-transaksi thead tr th:nth-child(2) { width: 17%; }   /* Tanggal */
-        #data-transaksi thead tr th:nth-child(3) { width: 22%; }   /* Nama */
-        #data-transaksi thead tr th:nth-child(4) { width: 22%; }   /* Alamat */
-        #data-transaksi thead tr th:nth-child(5) { width: 24%; }   /* Nominal */
-        #data-transaksi thead tr th:nth-child(6) { width: 10%; }   /* Aksi */
-
-        #data-transaksi th, #data-transaksi td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-            overflow: hidden; 
-        }
-        
-        .aksi-btn {
-            padding: 5px 10px;
-            margin-right: 5px;
-            font-size: 14px;
-        }
-        .edit-btn { background-color: #ffc107; color: #333;}
-        .delete-btn { background-color: #dc3545; }
-
-        /* Tampilan Logged-in */
-        #logged-in-status {
-            font-size: 0.9em;
-            color: #28a745;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        /* Atur tampilan form login saat sudah login */
-        #auth-container.logged-in {
-            max-width: 400px;
-        }
-        
-        #cancel-edit-btn {
-            background-color: #6c757d;
-            margin-top: -10px;
-        }
-    </style>
+    performInitialSignIn();
     
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-</head>
-<body>
-    <header>
-        <h1>💵 Pembukuan Transparansi Publik</h1>
-        <nav id="auth-nav">
-            </nav>
-    </header>
+    // Cleanup listener
+    return () => unsubscribe(); 
 
-    <main>
-        <section id="public-data-container" class="container">
-            
-            <h3>Daftar Transaksi (Transparansi)</h3>
-            <table id="data-transaksi">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Tanggal</th>
-                        <th>Nama</th>
-                        <th>Alamat</th>
-                        <th>Nominal</th>
-                        <th id="aksi-header" class="hidden">Aksi</th> 
-                    </tr>
-                </thead>
-                <tbody id="transaksi-list">
-                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
-                </tbody>
-            </table>
-            
-        </section>
+  }, []); // Hanya dijalankan sekali saat komponen dimuat
 
-        <hr style="max-width: 900px; margin: 20px auto;">
+  // --- Listener Data Transaksi (Real-time) ---
+  useEffect(() => {
+    // Pastikan Autentikasi sudah siap dan kita punya User ID yang valid
+    if (!isAuthReady || !dbInstance || !userId) {
+      console.log('DEBUG: Menunggu Auth/DB Siap.');
+      return;
+    }
 
-        <section id="auth-container" class="container">
-            <p id="logged-in-status" class="hidden">Anda masuk sebagai: <span id="user-display"></span></p>
+    const path = getCollectionPath(userId);
+    if (!path) return;
+    
+    console.log('DEBUG: Melampirkan onSnapshot ke jalur:', path); 
 
-            <div id="input-section" class="hidden">
-                <h3 id="form-title">Input Transaksi Baru</h3>
-                <form id="transaksi-form">
-                    <input type="hidden" id="edit-id" value=""> 
-                    
-                    <div id="input-fields-container"> 
-                        <input type="date" id="input-tanggal" required>
-                        <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
-                        <input type="text" id="input-alamat" placeholder="Alamat" required>
-                        <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
+    const colRef = collection(dbInstance, path);
+    const q = query(colRef); 
+
+    setIsLoading(true);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newTransactions = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        newTransactions.push({
+          id: doc.id,
+          ...data,
+          // Pastikan nominal adalah angka
+          nominal: Number(data.nominal || 0),
+        });
+      });
+
+      // Urutkan berdasarkan tanggal (descending, terbaru di atas)
+      newTransactions.sort((a, b) => {
+          const dateA = a.tanggal?.toMillis ? a.tanggal.toMillis() : new Date(a.tanggal).getTime();
+          const dateB = b.tanggal?.toMillis ? b.tanggal.toMillis() : new Date(b.tanggal).getTime();
+          return dateB - dateA; 
+      });
+
+      setTransactions(newTransactions);
+      setIsLoading(false);
+      setError(null);
+    }, (e) => {
+      console.error("Kesalahan saat mengambil data:", e);
+      console.error("DEBUG Diagnostik Error: UserID:", userId, "Path:", path); 
+      if (isAuthReady) {
+        // Pesan error yang diperjelas
+        setError(`Kesalahan saat mengambil data: ${e.message}. Pastikan Aturan Keamanan Firestore sudah dipublikasikan dan jalur data sudah benar: /artifacts/{appId}/users/{userId}/transactions.`);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe(); 
+  }, [isAuthReady, userId, dbInstance]); 
+  
+  // --- Perhitungan Saldo & Ringkasan ---
+  const { totalPemasukan, totalPengeluaran, saldoAkhir } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    transactions.forEach(t => {
+      if (t.jenis === 'pemasukan') {
+        income += t.nominal;
+      } else if (t.jenis === 'pengeluaran') {
+        expense += t.nominal;
+      }
+    });
+
+    return {
+      totalPemasukan: income,
+      totalPengeluaran: expense,
+      saldoAkhir: income - expense,
+    };
+  }, [transactions]);
+
+
+  // --- Penanganan Form ---
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNominalChange = (e) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    setFormData(prev => ({ ...prev, nominal: rawValue }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!dbInstance || !userId) {
+      setError("Autentikasi belum selesai. Mohon tunggu sebentar.");
+      return;
+    }
+
+    const nominalValue = parseInt(formData.nominal || '0', 10);
+    if (nominalValue <= 0) {
+      setError("Nominal transaksi harus lebih dari 0.");
+      return;
+    }
+    
+    const dateObject = new Date(formData.tanggal);
+    if (isNaN(dateObject.getTime())) {
+        setError("Format tanggal tidak valid.");
+        return;
+    }
+    
+    // Gunakan Timestamp Firestore untuk tanggal
+    const dataToSave = {
+      tanggal: Timestamp.fromDate(dateObject), 
+      deskripsi: formData.deskripsi.trim() || 'Tanpa Deskripsi',
+      nominal: nominalValue,
+      jenis: formData.jenis, 
+      userId: userId, 
+    };
+
+    try {
+      const path = getCollectionPath(userId);
+      if (!path) return;
+      
+      if (editingTransaction) {
+        // Mode Edit
+        const docRef = doc(dbInstance, path, editingTransaction.id); 
+        await updateDoc(docRef, dataToSave);
+      } else {
+        // Mode Tambah Baru
+        await addDoc(collection(dbInstance, path), dataToSave); 
+      }
+      
+      setFormData(initialFormState);
+      setIsModalOpen(false);
+      setEditingTransaction(null);
+      setError(null);
+    } catch (e) {
+      console.error("Kesalahan saat menyimpan data:", e);
+      setError(`Kesalahan saat menyimpan data: ${e.message}`);
+    }
+  };
+
+  const handleEdit = (transaction) => {
+    setEditingTransaction(transaction);
+    
+    // Konversi Timestamp ke string YYYY-MM-DD
+    let dateStr;
+    if (transaction.tanggal.toDate) {
+        dateStr = transaction.tanggal.toDate().toISOString().substring(0, 10);
+    } else {
+        dateStr = new Date(transaction.tanggal).toISOString().substring(0, 10);
+    }
+
+    setFormData({
+      tanggal: dateStr,
+      deskripsi: transaction.deskripsi,
+      nominal: String(transaction.nominal),
+      jenis: transaction.jenis,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (transaction) => {
+    setTransactionToDelete(transaction);
+    setIsConfirmModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!transactionToDelete || !dbInstance || !userId) return;
+
+    try {
+      const path = getCollectionPath(userId);
+      if (!path) return;
+      
+      const docRef = doc(dbInstance, path, transactionToDelete.id); 
+      await deleteDoc(docRef);
+      setIsConfirmModalOpen(false);
+      setTransactionToDelete(null);
+    } catch (e) {
+      console.error("Kesalahan saat menghapus data:", e);
+      setError(`Kesalahan saat menghapus data: ${e.message}`);
+      setIsConfirmModalOpen(false);
+      setTransactionToDelete(null);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setEditingTransaction(null);
+    setFormData(initialFormState);
+    setError(null);
+  };
+
+  // --- Komponen UI Pembantu ---
+
+  // Card Ringkasan Keuangan
+  const SummaryCard = ({ icon: Icon, title, value, bgColor, valueColor }) => (
+    <div className={`p-5 rounded-xl shadow-lg flex items-center justify-between ${bgColor} transform transition duration-200 hover:scale-[1.02] border-b-4 border-opacity-50`}>
+      <div className="flex items-center">
+        <Icon className={`w-6 h-6 mr-3 ${valueColor}`} />
+        <div>
+          <p className="text-sm font-medium text-gray-700">{title}</p>
+          <h2 className={`text-xl font-bold ${valueColor} mt-1`}>
+            {formatRupiah(value)}
+          </h2>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Modal Form Input/Edit
+  const InputModal = () => (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+      <div className="relative p-6 border w-11/12 md:w-1/2 shadow-lg rounded-xl bg-white animate-fade-in-down">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
+          {editingTransaction ? 'Edit Transaksi' : 'Input Transaksi Baru'}
+        </h3>
+        {error && (
+            <div className="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+                <ExclamationTriangleIcon className="w-4 h-4 inline mr-1" />
+                {error}
+            </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="jenis" className="block text-sm font-medium text-gray-700">Jenis Transaksi *</label>
+            <select
+              name="jenis"
+              id="jenis"
+              required
+              value={formData.jenis}
+              onChange={handleFormChange}
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+            >
+              <option value="pemasukan">Pemasukan (Income)</option>
+              <option value="pengeluaran">Pengeluaran (Expense)</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="tanggal" className="block text-sm font-medium text-gray-700">Tanggal *</label>
+            <input
+              type="date"
+              name="tanggal"
+              id="tanggal"
+              required
+              value={formData.tanggal}
+              onChange={handleFormChange}
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+            />
+          </div>
+          <div>
+            <label htmlFor="deskripsi" className="block text-sm font-medium text-gray-700">Deskripsi *</label>
+            <input
+              type="text"
+              name="deskripsi"
+              id="deskripsi"
+              required
+              placeholder="Contoh: Gaji Bulanan, Beli Bahan Makanan"
+              value={formData.deskripsi}
+              onChange={handleFormChange}
+              className="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+            />
+          </div>
+          <div>
+            <label htmlFor="nominal" className="block text-sm font-medium text-gray-700">Nominal (Rp) *</label>
+            <div className="mt-1 relative rounded-lg shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">Rp</span>
+              </div>
+              <input
+                type="text"
+                name="nominal"
+                id="nominal"
+                required
+                placeholder="Masukkan angka saja"
+                value={formData.nominal}
+                onChange={handleNominalChange}
+                className="block w-full rounded-lg pl-10 pr-3 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 p-2 border text-right font-mono text-lg"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-4 pt-4">
+            <button
+              type="button"
+              onClick={handleModalClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition"
+            >
+              {editingTransaction ? 'Simpan Perubahan' : 'Tambah Transaksi'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+  
+  // Modal Konfirmasi Hapus
+  const ConfirmDeleteModal = () => (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+      <div className="relative p-6 border w-11/12 md:w-96 shadow-xl rounded-xl bg-white transform transition-all">
+        <h3 className="text-lg font-bold text-red-700 mb-3">Konfirmasi Penghapusan</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Apakah Anda yakin ingin menghapus transaksi **{transactionToDelete?.deskripsi}** sebesar <span className="font-semibold">{formatRupiah(transactionToDelete?.nominal)}</span>? Aksi ini tidak dapat dibatalkan.
+        </p>
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={() => setIsConfirmModalOpen(false)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={confirmDelete}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+          >
+            Ya, Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Tabel Transaksi
+  const TransactionTable = ({ data }) => (
+    <div className="bg-white rounded-xl shadow-lg overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Tanggal</th>
+            <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-3/6">Deskripsi</th>
+            <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Nominal</th>
+            <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">Jenis</th>
+            <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">Aksi</th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                Belum ada data transaksi. Silakan input transaksi baru.
+              </td>
+            </tr>
+          ) : (
+            data.map((item) => {
+              const isIncome = item.jenis === 'pemasukan';
+              const nominalColor = isIncome ? 'text-green-600' : 'text-red-600';
+              const icon = isIncome ? <ArrowUpIcon className="w-4 h-4" /> : <ArrowDownIcon className="w-4 h-4" />;
+
+              return (
+                <tr key={item.id} className="hover:bg-gray-50 transition duration-100">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{formatDate(item.tanggal)}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.deskripsi}</td>
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm font-mono text-right ${nominalColor}`}>
+                    {formatRupiah(item.nominal)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-xs font-semibold text-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {icon}
+                        <span className="ml-1 hidden sm:inline">{isIncome ? 'Pemasukan' : 'Pengeluaran'}</span>
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 transition"
+                          title="Edit Transaksi"
+                        >
+                          <PencilSquareIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100 transition"
+                          title="Hapus Transaksi"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
                     </div>
-
-                    <button type="submit" id="submit-btn">Simpan Transaksi</button>
-                    <button type="button" id="cancel-edit-btn" class="hidden">Batal Edit</button>
-                    <p id="transaksi-message" class="error-message"></p>
-                </form>
-                <hr>
-            </div>
-            
-
-            <div id="login-section">
-                <h2>Akses Admin Input Data</h2>
-                <form id="login-form">
-                    <input type="email" id="auth-email" placeholder="Email" required>
-                    <input type="password" id="auth-password" placeholder="Password" required>
-                    <button type="submit" id="login-btn">Masuk Admin</button>
-                    <button type="button" id="register-btn">Daftar Admin</button>
-                </form>
-                <p id="auth-message" class="error-message"></p>
-            </div>
-        </section>
-
-    </main>
-    
-    <script>
-        // --- BAGIAN 1: KONFIGURASI FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w", 
-            authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            // URL DATABASE YANG KITA SIMPULKAN DARI PESAN WARNING AWAL ANDA:
-            databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app", 
-            projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
-        };
-
-        // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = app.auth();
-        const db = app.database(); 
-        
-        let currentUserId = null; 
-        let isEditMode = false; 
-        let currentTransactionData = {}; 
-
-        const PUBLIC_DATA_PATH = 'transaksi_publik'; 
-        
-        // --- BAGIAN 2: ELEMEN DOM (HTML) ---
-        const authContainer = document.getElementById('auth-container');
-        const loginSection = document.getElementById('login-section');
-        const inputSection = document.getElementById('input-section');
-        const loginForm = document.getElementById('login-form');
-        const authEmail = document.getElementById('auth-email');
-        const authPassword = document.getElementById('auth-password');
-        const registerBtn = document.getElementById('register-btn');
-        const authMessage = document.getElementById('auth-message');
-        const userDisplay = document.getElementById('user-display');
-        const loggedInStatus = document.getElementById('logged-in-status');
-        const authNav = document.getElementById('auth-nav');
-        
-        // Elemen Transaksi
-        const transaksiForm = document.getElementById('transaksi-form');
-        const formTitle = document.getElementById('form-title');
-        const inputTanggal = document.getElementById('input-tanggal');
-        const inputNama = document.getElementById('input-nama');
-        const inputAlamat = document.getElementById('input-alamat');
-        const inputNominal = document.getElementById('input-nominal');
-        const editId = document.getElementById('edit-id');
-        const submitBtn = document.getElementById('submit-btn');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
-        const transaksiMessage = document.getElementById('transaksi-message');
-        const transaksiList = document.getElementById('transaksi-list');
-        const aksiHeader = document.getElementById('aksi-header');
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+      {isLoading && (
+        <div className="p-4 text-center text-indigo-500 flex items-center justify-center">
+          <ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />
+          Memuat data...
+        </div>
+      )}
+    </div>
+  );
 
 
-        // --- BAGIAN 3: FUNGSI UTILITY (Dideklarasikan di sini agar Global) ---
-        
-        function displayMessage(element, message, isError = false) {
-            element.textContent = message;
-            element.style.color = isError ? 'red' : 'green';
-        }
+  // --- Render Aplikasi Utama ---
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans p-4 sm:p-6 lg:p-8">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-indigo-700">
+          <span className="block text-sm font-medium text-indigo-500">Aplikasi Pelacak</span>
+          Laporan Keuangan
+        </h1>
+        <div className="flex space-x-2">
+            <button
+              onClick={() => {
+                setFormData(initialFormState); 
+                setEditingTransaction(null);
+                setIsModalOpen(true);
+                setError(null);
+              }}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.02]"
+            >
+              <PlusIcon className="w-5 h-5 mr-1" />
+              <span className="hidden sm:inline">Tambah Transaksi</span>
+              <span className="sm:hidden">Tambah</span>
+            </button>
+            <button
+                onClick={() => {
+                    if (authInstance && authInstance.currentUser) {
+                        signOut(authInstance).then(() => console.log("Sign Out Berhasil.")).catch(e => console.error("Sign Out Gagal:", e));
+                    }
+                }}
+                title="Keluar / Sign Out"
+                className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition duration-150"
+            >
+                <PowerIcon className="w-5 h-5" />
+            </button>
+        </div>
+      </header>
+      
+      {/* Tampilkan UID */}
+      <p className="text-xs text-gray-500 mb-4">
+        ID Pengguna (UID): <span className="font-mono text-indigo-500">{userId || 'Menunggu Autentikasi...'}</span>
+      </p>
 
-        function formatRupiah(number) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(number);
-        }
-        
-        function resetForm() {
-            transaksiForm.reset();
-            isEditMode = false;
-            editId.value = '';
-            formTitle.textContent = 'Input Transaksi Baru';
-            submitBtn.textContent = 'Simpan Transaksi';
-            cancelEditBtn.classList.add('hidden');
-            transaksiMessage.textContent = '';
-        }
+      {/* Ringkasan Keuangan */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <SummaryCard
+          icon={ScaleIcon}
+          title="SALDO AKHIR"
+          value={saldoAkhir}
+          bgColor="bg-white"
+          valueColor={saldoAkhir >= 0 ? 'text-indigo-600' : 'text-red-600'}
+        />
+        <SummaryCard
+          icon={ArrowUpIcon}
+          title="TOTAL PEMASUKAN"
+          value={totalPemasukan}
+          bgColor="bg-green-50"
+          valueColor="text-green-600"
+        />
+        <SummaryCard
+          icon={ArrowDownIcon}
+          title="TOTAL PENGELUARAN"
+          value={totalPengeluaran}
+          bgColor="bg-red-50"
+          valueColor="text-red-600"
+        />
+      </div>
 
-        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CRUD) ---
+      {/* Tabel Data Transaksi */}
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Daftar Transaksi ({transactions.length} Data)</h2>
+      <TransactionTable data={transactions} />
 
-        function deleteTransaksi(id) {
-            if (!currentUserId) {
-                alert("Anda harus login sebagai admin untuk menghapus data.");
-                return;
-            }
-            if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
-                const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
-                itemRef.remove()
-                    .then(() => {
-                        console.log("Transaksi berhasil dihapus.");
-                    })
-                    .catch((error) => {
-                        alert(`Gagal menghapus: ${error.message}`);
-                    });
-            }
-        }
+      {/* Modals */}
+      {isModalOpen && <InputModal />}
+      {isConfirmModalOpen && <ConfirmDeleteModal />}
 
-        function editTransaksi(id, data) {
-            const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
-            itemRef.update(data)
-                .then(() => {
-                    displayMessage(transaksiMessage, 'Transaksi berhasil diperbarui!', false);
-                    resetForm();
-                })
-                .catch((error) => {
-                    displayMessage(transaksiMessage, `Gagal memperbarui: ${error.message}`, true);
-                });
-        }
-        
-        function addTransaksi(data) {
-             db.ref(PUBLIC_DATA_PATH).push(data)
-                .then(() => {
-                    displayMessage(transaksiMessage, 'Transaksi berhasil disimpan!', false);
-                    transaksiForm.reset(); 
-                })
-                .catch((error) => {
-                    displayMessage(transaksiMessage, `Gagal menyimpan: ${error.message}`, true);
-                });
-        }
+    </div>
+  );
+};
 
-        function handleTransaksiSubmit(e) {
-            e.preventDefault();
-            
-            if (!currentUserId) {
-                displayMessage(transaksiMessage, 'Error: Anda harus login untuk input data.', true);
-                return;
-            }
-            
-            const dataToSave = {
-                tanggal: inputTanggal.value,
-                nama: inputNama.value,
-                alamat: inputAlamat.value,
-                nominal: parseInt(inputNominal.value) || 0,
-            };
-
-            if (isEditMode) {
-                editTransaksi(editId.value, dataToSave);
-            } else {
-                dataToSave.createdAt = firebase.database.ServerValue.TIMESTAMP;
-                addTransaksi(dataToSave);
-            }
-        }
-        
-        function populateEditForm(id, data) {
-            isEditMode = true;
-            editId.value = id;
-            inputTanggal.value = data.tanggal;
-            inputNama.value = data.nama;
-            inputAlamat.value = data.alamat;
-            inputNominal.value = data.nominal;
-            
-            formTitle.textContent = 'Edit Transaksi';
-            submitBtn.textContent = 'Simpan Perubahan';
-            cancelEditBtn.classList.remove('hidden');
-            transaksiMessage.textContent = 'Mode Edit Aktif. Isi form di atas dan tekan tombol Simpan Perubahan.';
-            
-            inputSection.scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        function loadTransaksi(isLoggedIn) {
-            db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
-                transaksiList.innerHTML = ''; 
-                currentTransactionData = {}; 
-                let data = snapshot.val();
-                let rows = [];
-                let no = 1;
-
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        const item = { id: key, ...data[key] };
-                        rows.push(item);
-                        currentTransactionData[key] = item; 
-                    });
-                    
-                    rows.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
-
-                    rows.forEach(item => {
-                        const row = transaksiList.insertRow();
-                        
-                        row.innerHTML = `
-                            <td>${no++}</td>
-                            <td>${item.tanggal}</td>
-                            <td>${item.nama}</td>
-                            <td>${item.alamat}</td>
-                            <td>${formatRupiah(item.nominal)}</td>
-                            ${isLoggedIn ? 
-                                `<td>
-                                    <button class="aksi-btn edit-btn" data-id="${item.id}">Edit</button>
-                                    <button class="aksi-btn delete-btn" data-id="${item.id}">Hapus</button>
-                                </td>` : 
-                                ''
-                            }
-                        `;
-                    });
-                } else {
-                    transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data transaksi.</td></tr>';
-                }
-            }, (error) => {
-                transaksiList.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${error.message}</td></tr>`;
-            });
-        }
-
-        // --- BAGIAN 5: AUTENTIKASI ---
-
-        function updateAdminView(user) {
-            if (user) {
-                currentUserId = user.uid;
-                userDisplay.textContent = user.email;
-                loggedInStatus.classList.remove('hidden');
-                loginSection.classList.add('hidden');
-                inputSection.classList.remove('hidden');
-                authContainer.classList.add('logged-in'); 
-                resetForm(); 
-
-                aksiHeader.classList.remove('hidden');
-                authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
-                document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
-                loadTransaksi(true); 
-            } else {
-                currentUserId = null;
-                userDisplay.textContent = '';
-                loggedInStatus.classList.add('hidden');
-                loginSection.classList.remove('hidden');
-                inputSection.classList.add('hidden');
-                authContainer.classList.remove('logged-in');
-
-                aksiHeader.classList.add('hidden');
-                authNav.innerHTML = ''; 
-                loadTransaksi(false); 
-            }
-        }
-        
-        function handleLogin(e) {
-            e.preventDefault();
-            const email = authEmail.value;
-            const password = authPassword.value;
-            displayMessage(authMessage, 'Sedang memproses...'); 
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    displayMessage(authMessage, 'Login berhasil!', false);
-                    authEmail.value = ''; 
-                    authPassword.value = '';
-                })
-                .catch((error) => {
-                    displayMessage(authMessage, `Login Gagal: ${error.message}`, true);
-                });
-        }
-
-        function handleRegister() {
-            const email = authEmail.value;
-            const password = authPassword.value;
-            displayMessage(authMessage, 'Sedang mendaftarkan pengguna...');
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    displayMessage(authMessage, 'Pendaftaran berhasil! Silakan masuk.', false);
-                })
-                .catch((error) => {
-                    displayMessage(authMessage, `Pendaftaran Gagal: ${error.message}`, true);
-                });
-        }
-
-        function handleLogout() {
-            auth.signOut()
-                .catch((error) => {
-                    displayMessage(authMessage, `Logout Gagal: ${error.message}`, true);
-                });
-        }
-
-        // State Listener
-        auth.onAuthStateChanged((user) => {
-            updateAdminView(user);
-        });
-
-        // --- BAGIAN 6: EVENT LISTENERS & INICIALISASI ---
-        loginForm.addEventListener('submit', handleLogin);
-        registerBtn.addEventListener('click', handleRegister);
-        transaksiForm.addEventListener('submit', handleTransaksiSubmit);
-        cancelEditBtn.addEventListener('click', resetForm);
-
-        // Event Listener untuk tombol Edit dan Delete di tabel
-        transaksiList.addEventListener('click', (e) => {
-            const id = e.target.dataset.id;
-            
-            if (e.target.classList.contains('delete-btn')) {
-                deleteTransaksi(id);
-            } else if (e.target.classList.contains('edit-btn')) {
-                if (currentTransactionData[id]) {
-                    populateEditForm(id, currentTransactionData[id]);
-                } else {
-                    alert('Data transaksi tidak ditemukan.');
-                }
-            }
-        });
-        
-    </script>
-</body>
-</html>
+export default App;
