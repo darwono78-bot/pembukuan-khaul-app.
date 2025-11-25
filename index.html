@@ -317,21 +317,24 @@
 
             /**
              * Fungsi pengurutan ganda: Tanggal (Terbaru) > Timestamp (Waktu dibuat)
+             * Menggunakan perbandingan string tanggal YYYY-MM-DD, yang lebih aman 
+             * daripada mengandalkan objek Date dan perbedaan zona waktu.
              * @param {Array} transactions - Array data transaksi.
              */
             function sortTransactions(transactions) {
                 transactions.sort((a, b) => {
-                    const dateA = new Date(a.tanggal + 'T00:00:00');
-                    const dateB = new Date(b.tanggal + 'T00:00:00');
+                    const dateA = a.tanggal || '';
+                    const dateB = b.tanggal || '';
                     const timestampA = a.timestamp?.toMillis() || 0;
                     const timestampB = b.timestamp?.toMillis() || 0;
 
                     // 1. Urutan Utama: Tanggal (Menurun/Terbaru di atas)
-                    if (dateA.getTime() !== dateB.getTime()) {
-                         return dateB.getTime() - dateA.getTime();
-                    }
+                    // Karena formatnya YYYY-MM-DD, perbandingan string ini akan benar
+                    if (dateA > dateB) return -1; // Tanggal A lebih baru (di atas)
+                    if (dateA < dateB) return 1;  // Tanggal B lebih baru (di atas)
                     
                     // 2. Urutan Kedua (Fallback): Timestamp (Menurun/Terbaru di atas)
+                    // Jika tanggal sama, urutkan berdasarkan waktu entri (terbaru di atas)
                     return timestampB - timestampA;
                 });
                 return transactions;
@@ -353,7 +356,7 @@
                         const data = doc.data();
                         
                         // HANYA ambil jika alamat/kategori adalah 'Pemasukan'
-                        if (data.alamat) { // Dalam kasus publik, 'alamat' berisi alamat donatur
+                        if (data.nama && data.jariyah) { // Cek minimal ada nama dan nominal
                              publicTransactions.push({ id: doc.id, ...data });
                         }
                     });
@@ -394,7 +397,7 @@
                 publicTotalJariyahEl.textContent = formatRupiah(overallTotal);
                 publicOverallTotalDiv.classList.remove('hidden');
 
-                // Hanya tampilkan 10 data teratas di daftar
+                // Hanya tampilkan 10 data teratas di daftar (sesuai permintaan user sebelumnya)
                 transactions.slice(0, 10).forEach((t, index) => {
                     const row = document.createElement('tr');
                     
@@ -592,9 +595,9 @@
                 }
 
                 const transactionId = document.getElementById('transaction-id').value;
-                const tanggal = inputTanggal.value;
+                const tanggal = inputTanggal.value; // Format YYYY-MM-DD
                 const nama = inputNama.value.trim();
-                const alamatDonatur = inputAlamat.value.trim(); // Alamat donatur, bukan kategori
+                const alamatDonatur = inputAlamat.value.trim(); 
                 const jariyah = parseFloat(inputJariyah.value);
                 
                 // KATEGORI DITETAPKAN SECARA OTOMATIS SEBAGAI PEMASUKAN JARIYAH
@@ -618,19 +621,14 @@
 
                 try {
                     let privateDocRef;
-                    let publicDocId = transactionId; // Coba gunakan ID yang sama untuk update publik
 
                     if (transactionId) {
                         // UPDATE (Edit) Data Pribadi
                         privateDocRef = doc(db, privateCollectionPath, transactionId);
                         await setDoc(privateDocRef, transactionData, { merge: true });
                         console.log('Catatan pribadi berhasil diperbarui!');
-                        
-                        // Cek apakah ada ID publik yang tersimpan (misalnya di field tersembunyi)
-                        // Untuk kasus ini, karena kita tidak menyimpan ID publik, kita asumsikan update diabaikan untuk publik 
-                        // agar tidak menyebabkan duplikasi atau hilangnya data publik. 
-                        // Jika Anda ingin mengupdate data publik, Anda harus mencari dokumen publik yang sesuai.
-                        // UNTUK KONSISTENSI, saya TIDAK akan melakukan UPDATE di data publik saat ini.
+                        // NOTE: Karena data publik tidak memiliki ID yang sama dengan pribadi, 
+                        // update data publik diabaikan agar tidak menyebabkan masalah konsistensi data.
 
                     } else {
                         // CREATE (Tambah Baru) Data Pribadi
@@ -669,19 +667,12 @@
                         const transaction = docSnap.data();
                         
                         document.getElementById('transaction-id').value = id;
-                        inputTanggal.value = transaction.tanggal || '';
-                        
-                        // Perhatikan: Karena form input tidak memiliki field kategori,
-                        // kita hanya bisa mengisi Tanggal, Nama, Alamat, dan Nominal.
-                        // Data yang tersimpan di field 'alamat' pribadi adalah 'Pemasukan' atau 'Pengeluaran'.
-                        // Untuk Alamat Donatur, kita tidak bisa mengambilnya dari sini karena tidak ada field terpisah.
-                        // Kita hanya akan mengisi Tanggal, Nama, dan Jariyah.
+                        inputTanggal.value = transaction.tanggal || ''; // Format YYYY-MM-DD
                         
                         inputNama.value = transaction.nama || '';
                         inputJariyah.value = transaction.jariyah || 0;
-                        inputAlamat.value = ''; // Tidak bisa diisi karena data Alamat donatur tidak tersimpan terpisah di data pribadi
+                        inputAlamat.value = ''; // Input Alamat Donatur di form pribadi saat ini tidak terhubung ke data yang tersimpan
                         
-
                         formTitle.textContent = 'Edit Catatan';
                         submitButton.textContent = 'Update Catatan';
                         submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
@@ -741,31 +732,23 @@
                 }).format(number);
             }
 
-            function formatDate(date, simple = false) {
-                let d;
-                // Cek apakah data adalah string 'YYYY-MM-DD'
-                if (date && typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                    // Tambahkan T00:00:00 agar diinterpretasikan sebagai waktu lokal
-                    d = new Date(date + 'T00:00:00'); 
-                } else if (date && date.toDate) {
-                    // Jika data adalah Firebase Timestamp
-                    d = date.toDate();
-                } else {
-                    return '-';
-                }
+            function formatDate(dateString, simple = false) {
+                if (!dateString) return '-';
 
-                if (isNaN(d.getTime())) return '-';
+                // Membuat objek Date dari string YYYY-MM-DD. 
+                // Menggunakan waktu UTC untuk menghindari masalah zona waktu lokal
+                const parts = dateString.split('-');
+                if (parts.length !== 3) return dateString;
+
+                const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+
+                if (isNaN(d.getTime())) return dateString;
                 
-                if (simple) {
-                    // Format simpel: Hari/Bulan/Tahun (untuk daftar publik)
-                    return d.toLocaleDateString('id-ID', { year: 'numeric', month: 'numeric', day: 'numeric' });
-                }
+                const options = simple ? 
+                    { year: 'numeric', month: 'numeric', day: 'numeric' } :
+                    { year: 'numeric', month: 'long', day: 'numeric' };
 
-                return d.toLocaleDateString('id-ID', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                return d.toLocaleDateString('id-ID', options);
             }
 
 
