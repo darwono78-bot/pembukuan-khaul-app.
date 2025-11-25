@@ -13,6 +13,25 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
+        /* Custom style untuk header tabel publik agar mirip gambar yang diunggah */
+        #public-donors-table thead th {
+            background-color: #4a5568; /* Abu-abu gelap/Ungu */
+            color: white;
+        }
+        /* Style untuk kolom Total Jariyah (Total Akumulasi) */
+        .total-jariyah-cell {
+            background-color: #10b981; /* Hijau Emerald */
+            color: white;
+            font-weight: 600;
+        }
+        /* Style untuk baris Total Keseluruhan Donasi */
+        .overall-total-row td {
+            background-color: #4a5568;
+            color: white;
+            font-weight: bold;
+            text-align: right;
+            border-top: 2px solid #374151;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -126,7 +145,6 @@
     <div id="login-screen" class="flex flex-col items-center justify-center flex-grow p-4 space-y-6">
 
         <!-- 1. Daftar Donatur Publik (Lebar Diperluas ke max-w-4xl) -->
-        <!-- Perubahan di sini: max-w-xl diubah menjadi max-w-4xl dan margin auto untuk centering -->
         <div class="w-full max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 transform transition-all duration-300">
             <h2 class="text-2xl font-bold text-green-700 text-center mb-4">Daftar Donasi Publik Terbaru</h2>
             <p class="text-sm text-gray-500 text-center mb-4">Informasi umum pemasukan (jariyah) terbaru. Untuk Edit/Hapus, silakan Login.</p>
@@ -136,31 +154,48 @@
             </div>
 
             <div class="overflow-x-auto rounded-lg border border-gray-200">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+                <table id="public-donors-table" class="min-w-full divide-y divide-gray-200">
+                    <thead>
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">No</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Tanggal</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">Nama/Deskripsi</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Alamat/Kategori</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Jariyah (Nominal)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-1/12">No</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Tanggal</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-4/12">Nama Donatur</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Alamat</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider w-3/12">Jariyah (Rp)</th>
+                            <!-- Tambahkan kolom Total Jariyah (Akumulasi) -->
+                            <th class="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider w-3/12 total-jariyah-cell">Total Jariyah (Rp)</th> 
                         </tr>
                     </thead>
                     <tbody id="public-donors-list" class="bg-white divide-y divide-gray-200">
                         <!-- Data publik akan dimasukkan di sini oleh JavaScript -->
                     </tbody>
-                    <tfoot class="bg-gray-100">
-                        <tr>
-                            <!-- Total Jariyah Publik ditambahkan di sini -->
-                            <td colspan="4" class="px-4 py-3 text-right font-bold text-sm text-gray-700">TOTAL KESELURUHAN DONASI</td>
-                            <td id="public-total-jariyah" class="px-4 py-3 text-right font-bold text-sm text-green-700">Rp 0</td>
-                        </tr>
-                    </tfoot>
+                    <!-- Footer tabel TIDAK digunakan untuk total keseluruhan, akan diletakkan di luar tbody/tfoot -->
                 </table>
             </div>
+
             <div id="public-no-data" class="text-center py-4 text-gray-500 hidden">
                 Belum ada data donasi publik.
             </div>
+
+            <!-- Baris Total Keseluruhan Donasi diletakkan di luar tabel, namun distyling agar menyatu -->
+            <div id="public-overall-total" class="w-full">
+                <!-- Data ini akan diisi dan distyling oleh JS -->
+                <div class="overall-total-row">
+                    <table class="min-w-full">
+                        <tr class="overall-total-row">
+                            <!-- Kolom kosong yang mengisi lebar 5 kolom pertama dari 6 kolom di header -->
+                            <td colspan="5" class="px-4 py-3 text-right text-sm">
+                                **TOTAL KESELURUHAN DONASI:**
+                            </td>
+                            <!-- Kolom Total Akumulasi (Kolom ke-6) -->
+                            <td id="public-total-jariyah" class="px-4 py-3 text-right text-sm total-jariyah-cell">
+                                Rp 0
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            
         </div>
 
         <!-- 2. Formulir Login -->
@@ -215,7 +250,9 @@
             onSnapshot, 
             serverTimestamp,
             limit,
-            setLogLevel
+            setLogLevel,
+            getDoc,
+            orderBy
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Konfigurasi Firebase dari pengguna (SAMA SEPERTI SEBELUMNYA)
@@ -272,7 +309,8 @@
             const publicDonorsList = document.getElementById('public-donors-list');
             const publicLoadingIndicator = document.getElementById('public-data-loading');
             const publicNoDataMessage = document.getElementById('public-no-data');
-            const publicTotalJariyahEl = document.getElementById('public-total-jariyah'); // Elemen Total Jariyah Publik
+            const publicOverallTotalDiv = document.getElementById('public-overall-total');
+            const publicTotalJariyahEl = document.getElementById('public-total-jariyah');
 
             // Elemen Modal
             const deleteModal = document.getElementById('delete-modal');
@@ -284,32 +322,47 @@
 
             function setupPublicDonorsListener() {
                 publicLoadingIndicator.classList.remove('hidden');
+                publicOverallTotalDiv.classList.add('hidden'); // Sembunyikan total sampai data dimuat
                 
-                // Query untuk 100 donasi terbaru (ditingkatkan untuk total)
-                const q = query(
-                    collection(db, publicCollectionPath),
-                    limit(100) // Batasi 100 data untuk perhitungan total yang lebih akurat
-                );
+                // Ambil SEMUA data pemasukan publik untuk perhitungan akumulasi total
+                const q = query(collection(db, publicCollectionPath));
 
                 onSnapshot(q, (snapshot) => {
-                    const publicTransactions = [];
-                    let totalJariyah = 0;
+                    let publicTransactions = [];
 
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         
-                        // Hanya hitung jika alamat/kategori adalah 'Pemasukan'
+                        // Hanya ambil jika alamat/kategori adalah 'Pemasukan'
                         if (data.alamat === 'Pemasukan') {
                             publicTransactions.push({ id: doc.id, ...data });
-                            totalJariyah += data.jariyah || 0;
                         }
                     });
 
-                    // Sortir berdasarkan timestamp (terbaru di atas)
-                    publicTransactions.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+                    // Sortir data berdasarkan tanggal (paling baru di atas)
+                    publicTransactions.sort((a, b) => {
+                         const dateA = new Date(a.tanggal + 'T00:00:00');
+                         const dateB = new Date(b.tanggal + 'T00:00:00');
+                         return dateB.getTime() - dateA.getTime();
+                    });
 
-                    renderPublicDonors(publicTransactions);
-                    publicTotalJariyahEl.textContent = formatRupiah(totalJariyah); // Update Total Jariyah
+                    // Hitung akumulasi total
+                    let overallTotal = 0;
+                    // Lakukan iterasi dari data yang SUDAH diurutkan dari terbaru ke terlama
+                    // Kita akan membalik array ini hanya untuk tujuan perhitungan akumulasi dari bawah ke atas (terlama ke terbaru)
+                    const reversedTransactions = [...publicTransactions].reverse();
+                    
+                    let accumulatedTotal = 0;
+                    reversedTransactions.forEach(t => {
+                        accumulatedTotal += t.jariyah || 0;
+                        t.accumulated = accumulatedTotal;
+                    });
+                    overallTotal = accumulatedTotal; // Total akhir adalah akumulasi keseluruhan
+
+                    // Kembalikan ke urutan terbaru di atas untuk ditampilkan
+                    publicTransactions.reverse();
+                    
+                    renderPublicDonors(publicTransactions, overallTotal);
                     
                     publicLoadingIndicator.classList.add('hidden');
                     publicNoDataMessage.classList.toggle('hidden', publicTransactions.length > 0);
@@ -320,15 +373,23 @@
                 });
             }
 
-            function renderPublicDonors(transactions) {
+            function renderPublicDonors(transactions, overallTotal) {
                 publicDonorsList.innerHTML = '';
-                // Hanya tampilkan 10 data teratas di daftar (karena query sudah 100)
+                
+                // Update Total Keseluruhan di Div bawah tabel
+                publicTotalJariyahEl.textContent = formatRupiah(overallTotal);
+                publicOverallTotalDiv.classList.remove('hidden');
+
+                // Hanya tampilkan 10 data teratas di daftar (sesuai gambar)
                 transactions.slice(0, 10).forEach((t, index) => {
                     const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50 transition duration-100';
                     
                     const description = t.nama || 'Donatur Anonim';
                     const nominalText = formatRupiah(t.jariyah || 0);
+                    // Ambil nilai akumulasi (sudah dihitung)
+                    const accumulatedText = formatRupiah(t.accumulated || 0);
+                    
+                    row.className = 'hover:bg-gray-50 transition duration-100';
                     
                     row.innerHTML = `
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
@@ -336,7 +397,7 @@
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${description}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${t.alamat || '-'}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium text-right">${nominalText}</td>
-                        <!-- Kolom Aksi dihilangkan -->
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-right total-jariyah-cell">${accumulatedText}</td>
                     `;
                     publicDonorsList.appendChild(row);
                 });
@@ -400,7 +461,9 @@
                     console.log('Anda telah berhasil keluar.');
                 } catch (error) {
                     console.error("Gagal Logout:", error);
-                    alert(`Gagal keluar: ${error.message}`);
+                    // Menggunakan alert karena berada di konteks admin
+                    // Sebaiknya diganti dengan modal custom jika memungkinkan
+                    alert(`Gagal keluar: ${error.message}`); 
                 }
             });
 
@@ -433,7 +496,7 @@
                         }
                     });
 
-                    // Urutkan berdasarkan timestamp/tanggal
+                    // Urutkan berdasarkan tanggal (paling baru di atas)
                     transactions.sort((a, b) => {
                         const dateA = new Date(a.tanggal + 'T00:00:00');
                         const dateB = new Date(b.tanggal + 'T00:00:00');
@@ -504,7 +567,7 @@
             function updateTotalBalance(balance) {
                 const text = formatRupiah(balance);
                 totalBalanceEl.textContent = text;
-                if (balance >= 0) { // Ubah >= 0 agar saldo 0 juga hijau/standar
+                if (balance >= 0) { 
                     totalBalanceEl.classList.remove('text-red-600');
                     totalBalanceEl.classList.add('text-green-600');
                 } else {
@@ -518,7 +581,8 @@
                 e.preventDefault();
                 
                 if (!userId) {
-                    alert('Anda harus login untuk menyimpan data pribadi.');
+                    // Menggunakan alert karena berada di konteks admin
+                    alert('Anda harus login untuk menyimpan data pribadi.'); 
                     return;
                 }
 
@@ -529,6 +593,7 @@
                 const jariyah = parseFloat(document.getElementById('jariyah').value);
 
                 if (!tanggal || !nama || !alamat || isNaN(jariyah)) {
+                    // Menggunakan alert karena berada di konteks admin
                     alert('Semua field wajib diisi dengan benar.');
                     return;
                 }
@@ -558,6 +623,7 @@
                     
                     // Update/Add to Public List jika itu Pemasukan
                     if (alamat === 'Pemasukan') {
+                         // Catatan: Tidak ada ID, sehingga akan ditambahkan sebagai dokumen baru di publik
                          await addDoc(collection(db, publicCollectionPath), transactionData);
                          console.log('Catatan Pemasukan (Donasi) ditambahkan ke daftar publik.');
                     }
@@ -566,6 +632,7 @@
                     
                 } catch (error) {
                     console.error("Error saat menyimpan data:", error);
+                    // Menggunakan alert karena berada di konteks admin
                     alert(`Gagal menyimpan data: ${error.message}`);
                 }
             });
@@ -631,9 +698,12 @@
                     deleteModal.classList.add('hidden');
                     console.log('Catatan pribadi berhasil dihapus!');
                     // Catatan: Penghapusan dari daftar publik harus dilakukan secara terpisah jika diperlukan
+                    // (misalnya dengan menghapus semua data publik dan meregenerasinya, atau mencari dokumen publik yang sesuai)
+                    // Untuk kesederhanaan, kita hanya menghapus data pribadi, dan data publik akan terus bertambah.
                 } catch (error) {
                     console.error("Error saat menghapus data:", error);
                     deleteModal.classList.add('hidden');
+                    // Menggunakan alert karena berada di konteks admin
                     alert(`Gagal menghapus data: ${error.message}`);
                 }
             });
@@ -649,9 +719,12 @@
 
             function formatDate(date, simple = false) {
                 let d;
-                if (date && typeof date === 'string') {
+                // Cek apakah data adalah string 'YYYY-MM-DD'
+                if (date && typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    // Tambahkan T00:00:00 agar diinterpretasikan sebagai waktu lokal
                     d = new Date(date + 'T00:00:00'); 
                 } else if (date && date.toDate) {
+                    // Jika data adalah Firebase Timestamp
                     d = date.toDate();
                 } else {
                     return '-';
