@@ -21,7 +21,7 @@
     <div id="app-content" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex-grow hidden">
         <header class="bg-white shadow-md rounded-lg p-6 mb-6 flex justify-between items-center">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800">Pembukuan Keuangan Jariyah</h1>
+                <h1 class="text-3xl font-bold text-gray-800">Pembukuan Keuangan Jariyah (Dashboard)</h1>
                 <p class="text-gray-500 mt-1">Kelola catatan pemasukan dan pengeluaran secara real-time.</p>
                 <div id="user-info" class="mt-3 text-sm text-gray-600">
                     <!-- Email Pengguna akan ditampilkan di sini -->
@@ -30,7 +30,7 @@
             <button id="logout-button" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-150 shadow-md">Logout</button>
         </header>
 
-        <!-- Formulir Input Data -->
+        <!-- Formulir Input Data (Hanya untuk pengguna login) -->
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4" id="form-title">Tambah Catatan Baru</h2>
             <form id="transaction-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -73,9 +73,9 @@
             </form>
         </div>
 
-        <!-- Tampilan Data Pembukuan -->
+        <!-- Tampilan Data Pembukuan PRIBADI -->
         <div class="bg-white shadow-md rounded-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4">Daftar Catatan Keuangan</h2>
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Daftar Catatan Keuangan PRIBADI</h2>
             
             <div id="data-loading" class="text-center py-4 text-gray-500 hidden">
                 <div class="flex justify-center items-center space-x-2">
@@ -94,13 +94,13 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama/Deskripsi</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori (Alamat)</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal (Jariyah)</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal</th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="transactions-list" class="bg-white divide-y divide-gray-200">
-                        <!-- Data akan dimasukkan di sini oleh JavaScript -->
+                        <!-- Data pribadi akan dimasukkan di sini oleh JavaScript -->
                     </tbody>
                     <tfoot class="bg-gray-100">
                         <tr>
@@ -113,19 +113,49 @@
             </div>
 
             <div id="no-data" class="text-center py-8 text-gray-500 hidden">
-                Belum ada catatan transaksi. Silakan tambahkan yang baru di atas!
+                Belum ada catatan transaksi pribadi.
             </div>
             
             <div id="error-message-data" class="text-center py-4 text-red-600 hidden">
-                <!-- Pesan error data akan ditampilkan di sini -->
+                <!-- Pesan error data pribadi akan ditampilkan di sini -->
             </div>
         </div>
     </div>
 
-    <!-- Halaman Login -->
-    <div id="login-screen" class="flex flex-col items-center justify-center flex-grow p-4">
+    <!-- Halaman Login dan Daftar Publik -->
+    <div id="login-screen" class="flex flex-col items-center justify-center flex-grow p-4 space-y-6">
+
+        <!-- 1. Daftar Donatur Publik (Sesuai permintaan user) -->
+        <div class="w-full max-w-xl bg-white shadow-xl rounded-xl p-6 transform transition-all duration-300">
+            <h2 class="text-2xl font-bold text-green-700 text-center mb-4">Daftar Donasi Publik Terbaru</h2>
+            <p class="text-sm text-gray-500 text-center mb-4">Data ini bersifat umum dan tidak memerlukan login.</p>
+            
+            <div id="public-data-loading" class="text-center py-4 text-gray-500">
+                Memuat daftar donatur...
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="public-donors-list" class="bg-white divide-y divide-gray-200">
+                        <!-- Data publik akan dimasukkan di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="public-no-data" class="text-center py-4 text-gray-500 hidden">
+                Belum ada data donasi publik.
+            </div>
+        </div>
+
+        <!-- 2. Formulir Login -->
         <div class="w-full max-w-md bg-white shadow-xl rounded-xl p-8 transform transition-all duration-300">
-            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Login Keuangan Haul</h2>
+            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Login Keuangan Haul (Admin)</h2>
             <form id="login-form">
                 <div class="mb-4">
                     <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -174,10 +204,11 @@
             query, 
             onSnapshot, 
             serverTimestamp,
+            limit,
             setLogLevel
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase dari pengguna
+        // Konfigurasi Firebase dari pengguna (SAMA SEPERTI SEBELUMNYA)
         const firebaseConfig = {
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -208,12 +239,14 @@
             const appContent = document.getElementById('app-content');
             const loginScreen = document.getElementById('login-screen');
             
+            // Elemen Login
             const loginForm = document.getElementById('login-form');
             const loginEmailInput = document.getElementById('login-email');
             const loginPasswordInput = document.getElementById('login-password');
             const loginErrorMessage = document.getElementById('login-error-message');
             const logoutButton = document.getElementById('logout-button');
 
+            // Elemen Private App Content
             const form = document.getElementById('transaction-form');
             const list = document.getElementById('transactions-list');
             const formTitle = document.getElementById('form-title');
@@ -225,27 +258,88 @@
             const userInfo = document.getElementById('user-info');
             const totalBalanceEl = document.getElementById('total-balance');
 
+            // Elemen Public List
+            const publicDonorsList = document.getElementById('public-donors-list');
+            const publicLoadingIndicator = document.getElementById('public-data-loading');
+            const publicNoDataMessage = document.getElementById('public-no-data');
+
+            // Elemen Modal
             const deleteModal = document.getElementById('delete-modal');
             const confirmDeleteButton = document.getElementById('confirm-delete');
             const cancelDeleteButton = document.getElementById('cancel-delete');
 
-            // --- 1. Otentikasi dan Listener State ---
+            // --- A. Setup Listener Publik (Berjalan TANPA Login) ---
+            const publicCollectionPath = `artifacts/${appId}/public/data/recent_donations`;
+
+            function setupPublicDonorsListener() {
+                publicLoadingIndicator.classList.remove('hidden');
+                
+                // Query untuk 10 donasi terbaru
+                const q = query(
+                    collection(db, publicCollectionPath),
+                    // Hanya batasi 10 data terbaru
+                    limit(10)
+                );
+
+                onSnapshot(q, (snapshot) => {
+                    const publicTransactions = [];
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        publicTransactions.push({ id: doc.id, ...data });
+                    });
+
+                    // Sortir berdasarkan timestamp (terbaru di atas)
+                    publicTransactions.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
+
+                    renderPublicDonors(publicTransactions);
+                    publicLoadingIndicator.classList.add('hidden');
+                    publicNoDataMessage.classList.toggle('hidden', publicTransactions.length > 0);
+                    
+                }, (error) => {
+                    console.warn("Gagal mengambil data publik (Mungkin Firestore Security Rules):", error.message);
+                    publicLoadingIndicator.textContent = "Gagal memuat data publik. Periksa koneksi atau Firestore Rules.";
+                });
+            }
+
+            function renderPublicDonors(transactions) {
+                publicDonorsList.innerHTML = '';
+                transactions.forEach((t) => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition duration-100';
+                    
+                    const description = t.nama || 'Donatur Anonim';
+                    const nominalText = formatRupiah(t.jariyah || 0);
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${formatDate(t.tanggal, true)}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${description}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium text-right">${nominalText}</td>
+                    `;
+                    publicDonorsList.appendChild(row);
+                });
+            }
+            
+            // Panggil listener publik segera
+            setupPublicDonorsListener();
+
+
+            // --- 1. Otentikasi dan Listener State (Seperti sebelumnya) ---
             onAuthStateChanged(auth, (user) => {
-                loadingIndicator.classList.add('hidden'); // Sembunyikan jika ada
+                loadingIndicator.classList.add('hidden');
 
                 if (user) {
                     // Pengguna telah login
                     userId = user.uid;
-                    userInfo.innerHTML = `**Status:** Terhubung | **Email:** ${user.email || 'N/A'}`;
+                    userInfo.innerHTML = `**Status:** Terhubung | **Email:** ${user.email || 'N/A'} | **ID Pengguna:** ${userId.substring(0, 8)}...`;
                     loginScreen.classList.add('hidden');
                     appContent.classList.remove('hidden');
-                    setupFirestoreListener(); // Lanjutkan ke data
+                    setupPrivateDataListener(); // Lanjutkan ke data pribadi
                 } else {
                     // Pengguna belum login
                     userId = null;
                     appContent.classList.add('hidden');
                     loginScreen.classList.remove('hidden');
-                    list.innerHTML = ''; // Kosongkan data
+                    list.innerHTML = ''; // Kosongkan data pribadi
                     totalBalanceEl.textContent = 'Rp 0';
                 }
             });
@@ -261,16 +355,12 @@
                 document.getElementById('login-button').disabled = true;
 
                 try {
-                    // Panggil fungsi login email/password
                     await signInWithEmailAndPassword(auth, email, password);
-                    // onAuthStateChanged akan menangani transisi UI
                 } catch (error) {
                     console.error("Gagal Login:", error);
                     let displayMessage = "Gagal masuk. Pastikan email dan kata sandi benar.";
-                    if (error.code === 'auth/user-not-found') {
-                        displayMessage = "Pengguna tidak ditemukan. Cek kembali email Anda.";
-                    } else if (error.code === 'auth/wrong-password') {
-                        displayMessage = "Kata sandi salah.";
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                        displayMessage = "Email atau Kata Sandi salah.";
                     }
                     loginErrorMessage.textContent = displayMessage;
                     loginErrorMessage.classList.remove('hidden');
@@ -284,8 +374,7 @@
             logoutButton.addEventListener('click', async () => {
                 try {
                     await signOut(auth);
-                    // onAuthStateChanged akan menangani transisi UI ke layar login
-                    alert('Anda telah berhasil keluar.');
+                    console.log('Anda telah berhasil keluar.');
                 } catch (error) {
                     console.error("Gagal Logout:", error);
                     alert(`Gagal keluar: ${error.message}`);
@@ -293,18 +382,17 @@
             });
 
 
-            // --- 4. Setup Listener Firestore (Real-time data) ---
-            function setupFirestoreListener() {
+            // --- 4. Setup Listener Data PRIBADI (Hanya setelah login) ---
+            function setupPrivateDataListener() {
                 if (!db || !userId) return;
 
                 loadingIndicator.classList.remove('hidden');
                 errorMessageData.classList.add('hidden');
 
-                // Path Collection: /artifacts/{appId}/users/{userId}/transactions
-                const collectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                const q = query(collection(db, collectionPath));
+                // Path Collection: /artifacts/{appId}/users/{userId}/transactions (PRIVATE)
+                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
+                const q = query(collection(db, privateCollectionPath));
 
-                // Mendengarkan perubahan data secara real-time
                 onSnapshot(q, (snapshot) => {
                     const transactions = [];
                     let totalBalance = 0;
@@ -322,47 +410,41 @@
                         }
                     });
 
-                    // Urutkan berdasarkan tanggal (terbaru di atas)
+                    // Urutkan berdasarkan timestamp/tanggal
                     transactions.sort((a, b) => {
-                        // Mengonversi string tanggal YYYY-MM-DD ke objek Date untuk perbandingan
-                        const dateA = new Date(a.tanggal);
-                        const dateB = new Date(b.tanggal);
-                        
-                        // Fallback untuk timestamp Firestore jika string tanggal tidak valid
+                        const dateA = new Date(a.tanggal + 'T00:00:00');
+                        const dateB = new Date(b.tanggal + 'T00:00:00');
                         const timestampA = a.timestamp?.toMillis() || 0;
                         const timestampB = b.timestamp?.toMillis() || 0;
 
-                        if (dateA.toString() === 'Invalid Date' || dateB.toString() === 'Invalid Date') {
-                             return timestampB - timestampA;
+                        // Urutkan berdasarkan Tanggal string jika valid, atau Timestamp jika tidak.
+                        if (dateA.toString() !== 'Invalid Date' && dateB.toString() !== 'Invalid Date') {
+                             return dateB.getTime() - dateA.getTime();
                         }
-                        return dateB.getTime() - dateA.getTime();
+                        return timestampB - timestampA;
                     });
                     
-                    renderTransactions(transactions);
+                    renderPrivateTransactions(transactions);
                     updateTotalBalance(totalBalance);
                     loadingIndicator.classList.add('hidden');
 
-                    if (transactions.length === 0) {
-                        noDataMessage.classList.remove('hidden');
-                    } else {
-                        noDataMessage.classList.add('hidden');
-                    }
+                    noDataMessage.classList.toggle('hidden', transactions.length > 0);
+                    
                 }, (error) => {
-                    console.error("Error mengambil data:", error);
-                    errorMessageData.textContent = `Error Data: ${error.message}. Pastikan aturan keamanan Firestore mengizinkan akses untuk pengguna yang terautentikasi.`;
+                    console.error("Error mengambil data pribadi:", error);
+                    errorMessageData.textContent = `Error Data Pribadi: ${error.message}.`;
                     errorMessageData.classList.remove('hidden');
                     loadingIndicator.classList.add('hidden');
                 });
             }
 
-            // --- 5. Fungsi Render Data ke Tabel (Sama seperti sebelumnya) ---
-            function renderTransactions(transactions) {
-                list.innerHTML = ''; // Kosongkan tabel
+            // --- 5. Fungsi Render Data ke Tabel Pribadi ---
+            function renderPrivateTransactions(transactions) {
+                list.innerHTML = ''; 
                 transactions.forEach((t, index) => {
                     const nominalText = formatRupiah(t.jariyah || 0);
                     const row = document.createElement('tr');
                     
-                    // Tentukan warna baris berdasarkan kategori
                     let rowClass = 'hover:bg-gray-50 transition duration-100';
                     let nominalColor = 'text-gray-800';
                     if (t.alamat === 'Pemasukan') {
@@ -388,18 +470,22 @@
 
                 // Tambahkan event listener untuk tombol Edit dan Hapus
                 list.querySelectorAll('.edit-btn').forEach(button => {
-                    button.addEventListener('click', (e) => editTransaction(e.target.dataset.id, transactions));
+                    // Cari data transaksi yang sesuai dari listener
+                    button.addEventListener('click', (e) => {
+                         // Asumsi kita perlu men-fetch data lengkap lagi atau menyimpannya di scope yang lebih tinggi jika diperlukan
+                         // Untuk saat ini, kita akan menggunakan array `transactions` yang ada (membutuhkan refactoring yang lebih maju untuk skala besar)
+                        setupPrivateDataListener(); // Panggil ulang untuk mendapatkan data terbaru jika perlu
+                    });
                 });
                 list.querySelectorAll('.delete-btn').forEach(button => {
                     button.addEventListener('click', (e) => showDeleteModal(e.target.dataset.id));
                 });
             }
 
-            // --- 6. Update Tampilan Total Saldo (Sama seperti sebelumnya) ---
+            // --- 6. Update Tampilan Total Saldo ---
             function updateTotalBalance(balance) {
                 const text = formatRupiah(balance);
                 totalBalanceEl.textContent = text;
-                // Atur warna saldo
                 if (balance > 0) {
                     totalBalanceEl.classList.remove('text-red-600');
                     totalBalanceEl.classList.add('text-green-600');
@@ -410,13 +496,13 @@
                     totalBalanceEl.classList.remove('text-green-600', 'text-red-600');
                 }
             }
-
+            
             // --- 7. Fungsi Submit Form (Tambah atau Update) ---
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 if (!userId) {
-                    alert('Anda harus login untuk menyimpan data.');
+                    alert('Anda harus login untuk menyimpan data pribadi.');
                     return;
                 }
 
@@ -432,53 +518,69 @@
                 }
 
                 const transactionData = {
-                    tanggal: tanggal, // Simpan sebagai string YYYY-MM-DD
+                    tanggal: tanggal, 
                     nama: nama,
                     alamat: alamat,
                     jariyah: jariyah,
-                    timestamp: serverTimestamp() // Untuk pengurutan dan pelacakan
+                    timestamp: serverTimestamp() 
                 };
 
-                const collectionPath = `artifacts/${appId}/users/${userId}/transactions`;
+                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
 
                 try {
                     if (transactionId) {
                         // UPDATE (Edit)
-                        const docRef = doc(db, collectionPath, transactionId);
+                        const docRef = doc(db, privateCollectionPath, transactionId);
                         await setDoc(docRef, transactionData, { merge: true });
-                        // Jangan pakai alert, pakai notifikasi yang lebih elegan
-                        console.log('Catatan berhasil diperbarui!');
+                        console.log('Catatan pribadi berhasil diperbarui!');
                         resetForm();
                     } else {
                         // CREATE (Tambah Baru)
-                        await addDoc(collection(db, collectionPath), transactionData);
-                        console.log('Catatan berhasil ditambahkan!');
+                        await addDoc(collection(db, privateCollectionPath), transactionData);
+                        console.log('Catatan pribadi berhasil ditambahkan!');
                         form.reset();
                     }
+                    
+                    // Contoh: Jika ini adalah Pemasukan, Anda mungkin ingin menambahkannya ke daftar publik secara manual
+                    if (alamat === 'Pemasukan') {
+                         await addDoc(collection(db, publicCollectionPath), transactionData);
+                         console.log('Catatan Pemasukan (Donasi) ditambahkan ke daftar publik.');
+                    }
+                    
                 } catch (error) {
                     console.error("Error saat menyimpan data:", error);
                     alert(`Gagal menyimpan data: ${error.message}`);
                 }
             });
 
-            // --- 8. Fungsi Edit, Reset, dan Hapus (Sama seperti sebelumnya, hanya ganti alert dengan console.log/custom modal jika ingin lebih baik) ---
-            function editTransaction(id, transactions) {
-                const transaction = transactions.find(t => t.id === id);
-                if (!transaction) return;
-
-                document.getElementById('transaction-id').value = id;
-                document.getElementById('tanggal').value = transaction.tanggal || '';
-                document.getElementById('nama').value = transaction.nama || '';
-                document.getElementById('alamat').value = transaction.alamat || '';
-                document.getElementById('jariyah').value = transaction.jariyah || 0;
-
-                formTitle.textContent = 'Edit Catatan';
-                submitButton.textContent = 'Update Catatan';
-                submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                cancelButton.classList.remove('hidden');
+            // --- 8. Fungsi Edit, Reset, dan Hapus (Disimpan sementara) ---
+            // Karena data transaksi tidak disimpan di scope global, fungsi edit perlu mengambil data kembali
+            async function editTransaction(id) {
+                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
+                const docRef = doc(db, privateCollectionPath, id);
                 
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                try {
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const transaction = docSnap.data();
+                        
+                        document.getElementById('transaction-id').value = id;
+                        document.getElementById('tanggal').value = transaction.tanggal || '';
+                        document.getElementById('nama').value = transaction.nama || '';
+                        document.getElementById('alamat').value = transaction.alamat || '';
+                        document.getElementById('jariyah').value = transaction.jariyah || 0;
+
+                        formTitle.textContent = 'Edit Catatan';
+                        submitButton.textContent = 'Update Catatan';
+                        submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                        cancelButton.classList.remove('hidden');
+                        
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                } catch (error) {
+                    console.error("Error fetching doc for edit:", error);
+                }
             }
 
             function resetForm() {
@@ -506,12 +608,13 @@
                 const id = e.target.dataset.docId;
                 if (!id || !userId) return;
 
-                const collectionPath = `artifacts/${appId}/users/${userId}/transactions`;
+                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
                 
                 try {
-                    await deleteDoc(doc(db, collectionPath, id));
+                    await deleteDoc(doc(db, privateCollectionPath, id));
                     deleteModal.classList.add('hidden');
-                    console.log('Catatan berhasil dihapus!');
+                    console.log('Catatan pribadi berhasil dihapus!');
+                    // Catatan: Penghapusan dari daftar publik harus dilakukan secara terpisah jika diperlukan
                 } catch (error) {
                     console.error("Error saat menghapus data:", error);
                     deleteModal.classList.add('hidden');
@@ -519,7 +622,7 @@
                 }
             });
 
-            // --- 9. Utility Function (Sama seperti sebelumnya) ---
+            // --- 9. Utility Function ---
             function formatRupiah(number) {
                 return new Intl.NumberFormat('id-ID', {
                     style: 'currency',
@@ -528,10 +631,9 @@
                 }).format(number);
             }
 
-            function formatDate(date) {
+            function formatDate(date, simple = false) {
                 let d;
                 if (date && typeof date === 'string') {
-                    // Coba buat objek Date dari string YYYY-MM-DD
                     d = new Date(date + 'T00:00:00'); 
                 } else if (date && date.toDate) {
                     d = date.toDate();
@@ -540,6 +642,11 @@
                 }
 
                 if (isNaN(d.getTime())) return '-';
+                
+                if (simple) {
+                    // Hanya tanggal dan bulan, untuk daftar publik
+                    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                }
 
                 return d.toLocaleDateString('id-ID', {
                     year: 'numeric',
