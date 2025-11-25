@@ -45,38 +45,44 @@
             font-size: 16px;
         }
 
-        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan FLEXBOX yang efisien) */
+        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan DISPLAY: TABLE) */
+        
+        /* Container utama bertingkah sebagai baris tabel */
         #input-fields-container {
-            display: flex;
-            flex-wrap: wrap; 
-            gap: 5px; /* DIUBAH: Mengurangi gap menjadi 5px */
+            display: table; /* Ubah container menjadi tabel */
+            width: 100%; 
+            border-collapse: separate;
+            border-spacing: 5px; /* Jarak antar kolom 5px */
             margin-bottom: 10px;
-            width: 100%;
         }
 
+        /* Setiap input bertingkah sebagai sel tabel */
         #input-fields-container input, 
         #input-fields-container select {
-            /* DIUBAH: Menyesuaikan kalkulasi lebar dengan gap 5px */
-            width: calc(25% - 5px); 
-            flex-grow: 1; 
-            min-width: 150px; 
+            display: table-cell; /* Ubah input menjadi sel tabel */
+            width: 25%; /* Biarkan browser membagi rata */
+            padding: 10px;
+            box-sizing: border-box;
             margin: 0; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
 
-        /* Tombol dan input yang bukan di dalam flex container tetap 100% */
+        /* Tombol dan input yang bukan di dalam table container tetap 100% */
         #transaksi-form button {
             width: 100%;
             clear: both;
             margin-top: 5px; 
         }
 
-        /* Input form di luar flex container (Login/Logout) tetap seperti biasa */
+        /* Input form di luar table container (Login/Logout) tetap seperti biasa */
         #transaksi-form input:not(#input-fields-container input) {
             width: 100%;
         }
 
         input {
-            border: 1px solid #ccc;
+            /* Hapus border dari sini agar hanya input di dalam table-cell yang punya border */
+            /* border: 1px solid #ccc; */
         }
         
         button {
@@ -183,7 +189,7 @@
                     </tr>
                 </thead>
                 <tbody id="transaksi-list">
-                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
                 </tbody>
             </table>
             
