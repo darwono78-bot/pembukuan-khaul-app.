@@ -3,744 +3,954 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Haul: Donatur, Jurnal & Ekspor</title>
-    <!-- Tailwind CSS untuk styling -->
+    <title>Pembukuan Haul: Donatur, Jurnal & Ekspor Cloud</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- jsPDF dan AutoTable untuk ekspor PDF -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKx3Kf+c8vEwJ+a0wYpQc/tWw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- Font & Custom Styles -->
     <style>
         /* Gaya agar tabel bisa digeser jika terlalu lebar */
         .table-wrapper {
             overflow-x: auto; 
         }
 
-        /* Ganti font global ke Cambria / Times New Roman / Serif */
+        /* --- PERBAIKAN FONT DAN TEBAL --- */
         body {
             font-family: Cambria, 'Times New Roman', Times, serif; 
         }
         
-        /* Ganti font size global untuk isi tabel agar tidak terlalu besar */
         table {
             font-size: 0.9rem; 
             width: 100%; 
         }
 
-        /* Hapus tebal default dari sel tabel (di JS, kita tambahkan lagi hanya pada total akhir) */
         td {
-            font-weight: normal;
+            font-weight: normal; 
         }
 
-        /* Styling untuk tombol */
-        .btn-primary {
-            @apply px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300;
+        /* --- STICKY COLUMN --- */
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            white-space: nowrap; /* Jangan memutus baris di sel */
         }
-        .btn-danger {
-            @apply px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300;
+        
+        .sticky-col-1 {
+            position: sticky;
+            left: 0;
+            z-index: 10;
         }
-        .input-text {
-            @apply p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500;
+
+        /* Membuat header sticky column tetap di atas */
+        .sticky-col-1.header {
+            z-index: 20; 
         }
-        .header-section {
-             @apply bg-gray-50 p-4 rounded-xl shadow-inner mb-4 border border-gray-200;
+        
+        /* Memastikan warna latar untuk kolom sticky */
+        .bg-gray-200 { 
+            background-color: #e5e7eb; 
         }
+        .bg-white {
+            background-color: #fff;
+        }
+        
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-100 p-4 sm:p-8">
 
-    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-gray-900 border-b-2 border-indigo-600 pb-2">Pembukuan Keuangan Haul</h1>
-            <p class="text-gray-600 mt-2">Pencatatan Donatur, Pengeluaran (Jurnal), dan Ekspor Data Real-Time (Powered by Firebase)</p>
-        </header>
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-xl">
+        <h1 class="text-3xl font-extrabold text-center text-gray-800 mb-2">
+            Catatan Keuangan Haul
+        </h1>
+        <p class="text-center text-gray-600 mb-6">
+            Pencatatan Donasi Jariyah & Jurnal Kas Umum
+        </p>
 
-        <!-- Bagian Autentikasi dan Status Pengguna -->
-        <div id="auth-section" class="header-section flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <div id="user-status" class="text-sm text-gray-700">
-                Memuat status pengguna...
+        <div id="admin-controls" class="mt-4 mb-8">
+            <div id="login-form-container" class="space-y-2 p-4 border rounded shadow bg-gray-50 max-w-sm mx-auto">
+                <h3 class="font-bold text-center text-lg text-gray-700">Akses Admin</h3>
+                <input type="email" id="admin-email" placeholder="Email Admin" class="w-full p-2 border rounded" required>
+                <input type="password" id="admin-password" placeholder="Password Admin" class="w-full p-2 border rounded" required>
+                <button onclick="adminLogin()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded transition">
+                    <i class="fa-solid fa-right-to-bracket mr-2"></i>Login Admin
+                </button>
+                <p class="text-xs text-red-500 text-center">Pastikan Email/Password telah terdaftar di Firebase Auth Anda.</p>
             </div>
-            <div id="auth-controls" class="space-x-2">
-                <button id="logout-btn" class="btn-danger hidden">Logout</button>
-                <div id="login-form-container" class="space-x-2 hidden">
-                    <input type="email" id="email-input" class="input-text w-32" placeholder="Email Anda">
-                    <input type="password" id="password-input" class="input-text w-32" placeholder="Password Anda">
-                    <button id="login-btn" class="btn-primary">Login</button>
-                    <p id="auth-error" class="text-red-500 text-xs mt-1"></p>
+
+            <div id="admin-tools-container" class="hidden">
+                <div class="flex flex-col md:flex-row gap-2 justify-between mb-4">
+                    <button onclick="confirmResetData()" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition w-full md:w-auto">
+                        <i class="fa-solid fa-trash-can mr-2"></i>Reset Data
+                    </button>
+                    <button onclick="adminLogout()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition w-full md:w-auto">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout Admin
+                    </button>
+                </div>
+
+                <div class="mb-8 p-4 border rounded-lg shadow bg-green-50">
+                    <h2 class="text-xl font-bold mb-3 text-green-700">Input Data Donasi Jariyah</h2>
+                    <form id="form-donasi" class="space-y-3">
+                        <input type="hidden" id="donatur-id-input">
+                        <input type="date" id="donasi-tanggal" class="w-full p-2 border rounded" required>
+                        <input type="text" id="donasi-nama" placeholder="Nama Donatur" class="w-full p-2 border rounded" required>
+                        <input type="text" id="donasi-alamat" placeholder="Alamat (Opsional)" class="w-full p-2 border rounded">
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
+                            <input type="number" id="donasi-nilai" placeholder="Nominal Jariyah (cth: 100000)" class="w-full p-2 border rounded pl-10" required>
+                        </div>
+                        <button type="submit" id="submit-donasi-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Donasi
+                        </button>
+                        <button type="button" onclick="resetDonasiForm()" class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 rounded transition" id="cancel-donasi-btn" style="display:none;">
+                            <i class="fa-solid fa-xmark mr-2"></i>Batal Edit
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mb-8 p-4 border rounded-lg shadow bg-red-50">
+                    <h2 class="text-xl font-bold mb-3 text-red-700">Input Jurnal Kas Umum (Dana Keluar)</h2>
+                    <form id="form-jurnal" class="space-y-3">
+                        <input type="hidden" id="jurnal-id-input">
+                        <input type="date" id="jurnal-tanggal" class="w-full p-2 border rounded" required>
+                        <input type="text" id="jurnal-uraian" placeholder="Uraian (Contoh: Beli Konsumsi Panitia)" class="w-full p-2 border rounded" required>
+                        <select id="jurnal-kategori" class="w-full p-2 border rounded" required>
+                            <option value="">Pilih Kategori Pengeluaran</option>
+                            <option value="Biaya Haul">Biaya Haul (70%)</option>
+                            <option value="Perawatan Makam">Perawatan Makam (15%)</option>
+                            <option value="Ongkos Panitia">Ongkos Panitia (15%)</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
+                            <input type="number" id="jurnal-dana-keluar" placeholder="Dana Keluar (cth: 50000)" class="w-full p-2 border rounded pl-10" required>
+                        </div>
+                        <button type="submit" id="submit-jurnal-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded transition">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Simpan Pengeluaran
+                        </button>
+                        <button type="button" onclick="resetJurnalForm()" class="w-full bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 rounded transition" id="cancel-jurnal-btn" style="display:none;">
+                            <i class="fa-solid fa-xmark mr-2"></i>Batal Edit
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
+        <hr class="my-8">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center">
+            Jurnal Kas Umum
+            <button onclick="exportJurnalDetailPDF()" class="bg-gray-500 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded transition">
+                <i class="fa-solid fa-file-pdf mr-2"></i>Unduh PDF Detail
+            </button>
+        </h2>
+        <div id="jurnal-table-container" class="table-wrapper">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="sticky-col-1 header bg-gray-200 text-xs font-bold uppercase tracking-wider">NO</th>
+                        <th class="text-xs font-bold uppercase tracking-wider">Tanggal</th>
+                        <th class="text-xs font-bold uppercase tracking-wider">Uraian / Keterangan</th>
+                        <th id="jurnal-kategori-header" class="text-xs font-bold uppercase tracking-wider admin-only" style="display:none;">Kategori</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-right">Dana Masuk (Rp)</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-right">Dana Keluar (Rp)</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-right">Saldo (Rp)</th>
+                        <th id="jurnal-aksi-header" class="text-xs font-bold uppercase tracking-wider text-center admin-only" style="display:none;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="jurnal-kas-umum-body" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="8" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
+                </tbody>
+                <tfoot id="jurnal-kas-umum-foot" class="bg-gray-100 font-bold">
+                    </tfoot>
+            </table>
+        </div>
+        <div class="flex justify-center mt-4">
+            <button onclick="changeJurnalPage(-1)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded-l transition">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span id="jurnal-page-info" class="bg-gray-200 py-1 px-4 text-gray-800">Halaman 1/1</span>
+            <button onclick="changeJurnalPage(1)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded-r transition">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+
+
+        <hr class="my-8">
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 flex justify-between items-center">
+            Laporan List Donatur Jariyah
+            <div class="space-x-2">
+                <button onclick="exportDonaturPDF()" class="bg-green-500 hover:bg-green-700 text-white text-sm py-1 px-3 rounded transition">
+                    <i class="fa-solid fa-file-pdf mr-2"></i>Unduh PDF Donatur
+                </button>
+                <button onclick="exportLpjGlobalPDF()" class="bg-purple-500 hover:bg-purple-700 text-white text-sm py-1 px-3 rounded transition">
+                    <i class="fa-solid fa-file-pdf mr-2"></i>Unduh PDF Ringkasan
+                </button>
+            </div>
+        </h2>
         
-        <!-- Bagian Input Data -->
-        <div class="header-section grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Form Donasi/Pemasukan -->
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="text-xl font-semibold mb-4 text-indigo-700">1. Catat Donasi (Pemasukan)</h2>
-                <div class="space-y-3">
-                    <input type="date" id="donatur-date" class="input-text w-full">
-                    <input type="text" id="donatur-name" class="input-text w-full" placeholder="Nama Donatur (cth: Hamba Allah/Bpk. Budi)">
-                    <input type="number" id="donatur-amount" class="input-text w-full" placeholder="Jumlah Donasi (cth: 500000)">
-                    <button id="save-donasi-btn" class="btn-primary w-full disabled:opacity-50" disabled>Simpan Donasi</button>
-                </div>
-            </div>
-
-            <!-- Form Jurnal/Pengeluaran -->
-            <div class="bg-white p-6 rounded-xl shadow">
-                <h2 class="text-xl font-semibold mb-4 text-indigo-700">2. Catat Jurnal (Pengeluaran)</h2>
-                <div class="space-y-3">
-                    <input type="date" id="jurnal-date" class="input-text w-full">
-                    <input type="text" id="jurnal-desc" class="input-text w-full" placeholder="Uraian Pengeluaran (cth: Pembelian bahan baku)">
-                    <input type="number" id="jurnal-amount" class="input-text w-full" placeholder="Jumlah Pengeluaran (cth: 250000)">
-                    <button id="save-jurnal-btn" class="btn-primary w-full disabled:opacity-50" disabled>Simpan Jurnal</button>
-                </div>
-            </div>
+        <div id="donatur-table-container" class="table-wrapper">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="sticky-col-1 header bg-gray-200 text-xs font-bold uppercase tracking-wider">NO</th>
+                        <th class="text-xs font-bold uppercase tracking-wider">Tanggal</th>
+                        <th class="text-xs font-bold uppercase tracking-wider">Nama Donatur</th>
+                        <th class="text-xs font-bold uppercase tracking-wider">Alamat</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-right">Jariyah (Rp)</th>
+                        <th id="donatur-makam-header" class="text-xs font-bold uppercase tracking-wider text-right admin-only" style="display:none;">Perawatan Makam (15%)</th>
+                        <th id="donatur-panitia-header" class="text-xs font-bold uppercase tracking-wider text-right admin-only" style="display:none;">Ongkos Panitia (15%)</th>
+                        <th id="donatur-haul-header" class="text-xs font-bold uppercase tracking-wider text-right admin-only" style="display:none;">Biaya Haul (70%)</th>
+                        <th class="text-xs font-bold uppercase tracking-wider text-right">Total Jariyah (Rp)</th>
+                        <th id="donatur-aksi-header" class="text-xs font-bold uppercase tracking-wider text-center admin-only" style="display:none;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="donatur-list-body" class="bg-white divide-y divide-gray-200">
+                    <tr><td colspan="10" class="text-center py-4 text-gray-500">Memuat data...</td></tr>
+                </tbody>
+                <tfoot id="donatur-list-foot" class="bg-gray-100 font-bold">
+                    </tfoot>
+            </table>
+        </div>
+        <div class="flex justify-center mt-4">
+            <button onclick="changeDonaturPage(-1)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded-l transition">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span id="donatur-page-info" class="bg-gray-200 py-1 px-4 text-gray-800">Halaman 1/1</span>
+            <button onclick="changeDonaturPage(1)" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-1 px-3 rounded-r transition">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
         </div>
 
-        <!-- Bagian Laporan dan Ekspor -->
-        <div class="header-section">
-            <h2 class="text-xl font-semibold mb-4 text-indigo-700">3. Laporan dan Ekspor Data</h2>
-            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                <button id="export-ringkasan-btn" class="btn-primary flex-1 disabled:opacity-50" disabled>Ekspor Laporan Ringkasan (PDF)</button>
-                <button id="export-jurnal-btn" class="btn-primary flex-1 disabled:opacity-50" disabled>Ekspor Laporan Jurnal Detail (PDF)</button>
-            </div>
-        </div>
 
-        <!-- Bagian Tampilan Donatur -->
-        <section class="mt-8 bg-white p-6 rounded-xl shadow">
-            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Daftar Donatur (Pemasukan)</h2>
-            <div class="table-wrapper">
-                <table id="donatur-table" class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-indigo-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl.</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Donatur</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="donatur-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data akan dimasukkan di sini oleh JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="donatur-pagination" class="flex justify-between items-center mt-4">
-                <button id="donatur-prev" class="px-3 py-1 border rounded-lg text-sm disabled:opacity-50">Sebelumnya</button>
-                <span id="donatur-info" class="text-sm text-gray-600">Halaman 1</span>
-                <button id="donatur-next" class="px-3 py-1 border rounded-lg text-sm disabled:opacity-50">Berikutnya</button>
-            </div>
-        </section>
-
-        <!-- Bagian Tampilan Jurnal -->
-        <section class="mt-8 bg-white p-6 rounded-xl shadow">
-            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Daftar Jurnal (Pengeluaran)</h2>
-            <div class="table-wrapper">
-                <table id="jurnal-table" class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-indigo-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tgl.</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uraian</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jumlah (Rp)</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="jurnal-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Data akan dimasukkan di sini oleh JS -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="jurnal-pagination" class="flex justify-between items-center mt-4">
-                <button id="jurnal-prev" class="px-3 py-1 border rounded-lg text-sm disabled:opacity-50">Sebelumnya</button>
-                <span id="jurnal-info" class="text-sm text-gray-600">Halaman 1</span>
-                <button id="jurnal-next" class="px-3 py-1 border rounded-lg text-sm disabled:opacity-50">Berikutnya</button>
-            </div>
-        </section>
-
-        <!-- Pesan Modal Kustom -->
-        <div id="custom-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-                <h3 id="modal-title" class="text-xl font-bold mb-4 text-gray-800">Judul Pesan</h3>
-                <p id="modal-message" class="text-gray-700 mb-6">Isi pesan di sini.</p>
-                <div class="flex justify-end space-x-3">
-                    <button id="modal-cancel-btn" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 hidden">Batal</button>
-                    <button id="modal-confirm-btn" class="btn-primary">OK</button>
-                </div>
-            </div>
-        </div>
+        <p class="text-center text-xs text-gray-500 mt-8">
+            Dibuat dengan ❤️ untuk Pembukuan Haul.
+        </p>
 
     </div>
 
-    <!-- SCRIPT FIREBASE DAN LOGIKA APLIKASI -->
-    <script type="module">
-        // Import modul Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged, 
-            signInWithEmailAndPassword, 
-            signOut 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            query, 
-            orderBy, 
-            onSnapshot, 
-            addDoc, 
-            doc, 
-            deleteDoc, 
-            getDocs,
-            Timestamp,
-            setLogLevel 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global Variables for Firebase & Auth
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        let isAuthReady = false;
-
-        // Mendapatkan konfigurasi Firebase dari variabel global
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Your default config here if needed for pure local testing */ };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    <script>
+        const { jsPDF } = window.jspdf;
         
-        // Atur log level debug untuk melihat detail di console
-        setLogLevel('debug');
+        // ================================================================================
+        // 1. INICIALISASI FIREBASE & KONFIGURASI
+        // ================================================================================
 
-
-        // --------------------------------------------------------------------------------
-        // 1. FIREBASE INITIALIZATION & AUTHENTICATION
-        // --------------------------------------------------------------------------------
-
-        const initFirebase = async () => {
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-
-                // Listener untuk perubahan status otentikasi
-                onAuthStateChanged(auth, async (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Pengguna terautentikasi. UID:", userId);
-                        document.getElementById('user-status').textContent = `Status: Terautentikasi (UID: ${userId.substring(0, 8)}...)`;
-                        document.getElementById('logout-btn').classList.remove('hidden');
-                        document.getElementById('login-form-container').classList.add('hidden');
-                        
-                        // Aktifkan tombol input dan ekspor setelah autentikasi
-                        enableInputsAndExports(true);
-
-                        // Muat data hanya setelah autentikasi siap
-                        if (!isAuthReady) {
-                            isAuthReady = true;
-                            loadTransactions();
-                            // Panggil ini untuk menyesuaikan tampilan saat load pertama
-                            updateAdminView(); 
-                        }
-                    } else {
-                        userId = null;
-                        console.log("Pengguna tidak terautentikasi. Mencoba login anonim/kustom.");
-                        document.getElementById('user-status').textContent = 'Status: Belum Login';
-                        document.getElementById('logout-btn').classList.add('hidden');
-                        document.getElementById('login-form-container').classList.remove('hidden');
-                        
-                        // Nonaktifkan tombol input dan ekspor
-                        enableInputsAndExports(false);
-                        
-                        // Jika belum siap, set isAuthReady setelah mencoba login kustom/anonim
-                        if (!isAuthReady) {
-                            try {
-                                if (initialAuthToken) {
-                                    await signInWithCustomToken(auth, initialAuthToken);
-                                    console.log("Login dengan token kustom berhasil.");
-                                } else {
-                                    await signInAnonymously(auth);
-                                    console.log("Login anonim berhasil.");
-                                }
-                            } catch (error) {
-                                console.error("Gagal login kustom/anonim:", error.message);
-                                isAuthReady = true; // Tetap set ke true agar proses bisa berlanjut
-                                // Tampilkan pesan error pada form login jika ada
-                                document.getElementById('auth-error').textContent = `Error auth: ${error.code}`;
-                            }
-                        }
-                    }
-                });
-
-            } catch (error) {
-                console.error("Kesalahan saat inisialisasi Firebase:", error);
-                document.getElementById('user-status').textContent = `Error Init: ${error.message}`;
-            }
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
+            authDomain: "catatan-keuangan-haul.firebaseapp.com",
+            projectId: "catatan-keuangan-haul",
+            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+            messagingSenderId: "955355049778",
+            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
 
-        const handleLogin = async () => {
-            const email = document.getElementById('email-input').value;
-            const password = document.getElementById('password-input').value;
-            const errorElement = document.getElementById('auth-error');
-            errorElement.textContent = '';
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = app.firestore();
+        const auth = app.auth(); // <-- Inisialisasi Firebase Auth
 
-            if (!email || !password) {
-                errorElement.textContent = "Email dan Password harus diisi.";
-                return;
-            }
+        const DONATUR_COLLECTION = 'donatur_haul';
+        const JURNAL_COLLECTION = 'jurnal_haul';
+        
+        // Data Utama
+        let allTransactions = []; // Data Donatur
+        let jurnalTransactions = []; // Data Jurnal Kas Umum
 
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                console.log("Login Email/Password berhasil!");
-            } catch (error) {
-                console.error("Gagal Login:", error);
-                errorElement.textContent = `Login Gagal: ${error.message}`;
-            }
-        };
-
-        const handleLogout = async () => {
-            try {
-                await signOut(auth);
-                console.log("Logout berhasil.");
-                // Setelah logout, onAuthStateChanged akan memicu sign-in anonim/kustom lagi
-            } catch (error) {
-                console.error("Gagal Logout:", error);
-            }
-        };
-
-        const enableInputsAndExports = (isEnabled) => {
-            document.getElementById('save-donasi-btn').disabled = !isEnabled;
-            document.getElementById('save-jurnal-btn').disabled = !isEnabled;
-            document.getElementById('export-ringkasan-btn').disabled = !isEnabled;
-            document.getElementById('export-jurnal-btn').disabled = !isEnabled;
-        };
-
-
-        // --------------------------------------------------------------------------------
-        // 2. FIRESTORE OPERATIONS (CRUD)
-        // --------------------------------------------------------------------------------
-        const COLLECTION_NAME = "transactions";
-
-        // Fungsi untuk mendapatkan path koleksi transaksi pengguna
-        const getCollectionPath = () => {
-            // Menggunakan path /artifacts/{appId}/public/data/{COLLECTION_NAME}
-            // agar data bisa diakses (dibaca/ditulis) oleh semua pengguna yang terautentikasi di aplikasi ini.
-            return `/artifacts/${appId}/public/data/${COLLECTION_NAME}`;
-        };
-
-        /**
-         * Mengambil data transaksi dari Firestore secara real-time.
-         */
-        const loadTransactions = () => {
-            if (!isAuthReady || !userId) {
-                console.log("Menunggu otentikasi selesai sebelum memuat data Firestore.");
-                return;
-            }
-            
-            const transactionsRef = collection(db, getCollectionPath());
-            const q = query(transactionsRef, orderBy("timestamp", "desc")); // Urutkan berdasarkan waktu terbaru
-
-            // onSnapshot akan mendengarkan perubahan secara real-time
-            onSnapshot(q, (snapshot) => {
-                const fetchedTransactions = [];
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    // Konversi Firebase Timestamp menjadi JavaScript Date/number
-                    const timestampMs = data.timestamp instanceof Timestamp ? data.timestamp.toMillis() : data.timestamp;
-                    
-                    fetchedTransactions.push({
-                        id: doc.id,
-                        ...data,
-                        timestamp: timestampMs,
-                        date: data.date, // Tetap gunakan string tanggal untuk tampilan
-                    });
-                });
-                
-                console.log(`Data transaksi berhasil dimuat: ${fetchedTransactions.length} entri.`);
-                allTransactions = fetchedTransactions; // Perbarui data global
-                renderAllTables(); // Render ulang tabel
-            }, (error) => {
-                console.error("Kesalahan saat mengambil data dari Firestore:", error);
-                showCustomModal("Error", "Gagal memuat data dari database. Silakan periksa koneksi atau hak akses.", "OK");
-            });
-        };
-
-        /**
-         * Menyimpan transaksi baru ke Firestore.
-         * @param {Object} transactionData - Data transaksi (type, date, description/name, amount).
-         */
-        const saveTransaction = async (transactionData) => {
-            if (!userId) {
-                showCustomModal("Akses Ditolak", "Anda harus login untuk menyimpan data.", "OK");
-                return;
-            }
-            try {
-                // Tambahkan timestamp saat ini untuk pengurutan
-                const dataToSave = {
-                    ...transactionData,
-                    timestamp: Timestamp.now(), 
-                    userId: userId // Opsional: Tandai siapa yang membuat
-                };
-                
-                const docRef = await addDoc(collection(db, getCollectionPath()), dataToSave);
-                console.log("Dokumen berhasil ditulis dengan ID: ", docRef.id);
-            } catch (e) {
-                console.error("Error saat menambahkan dokumen: ", e);
-                showCustomModal("Error", "Gagal menyimpan transaksi ke database.", "OK");
-            }
-        };
-
-        /**
-         * Menghapus transaksi dari Firestore.
-         * @param {string} id - ID dokumen transaksi.
-         */
-        const deleteTransaction = async (id) => {
-            if (!userId) {
-                showCustomModal("Akses Ditolak", "Anda harus login untuk menghapus data.", "OK");
-                return;
-            }
-            try {
-                await deleteDoc(doc(db, getCollectionPath(), id));
-                console.log("Dokumen berhasil dihapus:", id);
-                // onSnapshot akan otomatis merender ulang tabel
-            } catch (e) {
-                console.error("Error saat menghapus dokumen: ", e);
-                showCustomModal("Error", "Gagal menghapus transaksi dari database.", "OK");
-            }
-        };
-
-
-        // --------------------------------------------------------------------------------
-        // 3. LOGIC & DATA HANDLING (Dipertahankan dari file lama, diubah untuk Firestore)
-        // --------------------------------------------------------------------------------
-        window.jsPDF = window.jspdf.jsPDF;
-        const TRANSACTIONS_PER_PAGE = 10;
-        let allTransactions = [];
+        let isAdminLoggedIn = false; // Status admin, diatur oleh Firebase Auth
+        
+        // Pagination
+        const itemsPerPage = 10;
         let currentDonaturPage = 1;
         let currentJurnalPage = 1;
 
-        // Helper: Format Rupiah
-        const formatRupiah = (number) => {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(number);
-        };
+        // ================================================================================
+        // 2. UTILITAS
+        // ================================================================================
 
-        // Helper: Tampilkan Modal
-        const showCustomModal = (title, message, confirmText = "OK", onConfirm = null, onCancel = null) => {
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            document.getElementById('modal-confirm-btn').textContent = confirmText;
+        const formatRupiah = (angka) => {
+            if (typeof angka !== 'number') return 'Rp 0';
+            const sisa = angka.toString().length % 3;
+            let rupiah = angka.toString().substring(0, sisa);
+            const ribuan = angka.toString().substring(sisa).match(/\d{3}/g);
+
+            if (ribuan) {
+                const separator = sisa ? '.' : '';
+                rupiah += separator + ribuan.join('.');
+            }
             
-            const modal = document.getElementById('custom-modal');
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            const cancelBtn = document.getElementById('modal-cancel-btn');
+            // Tambahkan minus jika negatif, tapi biasanya saldo tidak negatif
+            return (rupiah.startsWith('-') ? '- Rp ' : 'Rp ') + rupiah.replace(/^-/, ''); 
+        };
 
-            // Reset event listeners
-            confirmBtn.onclick = null;
-            cancelBtn.onclick = null;
-            cancelBtn.classList.add('hidden'); // Sembunyikan batal secara default
-
-            if (onConfirm) {
-                // Ini adalah dialog konfirmasi
-                cancelBtn.classList.remove('hidden');
-                confirmBtn.onclick = () => {
-                    modal.classList.add('hidden');
-                    onConfirm();
-                };
-                cancelBtn.onclick = () => {
-                    modal.classList.add('hidden');
-                    if (onCancel) onCancel();
-                };
+        const updateAdminView = () => {
+            const adminElements = document.querySelectorAll('.admin-only');
+            const forms = document.getElementById('admin-tools-container');
+            
+            // Tampilkan/Sembunyikan form input dan kolom admin
+            if (isAdminLoggedIn) {
+                adminElements.forEach(el => el.style.display = 'table-cell');
+                forms.classList.remove('hidden');
+                document.getElementById('login-form-container').classList.add('hidden');
             } else {
-                // Ini adalah dialog info/alert
-                confirmBtn.onclick = () => modal.classList.add('hidden');
+                adminElements.forEach(el => el.style.display = 'none');
+                forms.classList.add('hidden');
+                document.getElementById('login-form-container').classList.remove('hidden');
             }
 
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            // Render ulang tabel untuk menerapkan perubahan tampilan kolom
+            renderAllTables();
         };
-
-        // Paginasi Donatur
-        const updateDonaturPagination = (totalPages) => {
-            document.getElementById('donatur-prev').disabled = currentDonaturPage === 1;
-            document.getElementById('donatur-next').disabled = currentDonaturPage === totalPages || totalPages === 0;
-            document.getElementById('donatur-info').textContent = `Halaman ${currentDonaturPage} dari ${totalPages === 0 ? 1 : totalPages}`;
-        };
-
-        // Paginasi Jurnal
-        const updateJurnalPagination = (totalPages) => {
-            document.getElementById('jurnal-prev').disabled = currentJurnalPage === 1;
-            document.getElementById('jurnal-next').disabled = currentJurnalPage === totalPages || totalPages === 0;
-            document.getElementById('jurnal-info').textContent = `Halaman ${currentJurnalPage} dari ${totalPages === 0 ? 1 : totalPages}`;
-        };
-
-        // Render Donatur Table
-        const renderDonaturTable = (transactions, page) => {
-            const donaturData = transactions.filter(t => t.type === 'donasi');
-            const totalDonasi = donaturData.reduce((sum, t) => sum + t.amount, 0);
-            const totalPages = Math.ceil(donaturData.length / TRANSACTIONS_PER_PAGE);
-
-            currentDonaturPage = Math.max(1, Math.min(page, totalPages || 1));
-            updateDonaturPagination(totalPages);
-
-            const start = (currentDonaturPage - 1) * TRANSACTIONS_PER_PAGE;
-            const end = start + TRANSACTIONS_PER_PAGE;
-            const pageData = donaturData.slice(start, end);
-
-            const tbody = document.getElementById('donatur-body');
-            tbody.innerHTML = '';
-
-            pageData.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50';
-                tr.innerHTML = `
-                    <td class="px-6 py-2 whitespace-nowrap">${t.date}</td>
-                    <td class="px-6 py-2 whitespace-nowrap">${t.name}</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-right">${formatRupiah(t.amount)}</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-center">
-                        <button data-id="${t.id}" class="delete-btn text-red-600 hover:text-red-900 text-sm disabled:opacity-50" ${userId ? '' : 'disabled'}>Hapus</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Baris Total
-            if (donaturData.length > 0) {
-                const trTotal = document.createElement('tr');
-                trTotal.className = 'bg-indigo-100 font-bold';
-                trTotal.innerHTML = `
-                    <td colspan="2" class="px-6 py-2 whitespace-nowrap text-right">TOTAL DONASI</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-right">${formatRupiah(totalDonasi)}</td>
-                    <td class="px-6 py-2 whitespace-nowrap"></td>
-                `;
-                tbody.appendChild(trTotal);
-            } else if (isAuthReady) {
-                 const trNoData = document.createElement('tr');
-                 trNoData.innerHTML = `<td colspan="4" class="px-6 py-4 text-center text-gray-500">Belum ada data Donasi.</td>`;
-                 tbody.appendChild(trNoData);
-            }
-
-
-            return totalDonasi;
-        };
-
-        // Render Jurnal Table
-        const renderJurnalTable = (totalDonasi, page) => {
-            const jurnalData = allTransactions.filter(t => t.type === 'jurnal');
-            const totalPengeluaran = jurnalData.reduce((sum, t) => sum + t.amount, 0);
-            const saldoAkhir = totalDonasi - totalPengeluaran;
-            const totalPages = Math.ceil(jurnalData.length / TRANSACTIONS_PER_PAGE);
-
-            currentJurnalPage = Math.max(1, Math.min(page, totalPages || 1));
-            updateJurnalPagination(totalPages);
-
-            const start = (currentJurnalPage - 1) * TRANSACTIONS_PER_PAGE;
-            const end = start + TRANSACTIONS_PER_PAGE;
-            const pageData = jurnalData.slice(start, end);
-
-            const tbody = document.getElementById('jurnal-body');
-            tbody.innerHTML = '';
-
-            pageData.forEach(t => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-50';
-                tr.innerHTML = `
-                    <td class="px-6 py-2 whitespace-nowrap">${t.date}</td>
-                    <td class="px-6 py-2 whitespace-nowrap">${t.description}</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-right">${formatRupiah(t.amount)}</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-center">
-                        <button data-id="${t.id}" class="delete-btn text-red-600 hover:text-red-900 text-sm disabled:opacity-50" ${userId ? '' : 'disabled'}>Hapus</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Baris Total
-            if (allTransactions.length > 0) {
-                // Baris Total Pengeluaran
-                let trTotal = document.createElement('tr');
-                trTotal.className = 'bg-red-100 font-bold';
-                trTotal.innerHTML = `
-                    <td colspan="2" class="px-6 py-2 whitespace-nowrap text-right">TOTAL PENGELUARAN</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-right">${formatRupiah(totalPengeluaran)}</td>
-                    <td class="px-6 py-2 whitespace-nowrap"></td>
-                `;
-                tbody.appendChild(trTotal);
-
-                // Baris Saldo Akhir
-                let trSaldo = document.createElement('tr');
-                const saldoClass = saldoAkhir >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                trSaldo.className = `${saldoClass} font-extrabold text-lg`;
-                trSaldo.innerHTML = `
-                    <td colspan="2" class="px-6 py-2 whitespace-nowrap text-right">SALDO AKHIR</td>
-                    <td class="px-6 py-2 whitespace-nowrap text-right">${formatRupiah(saldoAkhir)}</td>
-                    <td class="px-6 py-2 whitespace-nowrap"></td>
-                `;
-                tbody.appendChild(trSaldo);
-            } else if (isAuthReady) {
-                 const trNoData = document.createElement('tr');
-                 trNoData.innerHTML = `<td colspan="4" class="px-6 py-4 text-center text-gray-500">Belum ada data Jurnal (Pengeluaran).</td>`;
-                 tbody.appendChild(trNoData);
-            }
-        };
-
-
-        // --------------------------------------------------------------------------------
-        // 4. PDF EXPORT LOGIC (Dipertahankan)
-        // --------------------------------------------------------------------------------
         
-        // Fungsi untuk menambahkan tanda tangan ke PDF
+        // ================================================================================
+        // 3. FIREBASE AUTHENTICATION
+        // ================================================================================
+        
+        // ADMIN LOGIN
+        window.adminLogin = async () => {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+
+            if (!email || !password) {
+                return alert('Mohon isi Email dan Password.');
+            }
+
+            try {
+                // Gunakan Firebase Auth untuk login
+                await auth.signInWithEmailAndPassword(email, password);
+                // alert('Login berhasil!'); // Notifikasi akan terjadi di onAuthStateChanged
+            } catch (error) {
+                console.error("Login Error: ", error);
+                alert(`Login gagal: ${error.message}`);
+            }
+        };
+
+        // ADMIN LOGOUT
+        window.adminLogout = async () => {
+            try {
+                await auth.signOut();
+                alert('Anda telah logout.');
+            } catch (error) {
+                console.error("Logout Error: ", error);
+                alert(`Logout gagal: ${error.message}`);
+            }
+        };
+        
+        // ADMIN STATE LISTENER (Menggantikan ADMIN_PASSWORD & sessionStorage)
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in
+                isAdminLoggedIn = true;
+                document.getElementById('admin-email').value = '';
+                document.getElementById('admin-password').value = '';
+            } else {
+                // User is signed out
+                isAdminLoggedIn = false;
+            }
+            updateAdminView();
+        });
+
+
+        // ================================================================================
+        // 4. FIREBASE FIRESTORE DATA (LOAD, SUBMIT, DELETE)
+        // ================================================================================
+
+        // LOAD DATA
+        const loadDataFromFirestore = async () => {
+            try {
+                // --- 1. Load Donatur (Urutkan berdasarkan timestamp) ---
+                const donaturSnapshot = await db.collection(DONATUR_COLLECTION).orderBy('timestamp', 'asc').get();
+                allTransactions = donaturSnapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    ...doc.data(), 
+                    nilai: Number(doc.data().nilai) // Pastikan nilai tetap berupa number
+                }));
+                
+                // --- 2. Load Jurnal (Urutkan berdasarkan timestamp) ---
+                const jurnalSnapshot = await db.collection(JURNAL_COLLECTION).orderBy('timestamp', 'asc').get();
+                jurnalTransactions = jurnalSnapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    ...doc.data(), 
+                    danaKeluar: Number(doc.data().danaKeluar)
+                }));
+                
+                renderAllTables();
+                
+            } catch (error) {
+                console.error("Error loading data from Firestore: ", error);
+                alert("Gagal memuat data dari Firebase. Cek koneksi internet dan konsol.");
+            }
+        };
+
+        // ================================================================================
+        // DONASI JARIYAH (SUBMIT)
+        // ================================================================================
+        const resetDonasiForm = () => {
+            document.getElementById('form-donasi').reset();
+            document.getElementById('donatur-id-input').value = '';
+            document.getElementById('submit-donasi-btn').textContent = 'Simpan Donasi';
+            document.getElementById('cancel-donasi-btn').style.display = 'none';
+        }
+        
+        window.editDonatur = (id) => {
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin.');
+            const transaction = allTransactions.find(t => t.id === id);
+            if (transaction) {
+                document.getElementById('donatur-id-input').value = transaction.id;
+                document.getElementById('donasi-tanggal').value = transaction.tanggal;
+                document.getElementById('donasi-nama').value = transaction.nama;
+                document.getElementById('donasi-alamat').value = transaction.alamat;
+                document.getElementById('donasi-nilai').value = transaction.nilai;
+                
+                document.getElementById('submit-donasi-btn').textContent = 'Update Donasi';
+                document.getElementById('cancel-donasi-btn').style.display = 'block';
+                document.getElementById('donasi-tanggal').focus(); // Fokus ke form
+            }
+        };
+
+        window.deleteDonatur = async (id) => {
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin untuk menghapus data.');
+            if (!confirm('Anda yakin ingin menghapus data donatur ini? Menghapus donasi akan mempengaruhi saldo total kas.')) return;
+
+            try {
+                await db.collection(DONATUR_COLLECTION).doc(id).delete();
+                await loadDataFromFirestore(); // Muat ulang data setelah delete
+                alert('Data Donatur berhasil dihapus.');
+            } catch (error) {
+                console.error("Error deleting donatur data: ", error);
+                alert("Gagal menghapus data donatur dari Firebase.");
+            }
+        };
+
+        document.getElementById('form-donasi').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin untuk menginput data.');
+            
+            const tanggal = document.getElementById('donasi-tanggal').value;
+            const nama = document.getElementById('donasi-nama').value;
+            const alamat = document.getElementById('donasi-alamat').value;
+            const nilai = parseFloat(document.getElementById('donasi-nilai').value);
+            
+            if (isNaN(nilai) || nilai <= 0) return alert('Nilai donasi tidak valid.');
+            if (!tanggal || !nama) return alert('Tanggal dan Nama Donatur harus diisi.');
+
+            const existingId = document.getElementById('donatur-id-input').value;
+            
+            const transactionData = { 
+                tanggal, 
+                nama, 
+                alamat, 
+                nilai, // Nilai sudah berupa number
+            };
+
+            try {
+                if (existingId) {
+                    // Mode Edit
+                    await db.collection(DONATUR_COLLECTION).doc(existingId).update(transactionData);
+                    alert('Data Donatur berhasil diubah!');
+                } else {
+                    // Mode Create
+                    transactionData.timestamp = Date.now(); // Tambahkan timestamp saat create
+                    await db.collection(DONATUR_COLLECTION).add(transactionData);
+                    alert('Donasi berhasil dicatat!');
+                }
+                
+                resetDonasiForm();
+                await loadDataFromFirestore(); // Muat ulang data setelah submit
+
+            } catch (error) {
+                console.error("Error saving donatur data: ", error);
+                alert("Gagal menyimpan data donatur ke Firebase.");
+            }
+        });
+
+        // ================================================================================
+        // JURNAL KAS UMUM (SUBMIT)
+        // ================================================================================
+
+        const resetJurnalForm = () => {
+            document.getElementById('form-jurnal').reset();
+            document.getElementById('jurnal-id-input').value = '';
+            document.getElementById('submit-jurnal-btn').textContent = 'Simpan Pengeluaran';
+            document.getElementById('cancel-jurnal-btn').style.display = 'none';
+        }
+
+        window.editJurnal = (id) => {
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin.');
+            
+            // Cari data di array jurnalTransactions (bukan donasi)
+            const transaction = jurnalTransactions.find(t => t.id === id); 
+            if (transaction) {
+                document.getElementById('jurnal-id-input').value = transaction.id;
+                document.getElementById('jurnal-tanggal').value = transaction.tanggal;
+                document.getElementById('jurnal-uraian').value = transaction.uraian;
+                document.getElementById('jurnal-kategori').value = transaction.kategori;
+                document.getElementById('jurnal-dana-keluar').value = transaction.danaKeluar; // danaKeluar saja
+                
+                document.getElementById('submit-jurnal-btn').textContent = 'Update Pengeluaran';
+                document.getElementById('cancel-jurnal-btn').style.display = 'block';
+                document.getElementById('jurnal-tanggal').focus(); // Fokus ke form
+            }
+        };
+
+        window.deleteJurnal = async (id) => {
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin untuk menghapus data.');
+            if (!confirm('Anda yakin ingin menghapus data pengeluaran ini?')) return;
+
+            try {
+                await db.collection(JURNAL_COLLECTION).doc(id).delete();
+                await loadDataFromFirestore(); // Muat ulang data setelah delete
+                alert('Data Jurnal berhasil dihapus.');
+            } catch (error) {
+                console.error("Error deleting jurnal data: ", error);
+                alert("Gagal menghapus data jurnal dari Firebase.");
+            }
+        };
+
+        document.getElementById('form-jurnal').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin untuk menginput data.');
+
+            const tanggal = document.getElementById('jurnal-tanggal').value;
+            const uraian = document.getElementById('jurnal-uraian').value;
+            const kategori = document.getElementById('jurnal-kategori').value;
+            const danaKeluar = parseFloat(document.getElementById('jurnal-dana-keluar').value);
+
+            if (isNaN(danaKeluar) || danaKeluar <= 0) return alert('Nilai dana keluar tidak valid.');
+            if (!tanggal || !uraian || !kategori) return alert('Semua kolom harus diisi.');
+
+            const existingId = document.getElementById('jurnal-id-input').value;
+
+            const jurnalData = { 
+                tanggal, 
+                uraian, 
+                kategori, 
+                danaMasuk: 0, // Dana masuk hanya dari Donasi, bukan input form ini
+                danaKeluar // Sudah berupa number
+            };
+
+            try {
+                if (existingId) {
+                    // Mode Edit
+                    await db.collection(JURNAL_COLLECTION).doc(existingId).update(jurnalData);
+                    alert('Data Jurnal berhasil diubah!');
+                } else {
+                    // Mode Create
+                    jurnalData.timestamp = Date.now(); // Tambahkan timestamp saat create
+                    await db.collection(JURNAL_COLLECTION).add(jurnalData);
+                    alert('Pengeluaran berhasil dicatat!');
+                }
+
+                resetJurnalForm();
+                await loadDataFromFirestore(); // Muat ulang data setelah submit
+                
+            } catch (error) {
+                console.error("Error saving jurnal data: ", error);
+                alert("Gagal menyimpan data jurnal ke Firebase.");
+            }
+        });
+
+        // ================================================================================
+        // RESET DATA (Menggunakan Batch Write)
+        // ================================================================================
+
+        window.confirmResetData = async () => {
+            if (!isAdminLoggedIn) return;
+            if (!confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi dan Jurnal di Firebase? Tindakan ini tidak bisa dibatalkan.')) return;
+            
+            const email = prompt('Untuk konfirmasi, ketik ulang email admin Anda:');
+            const password = prompt('Ketik ulang password admin Anda:');
+
+            if (!email || !password) return alert('Pembatalan reset data.');
+
+            try {
+                // 1. Re-otentikasi untuk keamanan
+                const credentials = await auth.signInWithEmailAndPassword(email, password);
+                
+                // 2. Jika otentikasi berhasil, lakukan reset data
+                const batch = db.batch();
+                
+                // Hapus semua data Donatur
+                const donaturSnap = await db.collection(DONATUR_COLLECTION).get();
+                donaturSnap.docs.forEach((doc) => batch.delete(doc.ref));
+                
+                // Hapus semua data Jurnal
+                const jurnalSnap = await db.collection(JURNAL_COLLECTION).get();
+                jurnalSnap.docs.forEach((doc) => batch.delete(doc.ref));
+                
+                await batch.commit();
+
+                // Muat ulang data
+                await loadDataFromFirestore(); 
+                alert('Semua data berhasil direset (dihapus).');
+                await auth.signOut(); // Logout otomatis setelah reset
+                
+            } catch (error) {
+                 console.error("Error resetting data: ", error);
+                 alert(`Gagal mereset data. Kemungkinan: Password/Email salah atau ${error.message}`);
+            }
+        };
+
+
+        // ================================================================================
+        // 5. RENDER TABLES (DONATUR & JURNAL)
+        // ================================================================================
+
+        const renderDonaturTable = (data, page) => {
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedData = data.slice(start, end);
+
+            const tbody = document.getElementById('donatur-list-body');
+            const tfoot = document.getElementById('donatur-list-foot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            let totalJariyah = 0;
+            let totalMakam = 0;
+            let totalPanitia = 0;
+            let totalHaul = 0;
+
+            paginatedData.forEach((t, index) => {
+                const no = start + index + 1;
+                totalJariyah += t.nilai;
+
+                const makam = Math.round(t.nilai * 0.15);
+                const panitia = Math.round(t.nilai * 0.15);
+                const haul = t.nilai - makam - panitia; // Sisanya
+
+                totalMakam += makam;
+                totalPanitia += panitia;
+                totalHaul += haul;
+
+                const actionCell = isAdminLoggedIn ? 
+                    `<td class="px-6 py-4 whitespace-nowrap text-right admin-only">
+                        <button onclick="editDonatur('${t.id}')" class="text-blue-600 hover:text-blue-900 mr-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteDonatur('${t.id}')" class="text-red-600 hover:text-red-900"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>` : `<td class="admin-only" style="display:none;"></td>`;
+
+                const adminCells = isAdminLoggedIn ? 
+                    `<td class="px-6 py-4 whitespace-nowrap text-right admin-only">${formatRupiah(makam)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right admin-only">${formatRupiah(panitia)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right admin-only">${formatRupiah(haul)}</td>` : '';
+
+                tbody.innerHTML += `
+                    <tr class="${(index % 2 === 0 ? 'bg-white' : 'bg-gray-50')}">
+                        <td class="sticky-col-1 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} px-6 py-4 whitespace-nowrap font-medium">${no}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${t.tanggal}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${t.nama}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${t.alamat || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">${formatRupiah(t.nilai)}</td>
+                        ${adminCells}
+                        <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-green-700">${formatRupiah(t.nilai)}</td>
+                        ${actionCell}
+                    </tr>
+                `;
+            });
+
+            // TFOOT
+            const colspanPublic = 4; // NO, Tanggal, Nama, Alamat
+            const colspanAdmin = 3; // Makam, Panitia, Haul
+
+            const totalColspan = isAdminLoggedIn ? colspanPublic + colspanAdmin : colspanPublic;
+            const totalActionCol = isAdminLoggedIn ? 1 : 0;
+            const totalMakamCell = isAdminLoggedIn ? `<td class="px-6 py-4 whitespace-nowrap text-right">${formatRupiah(totalMakam)}</td>` : '';
+            const totalPanitiaCell = isAdminLoggedIn ? `<td class="px-6 py-4 whitespace-nowrap text-right">${formatRupiah(totalPanitia)}</td>` : '';
+            const totalHaulCell = isAdminLoggedIn ? `<td class="px-6 py-4 whitespace-nowrap text-right">${formatRupiah(totalHaul)}</td>` : '';
+            const totalAksiCell = isAdminLoggedIn ? `<td class="px-6 py-4 whitespace-nowrap text-right"></td>` : '';
+
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="${totalColspan}" class="sticky-col-1 px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-100">SUBTOTAL HALAMAN:</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">${formatRupiah(totalJariyah)}</td>
+                    ${totalMakamCell}
+                    ${totalPanitiaCell}
+                    ${totalHaulCell}
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-green-700">${formatRupiah(totalJariyah)}</td>
+                    ${totalAksiCell}
+                </tr>
+                <tr>
+                    <td colspan="${totalColspan}" class="sticky-col-1 px-6 py-4 whitespace-nowrap text-right font-extrabold bg-gray-200">GRAND TOTAL SELURUH DONASI:</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-extrabold bg-gray-200">${formatRupiah(allTransactions.reduce((sum, t) => sum + t.nilai, 0))}</td>
+                    <td colspan="${4 + totalActionCol}" class="bg-gray-200"></td>
+                </tr>
+            `;
+
+            document.getElementById('donatur-page-info').textContent = `Halaman ${page}/${Math.ceil(data.length / itemsPerPage)}`;
+            return allTransactions.reduce((sum, t) => sum + t.nilai, 0); // Total donasi bersih
+        };
+        
+        const changeDonaturPage = (change) => {
+            const totalPages = Math.ceil(allTransactions.length / itemsPerPage);
+            const newPage = currentDonaturPage + change;
+            if (newPage > 0 && newPage <= totalPages) {
+                currentDonaturPage = newPage;
+                renderDonaturTable(allTransactions, currentDonaturPage);
+            }
+        };
+
+        const renderJurnalTable = (totalDonasi, page) => {
+            // Gabungkan Donasi (sebagai dana masuk) dan Pengeluaran (jurnalTransactions)
+            const donasiEntry = {
+                id: 'DONASI',
+                timestamp: allTransactions.length > 0 ? new Date(allTransactions[allTransactions.length - 1].tanggal).getTime() - 1 : Date.now(), // Masuk sebelum pengeluaran terakhir
+                tanggal: allTransactions.length > 0 ? allTransactions[allTransactions.length - 1].tanggal : new Date().toISOString().substring(0, 10),
+                uraian: 'TOTAL DONASI JARIYAH HAUL',
+                kategori: 'Dana Masuk',
+                danaMasuk: totalDonasi,
+                danaKeluar: 0,
+            };
+
+            const combinedTransactions = [...jurnalTransactions, donasiEntry].sort((a, b) => a.timestamp - b.timestamp);
+            
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedData = combinedTransactions.slice(start, end);
+
+            const tbody = document.getElementById('jurnal-kas-umum-body');
+            const tfoot = document.getElementById('jurnal-kas-umum-foot');
+            tbody.innerHTML = '';
+            tfoot.innerHTML = '';
+
+            let saldo = 0;
+            let totalMasuk = 0;
+            let totalKeluar = 0;
+
+            // Hitung saldo sebelum halaman ini
+            for (let i = 0; i < start; i++) {
+                saldo += combinedTransactions[i].danaMasuk - combinedTransactions[i].danaKeluar;
+            }
+
+            paginatedData.forEach((t, index) => {
+                const no = start + index + 1;
+                const danaMasuk = t.danaMasuk || 0;
+                const danaKeluar = t.danaKeluar || 0;
+                
+                saldo += danaMasuk - danaKeluar;
+                totalMasuk += danaMasuk;
+                totalKeluar += danaKeluar;
+
+                const actionCell = isAdminLoggedIn && t.id !== 'DONASI' ? 
+                    `<td class="px-6 py-4 whitespace-nowrap text-right admin-only">
+                        <button onclick="editJurnal('${t.id}')" class="text-blue-600 hover:text-blue-900 mr-2"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteJurnal('${t.id}')" class="text-red-600 hover:text-red-900"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>` : `<td class="admin-only" style="display:none;"></td>`;
+
+                const uraianCell = isAdminLoggedIn ? t.uraian : `${t.uraian} (${t.kategori})`;
+                const kategoriCell = isAdminLoggedIn ? `<td class="px-6 py-4 whitespace-nowrap admin-only">${t.kategori}</td>` : '';
+                
+                const bgColor = t.id === 'DONASI' ? 'bg-green-100 font-bold' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50');
+
+                tbody.innerHTML += `
+                    <tr class="${bgColor}">
+                        <td class="sticky-col-1 ${bgColor} px-6 py-4 whitespace-nowrap font-medium">${no}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${t.tanggal}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${uraianCell}</td>
+                        ${kategoriCell}
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-green-600">${formatRupiah(danaMasuk)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-red-600">${formatRupiah(danaKeluar)}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right font-bold ${saldo < 0 ? 'text-red-700' : 'text-gray-900'}">${formatRupiah(saldo)}</td>
+                        ${actionCell}
+                    </tr>
+                `;
+            });
+
+            // TFOOT
+            const totalColspan = isAdminLoggedIn ? 3 : 2; // NO, Tgl, Uraian, Kategori(admin)
+            const saldoAwal = combinedTransactions.slice(0, start).reduce((sum, t) => sum + t.danaMasuk - t.danaKeluar, 0);
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="${totalColspan}" class="sticky-col-1 px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-100">SALDO AWAL HALAMAN:</td>
+                    <td colspan="${1 + (isAdminLoggedIn ? 1 : 0)}" class="px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-100"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-100">${formatRupiah(saldoAwal)}</td>
+                    <td colspan="${isAdminLoggedIn ? 1 : 0}" class="bg-gray-100"></td>
+                </tr>
+                <tr>
+                    <td colspan="${totalColspan}" class="sticky-col-1 px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-200">TOTAL AKHIR KAS UMUM:</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-200 text-green-700">${formatRupiah(combinedTransactions.reduce((sum, t) => sum + t.danaMasuk, 0))}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-bold bg-gray-200 text-red-700">${formatRupiah(combinedTransactions.reduce((sum, t) => sum + t.danaKeluar, 0))}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-extrabold bg-gray-200 ${saldo < 0 ? 'text-red-700' : 'text-gray-900'}">${formatRupiah(saldo)}</td>
+                    <td colspan="${isAdminLoggedIn ? 1 : 0}" class="bg-gray-200"></td>
+                </tr>
+            `;
+
+            document.getElementById('jurnal-page-info').textContent = `Halaman ${page}/${Math.ceil(combinedTransactions.length / itemsPerPage)}`;
+        };
+        
+        const changeJurnalPage = (change) => {
+            const combinedTransactions = [...jurnalTransactions, {id: 'DONASI', timestamp: 0, danaMasuk: allTransactions.reduce((sum, t) => sum + t.nilai, 0), danaKeluar: 0, tanggal: ''}];
+            const totalPages = Math.ceil(combinedTransactions.length / itemsPerPage);
+            const newPage = currentJurnalPage + change;
+            if (newPage > 0 && newPage <= totalPages) {
+                currentJurnalPage = newPage;
+                renderJurnalTable(allTransactions.reduce((sum, t) => sum + t.nilai, 0), currentJurnalPage);
+            }
+        };
+
+
+        const renderAllTables = () => {
+            // Urutkan donatur sebelum merender
+            allTransactions.sort((a, b) => a.timestamp - b.timestamp);
+            jurnalTransactions.sort((a, b) => a.timestamp - b.timestamp);
+            const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
+            renderJurnalTable(totalDonasi, currentJurnalPage);
+        };
+        
+        // ================================================================================
+        // 6. EKSPOR PDF (LOGIC SAMA, TAPI DIPISAH UNTUK KEBERSIHAN)
+        // ================================================================================
+
         const addSignatures = (doc, yPos) => {
             doc.setFontSize(10);
-            doc.text("Pati, " + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }), 140, yPos);
-            
-            yPos += 5;
-            doc.text("Dibuat Oleh,", 30, yPos);
-            doc.text("Mengetahui,", 140, yPos);
-
-            yPos += 20; // Ruang untuk tanda tangan
-            doc.text("( Nama Petugas )", 30, yPos);
-            doc.text("( Nama Penanggung Jawab )", 140, yPos);
-        };
-
-        // Ekspor Laporan Jurnal Detail (Laporan Pengeluaran)
-        const exportJurnalDetail = () => {
-             const jurnalData = allTransactions.filter(t => t.type === 'jurnal').sort((a, b) => a.timestamp - b.timestamp);
-             const totalPengeluaran = jurnalData.reduce((sum, t) => sum + t.amount, 0);
-
-             if (jurnalData.length === 0) {
-                 showCustomModal("Informasi", "Tidak ada data jurnal untuk diekspor.", "OK");
-                 return;
-             }
-
-             const doc = new jsPDF();
-
-             // Header
-             doc.setFontSize(14);
-             doc.text("Laporan Jurnal Pengeluaran Haul", 105, 15, { align: "center" });
-             doc.setFontSize(10);
-             doc.text("Tanggal Cetak: " + new Date().toLocaleDateString('id-ID'), 10, 25);
-
-             const tableData = jurnalData.map((t, index) => [
-                 index + 1,
-                 t.date,
-                 t.description,
-                 formatRupiah(t.amount)
-             ]);
-
-             // Tambahkan baris total
-             tableData.push([
-                 { content: "TOTAL PENGELUARAN", colSpan: 3, styles: { fontStyle: 'bold', halign: 'right', fillColor: [220, 220, 220] } },
-                 { content: formatRupiah(totalPengeluaran), styles: { fontStyle: 'bold', halign: 'right', fillColor: [220, 220, 220] } }
-             ]);
-
-
-             doc.autoTable({
-                 startY: 30,
-                 head: [['No', 'Tanggal', 'Uraian Pengeluaran', 'Jumlah (Rp)']],
-                 body: tableData,
-                 theme: 'grid',
-                 styles: { font: 'Times', fontSize: 9, cellPadding: 2 },
-                 headStyles: { fillColor: [25, 118, 210], textColor: 255, fontStyle: 'bold', halign: 'center' },
-                 columnStyles: {
-                     0: { halign: 'center', cellWidth: 10 },
-                     1: { halign: 'center', cellWidth: 25 },
-                     3: { halign: 'right', cellWidth: 40 }
-                 },
-                 didParseCell: (data) => {
-                     // Agar Total baris tidak memiliki border
-                     if (data.row.raw.length > 0 && data.row.raw[0].content && data.row.raw[0].content.includes("TOTAL")) {
-                         data.cell.styles.lineWidth = 0.1; 
-                     }
-                 }
-             });
-
-             addSignatures(doc, doc.lastAutoTable.finalY + 10);
-             doc.save("LPJ_Jurnal_Detail.pdf");
-        };
-
-
-        // Ekspor Laporan Ringkasan (Donasi, Pengeluaran, Saldo)
-        const exportRingkasan = () => {
-            const donaturData = allTransactions.filter(t => t.type === 'donasi');
-            const jurnalData = allTransactions.filter(t => t.type === 'jurnal');
-
-            const totalDonasi = donaturData.reduce((sum, t) => sum + t.amount, 0);
-            const totalPengeluaran = jurnalData.reduce((sum, t) => sum + t.amount, 0);
-            const saldoAkhir = totalDonasi - totalPengeluaran;
-
-            if (allTransactions.length === 0) {
-                 showCustomModal("Informasi", "Tidak ada data transaksi untuk diekspor.", "OK");
-                 return;
-            }
-
-            const doc = new jsPDF();
-            
-            // Header
-            doc.setFontSize(14);
-            doc.text("Laporan Ringkasan Keuangan Haul", 105, 15, { align: "center" });
-            doc.setFontSize(10);
-            doc.text("Tanggal Cetak: " + new Date().toLocaleDateString('id-ID'), 10, 25);
-            
-            // Data Ringkasan
-            const summaryData = [
-                ['Total Donasi (Pemasukan)', formatRupiah(totalDonasi)],
-                ['Total Pengeluaran (Jurnal)', formatRupiah(totalPengeluaran)],
-                [
-                    { content: "SALDO AKHIR", styles: { fontStyle: 'bold', fillColor: [200, 230, 200] } },
-                    { content: formatRupiah(saldoAkhir), styles: { fontStyle: 'bold', halign: 'right', fillColor: [200, 230, 200] } }
-                ]
+            const signatureData = [
+                ["Mengetahui,", "Dibuat Oleh,"],
+                ["[Nama Penanggung Jawab]", "[Nama Bendahara]"],
+                ["NIP/Jabatan", "NIP/Jabatan"]
             ];
-
             doc.autoTable({
-                startY: 30,
-                head: [['Uraian', 'Jumlah']],
-                body: summaryData,
-                theme: 'grid',
-                styles: { font: 'Times', fontSize: 10, cellPadding: 2 },
-                headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold' },
-                columnStyles: {
-                    1: { halign: 'right' }
-                }
+                startY: yPos,
+                body: signatureData,
+                theme: 'plain',
+                styles: { fontSize: 10, cellPadding: 1, halign: 'center' },
+                columnStyles: { 0: { cellWidth: 80 }, 1: { cellWidth: 80 } },
+                margin: { left: 20 }
             });
+        };
 
-            // Teks Daftar Donatur
-            doc.setFontSize(12);
-            doc.text("Detail Daftar Donatur:", 10, doc.lastAutoTable.finalY + 10);
+        window.exportDonaturPDF = () => {
+            const doc = new jsPDF.jsPDF({ orientation: 'landscape', format: 'a4' });
+            doc.text('LAPORAN LIST DONATUR JARIYAH HAUL', 148.5, 15, null, null, 'center');
+            
+            const totalJariyah = allTransactions.reduce((sum, t) => sum + t.nilai, 0);
 
-            // Data Donatur
-            const donaturTableData = donaturData.sort((a, b) => a.timestamp - b.timestamp).map((t, index) => [
+            const tableData = allTransactions.map((t, index) => [
                 index + 1,
-                t.date,
-                t.name,
-                formatRupiah(t.amount)
+                t.tanggal,
+                t.nama,
+                t.alamat || '-',
+                formatRupiah(t.nilai).replace('Rp ', ''),
+                formatRupiah(t.nilai).replace('Rp ', '')
             ]);
 
             doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 15,
-                head: [['No', 'Tanggal', 'Nama Donatur', 'Jumlah (Rp)']],
-                body: donaturTableData,
-                theme: 'striped',
-                styles: { font: 'Times', fontSize: 8, cellPadding: [2, 0.5, 2, 4], halign: 'left' },
-                headStyles: { fillColor: [191, 219, 254], textColor: 0, fontStyle: 'bold', halign: 'center' },
-                // Penyesuaian agar angka Rupiah menempel nol ke batas kanan
-                tableWidth: 'wrap',
-                cellPadding: [2, 0.5, 2, 4], 
-                cellStyles: { 
-                    3: { halign: 'right' } 
-                },
+                head: [['NO', 'Tanggal', 'Nama Donatur', 'Alamat', 'Jariyah (Rp)', 'Total Jariyah (Rp)']],
+                body: tableData,
+                startY: 20,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185], halign: 'center' },
+                styles: { fontSize: 8 },
                 columnStyles: {
-                    0: { columnWidth: 10, halign: 'center' },
-                    1: { columnWidth: 20, halign: 'center' }, 
-                    2: { columnWidth: 'wrap' },
-                    3: { 
-                        halign: 'right', 
-                        columnWidth: 40,
-                        cellPadding: [2, 0.5, 2, 4] 
-                    } 
-                }
+                    4: { halign: 'right' },
+                    5: { halign: 'right', fontStyle: 'bold' },
+                },
+                foot: [['', '', '', 'GRAND TOTAL', formatRupiah(totalJariyah).replace('Rp ', ''), formatRupiah(totalJariyah).replace('Rp ', '')]],
+                footStyles: { halign: 'right', fontStyle: 'bold', fillColor: [200, 200, 200] }
+            });
+
+            addSignatures(doc, doc.lastAutoTable.finalY + 10);
+            doc.save("Laporan_List_Donatur.pdf");
+        };
+
+        window.exportJurnalDetailPDF = () => {
+            const doc = new jsPDF.jsPDF({ orientation: 'landscape', format: 'a4' });
+            doc.text('LAPORAN DETAIL JURNAL KAS UMUM HAUL', 148.5, 15, null, null, 'center');
+
+            const totalDonasi = allTransactions.reduce((sum, t) => sum + t.nilai, 0);
+            const donasiEntry = {
+                id: 'DONASI',
+                timestamp: allTransactions.length > 0 ? new Date(allTransactions[allTransactions.length - 1].tanggal).getTime() - 1 : Date.now(),
+                tanggal: allTransactions.length > 0 ? allTransactions[allTransactions.length - 1].tanggal : new Date().toISOString().substring(0, 10),
+                uraian: 'TOTAL DONASI JARIYAH',
+                kategori: 'Dana Masuk',
+                danaMasuk: totalDonasi,
+                danaKeluar: 0,
+            };
+
+            const combinedTransactions = [...jurnalTransactions, donasiEntry].sort((a, b) => a.timestamp - b.timestamp);
+
+            let saldo = 0;
+            const tableData = combinedTransactions.map((t, index) => {
+                saldo += t.danaMasuk - t.danaKeluar;
+                return [
+                    index + 1,
+                    t.tanggal,
+                    t.uraian,
+                    t.kategori,
+                    t.danaMasuk > 0 ? formatRupiah(t.danaMasuk).replace('Rp ', '') : '',
+                    t.danaKeluar > 0 ? formatRupiah(t.danaKeluar).replace('Rp ', '') : '',
+                    formatRupiah(saldo).replace('Rp ', ''),
+                ];
+            });
+
+            doc.autoTable({
+                head: [['NO', 'Tanggal', 'Uraian', 'Kategori', 'Dana Masuk (Rp)', 'Dana Keluar (Rp)', 'Saldo (Rp)']],
+                body: tableData,
+                startY: 20,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 128, 185], halign: 'center' },
+                styles: { fontSize: 8 },
+                columnStyles: {
+                    4: { halign: 'right', textColor: [0, 150, 0] },
+                    5: { halign: 'right', textColor: [180, 0, 0] },
+                    6: { halign: 'right', fontStyle: 'bold' },
+                },
+                foot: [['', '', '', 'GRAND TOTAL', formatRupiah(combinedTransactions.reduce((sum, t) => sum + t.danaMasuk, 0)).replace('Rp ', ''), formatRupiah(combinedTransactions.reduce((sum, t) => sum + t.danaKeluar, 0)).replace('Rp ', ''), formatRupiah(saldo).replace('Rp ', '')]],
+                footStyles: { halign: 'right', fontStyle: 'bold', fillColor: [200, 200, 200] }
+            });
+
+            addSignatures(doc, doc.lastAutoTable.finalY + 10);
+            doc.save("Laporan_Detail_Jurnal.pdf");
+        };
+
+        window.exportLpjGlobalPDF = () => {
+            const doc = new jsPDF.jsPDF({ orientation: 'portrait', format: 'a4' });
+            doc.text('LAPORAN PERTANGGUNGJAWABAN (LPJ) GLOBAL RINGKASAN', 105, 15, null, null, 'center');
+            
+            const totalDonasi = allTransactions.reduce((sum, t) => sum + t.nilai, 0);
+            const totalMakam = Math.round(totalDonasi * 0.15);
+            const totalPanitia = Math.round(totalDonasi * 0.15);
+            const totalHaul = totalDonasi - totalMakam - totalPanitia;
+
+            const pengeluaran = jurnalTransactions.reduce((acc, t) => {
+                acc[t.kategori] = (acc[t.kategori] || 0) + t.danaKeluar;
+                return acc;
+            }, {});
+
+            const tableData = [
+                ['A. DANA MASUK', ''],
+                ['Total Donasi Jariyah', formatRupiah(totalDonasi).replace('Rp ', '')],
+                ['', ''],
+                ['B. ALOKASI DANA MASUK', ''],
+                ['1. Perawatan Makam (15% dari Donasi)', formatRupiah(totalMakam).replace('Rp ', '')],
+                ['2. Ongkos Panitia (15% dari Donasi)', formatRupiah(totalPanitia).replace('Rp ', '')],
+                ['3. Biaya Haul (70% dari Donasi)', formatRupiah(totalHaul).replace('Rp ', '')],
+                ['', ''],
+                ['C. PENGELUARAN AKTUAL', ''],
+                ...Object.keys(pengeluaran).map(k => [`Pengeluaran Kategori: ${k}`, formatRupiah(pengeluaran[k]).replace('Rp ', '')]),
+                ['Total Pengeluaran Aktual', formatRupiah(Object.values(pengeluaran).reduce((s, v) => s + v, 0)).replace('Rp ', '')],
+                ['', ''],
+            ];
+
+            const totalPengeluaran = Object.values(pengeluaran).reduce((s, v) => s + v, 0);
+            const saldoAkhir = totalDonasi - totalPengeluaran;
+
+            doc.autoTable({
+                head: [['Uraian', 'Jumlah (Rp)']],
+                body: tableData,
+                startY: 20,
+                theme: 'striped',
+                headStyles: { fillColor: [41, 128, 185], halign: 'center' },
+                styles: { fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 120 },
+                    1: { halign: 'right' },
+                },
+                foot: [['SALDO AKHIR KAS (Masuk - Keluar)', formatRupiah(saldoAkhir).replace('Rp ', '')]],
+                footStyles: { halign: 'right', fontStyle: 'bold', fillColor: [200, 200, 200] }
             });
             
             addSignatures(doc, doc.lastAutoTable.finalY + 10);
@@ -749,110 +959,13 @@
 
 
         // --------------------------------------------------------------------------------
-        // 5. RENDER ALL & EVENT LISTENERS
+        // 7. INITIAL LOAD
         // --------------------------------------------------------------------------------
 
-        const renderAllTables = () => {
-            // Urutkan data berdasarkan waktu, terbaru di atas (sesuai query Firestore, tapi diurutkan di client untuk kepastian)
-            allTransactions.sort((a, b) => b.timestamp - a.timestamp); 
-            const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
-            renderJurnalTable(totalDonasi, currentJurnalPage);
-        };
-
-        const updateAdminView = () => {
-             // Secara default, tombol delete akan di-disable jika userId null
-             const deleteButtons = document.querySelectorAll('.delete-btn');
-             deleteButtons.forEach(btn => {
-                 btn.disabled = !userId;
-             });
-        };
-
-        // Event listener untuk tombol Simpan Donasi
-        document.getElementById('save-donasi-btn').addEventListener('click', () => {
-            const date = document.getElementById('donatur-date').value;
-            const name = document.getElementById('donatur-name').value;
-            const amount = parseInt(document.getElementById('donatur-amount').value);
-
-            if (!date || !name || isNaN(amount) || amount <= 0) {
-                showCustomModal("Input Salah", "Semua kolom Donasi harus diisi dengan benar.", "OK");
-                return;
-            }
-
-            saveTransaction({
-                type: 'donasi',
-                date: date,
-                name: name,
-                amount: amount
-            });
-
-            // Bersihkan form
-            document.getElementById('donatur-name').value = '';
-            document.getElementById('donatur-amount').value = '';
-        });
-
-        // Event listener untuk tombol Simpan Jurnal
-        document.getElementById('save-jurnal-btn').addEventListener('click', () => {
-            const date = document.getElementById('jurnal-date').value;
-            const description = document.getElementById('jurnal-desc').value;
-            const amount = parseInt(document.getElementById('jurnal-amount').value);
-
-            if (!date || !description || isNaN(amount) || amount <= 0) {
-                showCustomModal("Input Salah", "Semua kolom Jurnal harus diisi dengan benar.", "OK");
-                return;
-            }
-
-            saveTransaction({
-                type: 'jurnal',
-                date: date,
-                description: description,
-                amount: amount
-            });
-            
-            // Bersihkan form
-            document.getElementById('jurnal-desc').value = '';
-            document.getElementById('jurnal-amount').value = '';
-        });
-
-        // Delegasi Event untuk tombol Hapus (Donatur & Jurnal)
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) {
-                const docId = e.target.dataset.id;
-                showCustomModal(
-                    "Konfirmasi Hapus", 
-                    "Apakah Anda yakin ingin menghapus data ini secara permanen?", 
-                    "Ya, Hapus", 
-                    () => deleteTransaction(docId)
-                );
-            }
-        });
-
-        // Event listener untuk ekspor
-        document.getElementById('export-ringkasan-btn').addEventListener('click', exportRingkasan);
-        document.getElementById('export-jurnal-btn').addEventListener('click', exportJurnalDetail);
-
-        // Event listener untuk Paginasi Donatur
-        document.getElementById('donatur-prev').addEventListener('click', () => { currentDonaturPage--; renderAllTables(); });
-        document.getElementById('donatur-next').addEventListener('click', () => { currentDonaturPage++; renderAllTables(); });
-
-        // Event listener untuk Paginasi Jurnal
-        document.getElementById('jurnal-prev').addEventListener('click', () => { currentJurnalPage--; renderAllTables(); });
-        document.getElementById('jurnal-next').addEventListener('click', () => { currentJurnalPage++; renderAllTables(); });
-
-        // Event listener Auth
-        document.getElementById('login-btn').addEventListener('click', handleLogin);
-        document.getElementById('logout-btn').addEventListener('click', handleLogout);
-
-        // Inisialisasi Firebase saat window dimuat
         window.onload = () => {
-            // Set tanggal hari ini secara default pada input tanggal
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('donatur-date').value = today;
-            document.getElementById('jurnal-date').value = today;
-
-            initFirebase();
-            // loadTransactions akan dipanggil di dalam onAuthStateChanged setelah autentikasi siap
+            // Hanya panggil load data. Status admin akan otomatis ditangani oleh onAuthStateChanged.
+            loadDataFromFirestore(); 
         };
-
     </script>
 </body>
 </html>
