@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catatan Jariyah Haul - Laporan Rinci</title>
+    <title>Dashboard Keuangan Haul - Kas & Jariyah</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Font: Inter for modern look -->
@@ -29,16 +29,27 @@
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
-        /* Style for overall total box */
-        .total-box {
+        /* Style for overall total box (Jariyah) */
+        .total-box-jariyah {
             background-color: #10b981; /* Emerald Green */
             color: white;
         }
+        /* Style for overall total box (Kas) */
+        .total-box-kas {
+            background-color: #4f46e5; /* Indigo */
+            color: white;
+        }
         /* Style for the Total Jariyah column (Running Total) */
-        .running-total-cell {
+        .running-total-cell-jariyah {
             background-color: #d1fae5; /* Light green background */
             color: #047857; /* Dark green text */
             font-weight: 800; /* Extra bold */
+        }
+        /* Style for the Saldo column (Running Balance) */
+        .running-saldo-cell-kas {
+            background-color: #e0e7ff; /* Light indigo background */
+            color: #4338ca; /* Dark indigo text */
+            font-weight: 800;
         }
         .data-row:nth-child(even) {
             background-color: #f9fafb; /* Subtle zebra striping */
@@ -46,11 +57,16 @@
         .data-row:hover {
             background-color: #eef2ff; /* Light indigo on hover */
         }
+        .tab-active {
+            border-bottom: 3px solid #4f46e5;
+            color: #4f46e5;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
 
-<!-- Login/Auth Modal - Covers entire screen until authenticated -->
+<!-- Login/Auth Modal (UNMODIFIED) -->
 <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center p-4 z-50">
     <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
         <h2 class="text-3xl font-bold text-center text-indigo-700 mb-6">Akses Catatan Keuangan</h2>
@@ -72,88 +88,145 @@
 <!-- Main Application Wrapper - Hidden until authenticated -->
 <div id="app-content" class="container-main mx-auto hidden">
     
-    <!-- Header -->
-    <header class="text-center py-6 bg-white shadow-lg rounded-xl mb-6">
-        <h1 class="text-3xl font-extrabold text-gray-900">2. Laporan List Donatur Jariyah</h1>
-        <p class="text-sm text-gray-500 mt-1">Total jariyah akan dibagi secara otomatis: Perawatan Makam (15%), Ongkos Panitia (15%), Biaya Haul (70%).</p>
+    <!-- Header & Tab Navigation -->
+    <header class="bg-white shadow-lg rounded-xl mb-6">
+        <h1 class="text-3xl font-extrabold text-gray-900 text-center py-4">Dashboard Keuangan Jariyah Haul</h1>
+        
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200">
+            <button id="tab-jariyah" data-target="content-jariyah" class="tab-button tab-active p-4 text-gray-600 hover:text-indigo-600 transition">
+                1. Laporan Jariyah (Donatur)
+            </button>
+            <button id="tab-kasumum" data-target="content-kasumum" class="tab-button p-4 text-gray-600 hover:text-indigo-600 transition">
+                2. Jurnal Kas Umum (Masuk & Keluar)
+            </button>
+        </div>
     </header>
 
-    <!-- Overall Summary Box -->
-    <div class="flex justify-end mb-6">
-        <div class="total-box p-4 rounded-xl text-center shadow-lg min-w-[250px]">
-            <p class="text-sm font-light opacity-80">Total Akhir Semua Jariyah</p>
-            <p id="total-jumlah" class="text-3xl font-extrabold">Rp 0</p>
+    <!-- CONTENT 1: LAPORAN JARIYAH (EXISTING FEATURE) -->
+    <div id="content-jariyah" class="tab-content">
+        <!-- Overall Summary Box -->
+        <div class="flex justify-end mb-6">
+            <div class="total-box-jariyah p-4 rounded-xl text-center shadow-lg min-w-[250px]">
+                <p class="text-sm font-light opacity-80">Total Akhir Semua Jariyah</p>
+                <p id="total-jumlah-jariyah" class="text-3xl font-extrabold">Rp 0</p>
+            </div>
+        </div>
+
+        <!-- Data Entry Form Jariyah -->
+        <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Input Data Jariyah Baru</h2>
+            <form id="jariyah-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="date" id="jariyah-tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Tanggal">
+                <input type="text" id="jariyah-nama" placeholder="Nama Donatur (Wajib)" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Nama Donatur">
+                <input type="text" id="jariyah-alamat" placeholder="Alamat (Opsional)" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Alamat">
+                <input type="number" id="jariyah-jumlah" placeholder="Jumlah Jariyah (Wajib)" required min="1" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Jumlah Jariyah">
+                <button type="submit" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                    Tambah Catatan
+                </button>
+            </form>
+        </div>
+
+        <!-- Data Table Jariyah -->
+        <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200">
+            <div class="table-wrapper">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="text-white">
+                        <tr class="table-header">
+                            <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider rounded-tl-lg w-12 bg-indigo-800 border-r border-gray-600">NO</th>
+                            <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider w-24 bg-indigo-800">TANGGAL</th>
+                            <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[150px] bg-indigo-800">NAMA DONATUR</th>
+                            <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[200px] bg-indigo-800">ALAMAT</th>
+                            <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[120px] bg-indigo-800 border-r border-gray-600">JARIYAH (RP)</th>
+                            <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider min-w-[150px] bg-green-700 border-r border-gray-600">TOTAL JARIYAH (RP)</th>
+                            <th colspan="3" class="px-3 py-2 text-center text-xs uppercase tracking-wider bg-amber-700 rounded-tr-lg">PRESENTASE DONASI</th>
+                            <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 bg-indigo-800">AKSI</th>
+                        </tr>
+                        <tr>
+                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">PERAWATAN MAKAM (15%)</th>
+                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">ONGKOS PANITIA (15%)</th>
+                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">BIAYA HAUL (70%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jariyah-list" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="10" class="p-4 text-center text-gray-500">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Data Entry Form -->
-    <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
-        <h2 class="text-xl font-semibold mb-4 text-indigo-700">1. Input Data Jariyah Baru</h2>
-        <form id="jariyah-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <!-- Tanggal (Date) -->
-            <input type="date" id="tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" title="Tanggal">
-            
-            <!-- Nama (Name) -->
-            <input type="text" id="nama" placeholder="Nama Donatur (Wajib)" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" title="Nama Donatur">
-            
-            <!-- Alamat (Address) -->
-            <input type="text" id="alamat" placeholder="Alamat (Opsional)" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" title="Alamat">
-            
-            <!-- Jariyah (Amount) -->
-            <input type="number" id="jumlah" placeholder="Jumlah Jariyah (Wajib)" required min="1" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" title="Jumlah Jariyah">
-            
-            <!-- Tombol Tambah (Submit Button) -->
-            <button type="submit" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
-                Tambah Catatan
-            </button>
-        </form>
-    </div>
+    <!-- CONTENT 2: JURNAL KAS UMUM (NEW FEATURE) -->
+    <div id="content-kasumum" class="tab-content hidden">
+         <!-- Overall Summary Box for Kas -->
+        <div class="flex justify-end mb-6">
+            <div class="total-box-kas p-4 rounded-xl text-center shadow-lg min-w-[250px]">
+                <p class="text-sm font-light opacity-80">Saldo Kas Saat Ini</p>
+                <p id="total-saldo-kasumum" class="text-3xl font-extrabold">Rp 0</p>
+            </div>
+        </div>
 
-    <!-- Data Table -->
-    <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200">
+        <!-- Data Entry Form Kas Umum -->
+        <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
+            <h2 class="text-xl font-semibold mb-4 text-indigo-700">Input Jurnal Kas Baru</h2>
+            <form id="kasumum-form" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <input type="date" id="kasumum-tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Tanggal">
+                
+                <input type="text" id="kasumum-uraian" placeholder="Uraian (Contoh: Dana dari Donatur A)" required class="col-span-2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Uraian Transaksi">
+                
+                <select id="kasumum-kategori" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Kategori Transaksi">
+                    <option value="" disabled selected>Pilih Kategori</option>
+                    <optgroup label="Dana Masuk">
+                        <option value="Donatur">Donatur</option>
+                        <option value="Usaha">Usaha</option>
+                    </optgroup>
+                    <optgroup label="Dana Keluar">
+                        <option value="Bisyaroh Kiai">Bisyaroh Kiai</option>
+                        <option value="Ongkos persewaan">Ongkos persewaan</option>
+                        <option value="Ongkos konsumsi">Ongkos konsumsi</option>
+                        <option value="Ongkos pekerja">Ongkos pekerja</option>
+                        <option value="Bisyaroh khataman">Bisyaroh khataman</option>
+                        <option value="Lain-Lain">Lain-Lain</option>
+                    </optgroup>
+                </select>
 
-        <!-- Table Wrapper for horizontal scrolling on mobile -->
-        <div class="table-wrapper">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="text-white">
-                    <!-- Row 1: Group Headers -->
-                    <tr class="table-header">
-                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider rounded-tl-lg w-12 bg-indigo-800 border-r border-gray-600">NO</th>
-                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider w-24 bg-indigo-800">TANGGAL</th>
-                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[150px] bg-indigo-800">NAMA DONATUR</th>
-                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[200px] bg-indigo-800">ALAMAT</th>
-                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[120px] bg-indigo-800 border-r border-gray-600">JARIYAH (RP)</th>
-                        
-                        <!-- TOTAL JARIYAH (Running Total) -->
-                        <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider min-w-[150px] bg-green-700 border-r border-gray-600">TOTAL JARIYAH (RP)</th>
-                        
-                        <!-- PRESENSTASE DONASI -->
-                        <th colspan="3" class="px-3 py-2 text-center text-xs uppercase tracking-wider bg-amber-700 rounded-tr-lg">PRESENTASE DONASI</th>
-                        
-                        <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 bg-indigo-800">AKSI</th>
-                    </tr>
-                    <!-- Row 2: Sub-Headers for PRESENTASE DONASI -->
-                    <tr>
-                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">PERAWATAN MAKAM (15%)</th>
-                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">ONGKOS PANITIA (15%)</th>
-                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">BIAYA HAUL (70%)</th>
-                    </tr>
-                </thead>
-                <tbody id="jariyah-list" class="bg-white divide-y divide-gray-200">
-                    <!-- Data will be inserted here by JavaScript -->
-                    <tr>
-                        <td colspan="10" class="p-4 text-center text-gray-500">Memuat data...</td>
-                    </tr>
-                </tbody>
-            </table>
+                <input type="number" id="kasumum-jumlah" placeholder="Jumlah (RP) (Wajib)" required min="1" class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Jumlah Uang">
+                
+                <button type="submit" class="col-span-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out">
+                    Catat Jurnal
+                </button>
+            </form>
+        </div>
+
+        <!-- Data Table Kas Umum -->
+        <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200">
+            <div class="table-wrapper">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-indigo-600 text-white">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs uppercase tracking-wider w-12 rounded-tl-lg">NO</th>
+                            <th class="px-3 py-3 text-left text-xs uppercase tracking-wider w-24">TANGGAL</th>
+                            <th class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[200px]">URAIAN</th>
+                            <th class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[150px]">KATEGORI</th>
+                            <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[120px] bg-green-700">DANA MASUK (RP)</th>
+                            <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[120px] bg-red-700">DANA KELUAR (RP)</th>
+                            <th class="px-3 py-3 text-right text-xs uppercase tracking-wider min-w-[150px] bg-indigo-700">SALDO (RP)</th>
+                            <th class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 rounded-tr-lg">AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kasumum-list" class="bg-white divide-y divide-gray-200">
+                        <tr><td colspan="8" class="p-4 text-center text-gray-500">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-    
+
     <!-- Control Panel -->
-    <div class="mt-6 flex justify-between items-center p-4 bg-white rounded-xl shadow-lg border border-red-200">
+    <div class="mt-6 flex justify-between items-center p-4 bg-white rounded-xl shadow-lg border border-gray-200">
         <!-- Rata Kiri: Reset Data -->
         <button id="reset-data" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out text-sm md:text-base">
-            <span class="font-bold mr-1">⚠️</span> Reset Semua Data
+            <span class="font-bold mr-1">⚠️</span> Reset Data Aktif
         </button>
 
         <!-- Rata Kanan: User Info & Log Out -->
@@ -207,7 +280,7 @@
     // IMPORTANT: Use the global variables provided by the environment
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     
-    // Using the user-provided config directly since it's in the prompt
+    // Firebase Config (using placeholder values as per previous instruction)
     const firebaseConfig = {
         apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
         authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -226,8 +299,9 @@
 
     let userId = null;
     let isAuthReady = false;
+    let currentTab = 'jariyah'; // State for current active tab
 
-    // DOM elements for Auth
+    // --- DOM elements ---
     const appContent = document.getElementById('app-content');
     const authModal = document.getElementById('auth-modal');
     const authForm = document.getElementById('auth-form');
@@ -235,18 +309,31 @@
     const authPassword = document.getElementById('auth-password');
     const authMessage = document.getElementById('auth-message');
     const registerButton = document.getElementById('register-button');
-
-    // DOM elements for Main App
-    const jariyahForm = document.getElementById('jariyah-form');
-    const jariyahList = document.getElementById('jariyah-list');
-    const totalJumlahElement = document.getElementById('total-jumlah');
     const logoutButton = document.getElementById('logout');
     const resetButton = document.getElementById('reset-data');
     const userInfoElement = document.getElementById('user-info');
+    
+    // Tabs
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // Jariyah Elements
+    const jariyahForm = document.getElementById('jariyah-form');
+    const jariyahList = document.getElementById('jariyah-list');
+    const totalJumlahJariyahElement = document.getElementById('total-jumlah-jariyah');
+    
+    // Kas Umum Elements
+    const kasumumForm = document.getElementById('kasumum-form');
+    const kasumumList = document.getElementById('kasumum-list');
+    const totalSaldoKasUmumElement = document.getElementById('total-saldo-kasumum');
+
+    // --- Configuration ---
+    const KATEGORI_MASUK = ['Donatur', 'Usaha'];
+    const KATEGORI_KELUAR = ['Bisyaroh Kiai', 'Ongkos persewaan', 'Ongkos konsumsi', 'Ongkos pekerja', 'Bisyaroh khataman', 'Lain-Lain'];
+
 
     // Helper functions for UI (Modal/Notification)
     const formatRupiah = (number) => {
-        // Round to the nearest whole number for display consistency
         const roundedNumber = Math.round(number);
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
@@ -262,7 +349,6 @@
         const modalMessage = document.getElementById('modal-message');
         const modalActions = document.getElementById('modal-actions');
         
-        // Clear previous buttons
         modalActions.innerHTML = ''; 
 
         modalTitle.textContent = title;
@@ -271,13 +357,11 @@
         if (isConfirm) {
             // Setup Confirm/Cancel buttons
             const cancelButton = document.createElement('button');
-            cancelButton.id = 'modal-cancel';
             cancelButton.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
             cancelButton.textContent = 'Batal';
             cancelButton.onclick = hideModal;
 
             const confirmButton = document.createElement('button');
-            confirmButton.id = 'modal-confirm';
             confirmButton.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition';
             confirmButton.textContent = 'Konfirmasi';
             confirmButton.onclick = () => { onConfirm(); hideModal(); };
@@ -313,13 +397,38 @@
         }, 300);
     };
 
+    // --- Tab Switching Logic ---
+    const switchTab = (targetId) => {
+        currentTab = targetId.replace('content-', '');
+        
+        tabContents.forEach(content => {
+            content.classList.add('hidden');
+        });
+        document.getElementById(targetId).classList.remove('hidden');
 
-    // 2. Authentication Flow
+        tabButtons.forEach(button => {
+            if (button.dataset.target === targetId) {
+                button.classList.add('tab-active');
+            } else {
+                button.classList.remove('tab-active');
+            }
+        });
+        
+        // Ensure the correct listener is active/inactive
+        if (currentTab === 'jariyah' && userId) {
+            setupRealtimeListener('jariyah');
+        } else if (currentTab === 'kasumum' && userId) {
+            setupRealtimeListener('kasumum');
+        }
+    }
 
-    // Handle Auth State Changes
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => switchTab(button.dataset.target));
+    });
+
+    // --- 2. Authentication Flow ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            // Logged in
             userId = user.uid;
             userInfoElement.textContent = `User ID: ${userId}`;
             userInfoElement.classList.remove('hidden');
@@ -327,43 +436,43 @@
             authModal.classList.add('hidden');
             isAuthReady = true;
             console.log('User signed in with UID:', userId);
-            setupRealtimeListener();
+            
+            // Setup listeners for both collections when logged in
+            setupRealtimeListener('jariyah');
+            setupRealtimeListener('kasumum');
+            
         } else {
-            // Logged out
             userId = null;
             userInfoElement.textContent = 'User ID: Log Out';
             appContent.classList.add('hidden');
             authModal.classList.remove('hidden');
             isAuthReady = false;
-            // Clear data list when logged out
-            jariyahList.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data.</td></tr>';
-            totalJumlahElement.textContent = formatRupiah(0);
+            // Clear UI
+            jariyahList.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Jariyah.</td></tr>';
+            totalJumlahJariyahElement.textContent = formatRupiah(0);
+            kasumumList.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Kas Umum.</td></tr>';
+            totalSaldoKasUmumElement.textContent = formatRupiah(0);
         }
     });
 
-    // Handle Login/Register Form Submission (Default is Login)
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = authEmail.value;
         const password = authPassword.value;
-
         authMessage.textContent = 'Memproses Login...';
         try {
             await signInWithEmailAndPassword(auth, email, password);
             authMessage.textContent = '';
-            // onAuthStateChanged will handle UI update
         } catch (error) {
             console.error("Login Gagal:", error.message);
             authMessage.textContent = 'Login Gagal. Pastikan Email dan Kata Sandi benar.';
         }
     });
 
-    // Handle Register Button Click
     registerButton.addEventListener('click', async () => {
         const email = authEmail.value;
         const password = authPassword.value;
         authMessage.textContent = 'Memproses pendaftaran...';
-
         try {
             if (!email || !password) {
                  authMessage.textContent = 'Email dan Kata Sandi wajib diisi untuk mendaftar.';
@@ -371,10 +480,8 @@
             }
             await createUserWithEmailAndPassword(auth, email, password);
             authMessage.textContent = 'Pendaftaran berhasil! Anda akan otomatis masuk.';
-            // onAuthStateChanged will handle UI update
         } catch (error) {
             console.error("Register Gagal:", error.message);
-            // Translate common errors
             let errorMessage = 'Pendaftaran Gagal. Coba lagi.';
             if (error.code === 'auth/weak-password') {
                 errorMessage = 'Kata Sandi terlalu lemah (minimal 6 karakter).';
@@ -388,148 +495,168 @@
     });
 
 
-    // 3. Firestore Functions
+    // --- 3. Firestore Functions ---
 
-    // Get the collection reference (Private Data)
-    const getCollectionRef = () => {
+    // Get the collection reference
+    const getCollectionRef = (collectionName) => {
         if (!userId) {
             console.error("Error: User ID is not defined (Not logged in).");
             return null;
         }
-        // Collection path: /artifacts/{appId}/users/{userId}/jariyah_records
-        return collection(db, `artifacts/${appId}/users/${userId}/jariyah_records`);
+        // Path: /artifacts/{appId}/users/{userId}/{collectionName}
+        return collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
     };
 
-    // Add new document
+    // --- Jariyah Handlers (Modified slightly for new IDs) ---
     jariyahForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
             showModal("Gagal", "Anda harus login untuk menambah data.");
             return;
         }
-
-        const ref = getCollectionRef();
+        const ref = getCollectionRef('jariyah_records');
         if (!ref) return;
 
         const data = {
-            tanggal: document.getElementById('tanggal').value,
-            nama: document.getElementById('nama').value,
-            alamat: document.getElementById('alamat').value || '-',
-            jumlah: parseInt(document.getElementById('jumlah').value, 10),
-            timestamp: serverTimestamp() // Add timestamp for ordering
+            tanggal: document.getElementById('jariyah-tanggal').value,
+            nama: document.getElementById('jariyah-nama').value,
+            alamat: document.getElementById('jariyah-alamat').value || '-',
+            jumlah: parseInt(document.getElementById('jariyah-jumlah').value, 10),
+            timestamp: serverTimestamp() 
         };
-
         try {
             await addDoc(ref, data);
             jariyahForm.reset();
-            document.getElementById('tanggal').valueAsDate = new Date(); 
-            console.log("Document successfully written!");
+            document.getElementById('jariyah-tanggal').valueAsDate = new Date(); 
         } catch (e) {
-            console.error("Error adding document: ", e);
-            showModal("Gagal Menambah Data", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
+            console.error("Error adding jariyah document: ", e);
+            showModal("Gagal Menambah Data Jariyah", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
+        }
+    });
+    
+    // --- Kas Umum Handlers (New) ---
+    kasumumForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!isAuthReady || !userId) {
+            showModal("Gagal", "Anda harus login untuk menambah data.");
+            return;
+        }
+        const ref = getCollectionRef('kas_umum_records');
+        if (!ref) return;
+
+        const kategori = document.getElementById('kasumum-kategori').value;
+        if (!kategori) {
+             showModal("Peringatan", "Kategori wajib dipilih.");
+             return;
+        }
+
+        const data = {
+            tanggal: document.getElementById('kasumum-tanggal').value,
+            uraian: document.getElementById('kasumum-uraian').value,
+            kategori: kategori,
+            jumlah: parseInt(document.getElementById('kasumum-jumlah').value, 10),
+            timestamp: serverTimestamp() 
+        };
+        try {
+            await addDoc(ref, data);
+            kasumumForm.reset();
+            document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
+        } catch (e) {
+            console.error("Error adding kas umum document: ", e);
+            showModal("Gagal Mencatat Kas Umum", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
         }
     });
 
-    // Delete document
-    const deleteRecord = async (docId) => {
+    const deleteRecord = async (docId, type) => {
         if (!isAuthReady || !userId) {
             showModal("Gagal", "Anda harus login untuk menghapus data.");
             return;
         }
-        
-        const ref = getCollectionRef();
+        const collectionName = type === 'jariyah' ? 'jariyah_records' : 'kas_umum_records';
+        const ref = getCollectionRef(collectionName);
         if (!ref) return;
 
         try {
             await deleteDoc(doc(ref, docId));
-            console.log("Document successfully deleted!");
+            console.log(`Document (${type}) successfully deleted!`);
         } catch (e) {
-            console.error("Error deleting document: ", e);
+            console.error(`Error deleting document (${type}): `, e);
             showModal("Gagal Menghapus Data", "Terjadi kesalahan saat menghapus data. Coba lagi.");
         }
     };
 
-    // Real-time listener (onSnapshot)
-    let unsubscribe = null;
-    const setupRealtimeListener = () => {
-        if (unsubscribe) {
-            unsubscribe(); // Detach previous listener if exists
-        }
-
-        if (!isAuthReady || !userId) {
-            console.log("Auth not ready or user ID missing. Listener not set up.");
-            return;
-        }
-
-        const ref = getCollectionRef();
+    // --- Real-time Listeners ---
+    let unsubscribeJariyah = null;
+    let unsubscribeKasUmum = null;
+    
+    const setupRealtimeListener = (type) => {
+        const collectionName = type === 'jariyah' ? 'jariyah_records' : 'kas_umum_records';
+        const ref = getCollectionRef(collectionName);
         if (!ref) return;
+
+        // Clean up previous listener
+        if (type === 'jariyah' && unsubscribeJariyah) { unsubscribeJariyah(); }
+        if (type === 'kasumum' && unsubscribeKasUmum) { unsubscribeKasUmum(); }
 
         const q = query(ref); 
 
-        unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             let records = [];
-            let totalJumlahGlobal = 0;
-            
             snapshot.forEach((doc) => {
-                const data = doc.data();
-                records.push({ id: doc.id, ...data });
-                totalJumlahGlobal += data.jumlah || 0;
+                records.push({ id: doc.id, ...doc.data() });
             });
 
-            // 1. Sort data locally by timestamp descending (newest first)
+            // Sort by timestamp for running balance/total calculation (oldest first)
             records.sort((a, b) => {
                 const timeA = a.timestamp?.toMillis() || 0;
                 const timeB = b.timestamp?.toMillis() || 0;
-                return timeB - timeA;
+                return timeA - timeB; 
             });
 
-            // 2. Reverse the array to calculate the running total correctly (from oldest to newest)
-            records.reverse(); 
-            
-            let runningTotal = 0;
-            
-            // 3. Iterate to calculate Running Total and Percentage Splits
-            records = records.map(record => {
-                const jariyah = record.jumlah || 0;
-                
-                // Calculate running total
-                runningTotal += jariyah;
-                
-                // Calculate percentages (using Math.round to match common financial display)
-                const perawatanMakam = Math.round(jariyah * 0.15);
-                const ongkosPanitia = Math.round(jariyah * 0.15);
-                const biayaHaul = Math.round(jariyah * 0.70);
-
-                return {
-                    ...record,
-                    runningTotal: runningTotal, 
-                    perawatanMakam: perawatanMakam,
-                    ongkosPanitia: ongkosPanitia,
-                    biayaHaul: biayaHaul
-                };
-            });
-            
-            // 4. Reverse back to descending order (newest first) for display as per image
-            records.reverse();
-
-            // Update UI
-            renderJariyahList(records);
-            totalJumlahElement.textContent = formatRupiah(totalJumlahGlobal);
+            if (type === 'jariyah') {
+                calculateAndRenderJariyah(records);
+            } else if (type === 'kasumum') {
+                calculateAndRenderKasUmum(records);
+            }
         }, (error) => {
-            console.error("Error listening to Firestore: ", error);
-            showModal("Kesalahan Database", "Gagal memuat data real-time.");
+            console.error(`Error listening to Firestore (${type}): `, error);
+            showModal("Kesalahan Database", `Gagal memuat data real-time untuk ${type}.`);
         });
+
+        if (type === 'jariyah') { unsubscribeJariyah = unsubscribe; }
+        if (type === 'kasumum') { unsubscribeKasUmum = unsubscribe; }
     };
     
-    // Render list function
-    const renderJariyahList = (records) => {
-        jariyahList.innerHTML = ''; // Clear existing list
+    // --- Jariyah Rendering Logic ---
+    const calculateAndRenderJariyah = (records) => {
+        let runningTotal = 0;
+        let totalJumlahGlobal = 0;
+
+        records = records.map(record => {
+            const jariyah = record.jumlah || 0;
+            totalJumlahGlobal += jariyah;
+            runningTotal += jariyah;
+            
+            const perawatanMakam = Math.round(jariyah * 0.15);
+            const ongkosPanitia = Math.round(jariyah * 0.15);
+            const biayaHaul = Math.round(jariyah * 0.70);
+
+            return {
+                ...record,
+                runningTotal: runningTotal, 
+                perawatanMakam: perawatanMakam,
+                ongkosPanitia: ongkosPanitia,
+                biayaHaul: biayaHaul
+            };
+        });
+        
+        // Reverse back to descending order (newest first) for display
+        records.reverse();
+
+        totalJumlahJariyahElement.textContent = formatRupiah(totalJumlahGlobal);
+        jariyahList.innerHTML = ''; 
         if (records.length === 0) {
-            jariyahList.innerHTML = `
-                <tr>
-                    <td colspan="10" class="p-4 text-center text-gray-500 italic">Belum ada catatan jariyah. Silakan tambahkan data baru.</td>
-                </tr>
-            `;
+            jariyahList.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Belum ada catatan jariyah. Silakan tambahkan data baru.</td></tr>`;
             return;
         }
 
@@ -543,33 +670,18 @@
                 day: 'numeric'
             }) : '-';
             
-            // Generate table cell (td) content
             row.innerHTML = `
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${formattedDate}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">${record.nama}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${record.alamat}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold text-indigo-600 border-r border-gray-200">${formatRupiah(record.jumlah)}</td>
-                
-                <!-- COLUMN: TOTAL JARIYAH (Running Total) -->
-                <td class="px-3 py-3 whitespace-nowrap text-sm running-total-cell border-r border-gray-200">${formatRupiah(record.runningTotal)}</td>
-
-                <!-- COLUMN: PERAWATAN MAKAM (15%) -->
+                <td class="px-3 py-3 whitespace-nowrap text-sm running-total-cell-jariyah border-r border-gray-200">${formatRupiah(record.runningTotal)}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.perawatanMakam)}</td>
-                
-                <!-- COLUMN: ONGOS PANITIA (15%) -->
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.ongkosPanitia)}</td>
-                
-                <!-- COLUMN: BIAYA HAUL (70%) -->
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.biayaHaul)}</td>
-
                 <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
-                    <!-- Edit Placeholder -->
-                    <button class="edit-btn text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-100 transition mr-1" title="Edit Catatan (Non-aktif)">
-                        Edit
-                    </button>
-                    <!-- Delete Button -->
-                    <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" title="Hapus Catatan">
+                    <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="jariyah" title="Hapus Catatan">
                         Hapus
                     </button>
                 </td>
@@ -577,24 +689,87 @@
 
             row.querySelector('.delete-btn').addEventListener('click', (e) => {
                 const docId = e.currentTarget.dataset.id;
-                showModal("Konfirmasi Hapus", `Apakah Anda yakin ingin menghapus catatan Jariyah dari ${record.nama}?`, true, () => deleteRecord(docId));
+                showModal("Konfirmasi Hapus Jariyah", `Apakah Anda yakin ingin menghapus catatan Jariyah dari ${record.nama}?`, true, () => deleteRecord(docId, 'jariyah'));
             });
 
             jariyahList.appendChild(row);
         });
     };
+    
+    // --- Kas Umum Rendering Logic (New) ---
+    const calculateAndRenderKasUmum = (records) => {
+        let saldo = 0;
+        
+        records = records.map(record => {
+            const jumlah = record.jumlah || 0;
+            const kategori = record.kategori;
+            const jenis = KATEGORI_MASUK.includes(kategori) ? 'Masuk' : 'Keluar';
+            
+            const danaMasuk = jenis === 'Masuk' ? jumlah : 0;
+            const danaKeluar = jenis === 'Keluar' ? jumlah : 0;
+            
+            saldo += danaMasuk - danaKeluar;
 
-    // 4. Control Panel Actions
+            return {
+                ...record,
+                danaMasuk: danaMasuk,
+                danaKeluar: danaKeluar,
+                saldo: saldo
+            };
+        });
+        
+        // Reverse back to descending order (newest first) for display
+        records.reverse();
 
-    // Logout function
+        totalSaldoKasUmumElement.textContent = formatRupiah(saldo);
+        kasumumList.innerHTML = ''; 
+        if (records.length === 0) {
+            kasumumList.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500 italic">Belum ada catatan Kas Umum. Silakan tambahkan data baru.</td></tr>`;
+            return;
+        }
+
+        records.forEach((record, index) => {
+            const row = document.createElement('tr');
+            row.className = 'data-row hover:bg-indigo-50 transition duration-150';
+
+            const formattedDate = record.tanggal ? new Date(record.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) : '-';
+            
+            row.innerHTML = `
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${formattedDate}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${record.uraian}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold ${KATEGORI_MASUK.includes(record.kategori) ? 'text-green-600' : 'text-red-600'}">${record.kategori}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-green-700">${record.danaMasuk > 0 ? formatRupiah(record.danaMasuk) : '-'}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-red-700">${record.danaKeluar > 0 ? formatRupiah(record.danaKeluar) : '-'}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-right running-saldo-cell-kas">${formatRupiah(record.saldo)}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
+                    <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="kasumum" title="Hapus Catatan">
+                        Hapus
+                    </button>
+                </td>
+            `;
+
+            row.querySelector('.delete-btn').addEventListener('click', (e) => {
+                const docId = e.currentTarget.dataset.id;
+                showModal("Konfirmasi Hapus Jurnal", `Apakah Anda yakin ingin menghapus jurnal: ${record.uraian}?`, true, () => deleteRecord(docId, 'kasumum'));
+            });
+
+            kasumumList.appendChild(row);
+        });
+    };
+
+
+    // --- 4. Control Panel Actions ---
     logoutButton.addEventListener('click', async () => {
         showModal("Konfirmasi Log Out", "Apakah Anda yakin ingin keluar?", true, async () => {
             try {
-                if (unsubscribe) {
-                    unsubscribe(); // Stop listening to data
-                }
+                if (unsubscribeJariyah) { unsubscribeJariyah(); }
+                if (unsubscribeKasUmum) { unsubscribeKasUmum(); }
                 await signOut(auth);
-                console.log("User logged out.");
             } catch (error) {
                 console.error("Error signing out: ", error);
                 showModal("Gagal Log Out", "Terjadi kesalahan saat keluar. Coba lagi.");
@@ -602,21 +777,23 @@
         });
     });
 
-    // Reset Data function
     resetButton.addEventListener('click', () => {
-        showModal("KONFIRMASI RESET DATA KRITIS", "⚠️ PERINGATAN! Ini akan **menghapus SEMUA data jariyah** Anda secara permanen. Tindakan ini tidak bisa dibatalkan. Lanjutkan?", true, async () => {
+        const activeCollection = currentTab === 'jariyah' ? 'jariyah_records' : 'kas_umum_records';
+        const collectionDisplay = currentTab === 'jariyah' ? 'Catatan Jariyah' : 'Jurnal Kas Umum';
+
+        showModal("KONFIRMASI RESET DATA KRITIS", `⚠️ PERINGATAN! Ini akan **menghapus SEMUA data ${collectionDisplay}** Anda secara permanen. Lanjutkan?`, true, async () => {
             if (!isAuthReady || !userId) {
                 showModal("Gagal", "Anda harus login untuk mereset data.");
                 return;
             }
 
-            const ref = getCollectionRef();
+            const ref = getCollectionRef(activeCollection);
             if (!ref) return;
 
             try {
                 const snapshot = await getDocs(ref);
                 if (snapshot.empty) {
-                    showModal("Info", "Tidak ada data untuk direset.", false);
+                    showModal("Info", `Tidak ada data ${collectionDisplay} untuk direset.`, false);
                     return;
                 }
 
@@ -626,7 +803,7 @@
                 });
 
                 await batch.commit();
-                showModal("Sukses Reset", "Semua data jariyah berhasil dihapus.", false);
+                showModal("Sukses Reset", `Semua data ${collectionDisplay} berhasil dihapus.`, false);
             } catch (e) {
                 console.error("Error resetting data: ", e);
                 showModal("Gagal Reset", "Terjadi kesalahan saat menghapus data secara massal. Coba lagi.");
@@ -634,8 +811,12 @@
         });
     });
     
-    // Set default date to today for convenience on load
-    document.getElementById('tanggal').valueAsDate = new Date(); 
+    // Set default dates on load
+    document.getElementById('jariyah-tanggal').valueAsDate = new Date(); 
+    document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
+
+    // Initialize with Jariyah tab active
+    switchTab('content-jariyah');
 
 </script>
 </body>
