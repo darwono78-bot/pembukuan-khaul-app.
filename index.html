@@ -54,13 +54,14 @@
             border-collapse: separate;
             border-spacing: 5px; /* Jarak antar kolom 5px */
             margin-bottom: 10px;
+            table-layout: fixed; /* PENTING: Memastikan kolom dibagi rata */
         }
 
         /* Setiap input bertingkah sebagai sel tabel */
         #input-fields-container input, 
         #input-fields-container select {
             display: table-cell; /* Ubah input menjadi sel tabel */
-            width: 25%; /* Biarkan browser membagi rata */
+            /* width: 25% Dihapus, biarkan table-layout: fixed yang membagi rata */
             padding: 10px;
             box-sizing: border-box;
             margin: 0; 
@@ -80,9 +81,9 @@
             width: 100%;
         }
 
+        /* Aturan input umum (diambil dari body input) */
         input {
-            /* Hapus border dari sini agar hanya input di dalam table-cell yang punya border */
-            /* border: 1px solid #ccc; */
+            /* Pastikan border hanya ada di input di dalam table-cell */
         }
         
         button {
