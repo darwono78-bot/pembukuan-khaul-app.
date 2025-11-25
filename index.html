@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pembukuan Sederhana</title>
+    <title>Aplikasi Pembukuan Transparan</title>
     
     <style>
         body {
@@ -29,7 +29,7 @@
         
         .container {
             width: 90%;
-            max-width: 900px; /* Lebarkan kontainer untuk tabel */
+            max-width: 900px;
             margin: 40px auto;
             padding: 20px;
             background: white;
@@ -123,6 +123,19 @@
         }
         .edit-btn { background-color: #ffc107; color: #333;}
         .delete-btn { background-color: #dc3545; }
+
+        /* Tampilan Logged-in */
+        #logged-in-status {
+            font-size: 0.9em;
+            color: #28a745;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* Atur tampilan form login saat sudah login */
+        #auth-container.logged-in {
+            max-width: 400px;
+        }
     </style>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -131,44 +144,15 @@
 </head>
 <body>
     <header>
-        <h1>💵 Pembukuan Keuangan</h1>
+        <h1>💵 Pembukuan Transparansi Publik</h1>
         <nav id="auth-nav">
             </nav>
     </header>
 
     <main>
-        <section id="auth-container" class="container">
-            <h2>Masuk / Daftar</h2>
-            <form id="login-form">
-                <input type="email" id="auth-email" placeholder="Email" required>
-                <input type="password" id="auth-password" placeholder="Password" required>
-                <button type="submit" id="login-btn">Masuk</button>
-                <button type="button" id="register-btn">Daftar</button>
-            </form>
-            <p id="auth-message" class="error-message"></p>
-        </section>
-
-        <section id="dashboard-container" class="container hidden">
-            <h2>Dashboard Pembukuan</h2>
-            <p>Selamat datang, <span id="user-display">Pengguna</span>!</p>
-
-            <h3>Input Transaksi Baru</h3>
-            <form id="transaksi-form">
-                <div class="form-row">
-                    <input type="date" id="input-tanggal" required>
-                    <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
-                </div>
-                <div class="form-row">
-                    <input type="text" id="input-alamat" placeholder="Alamat" required>
-                    <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
-                </div>
-                <button type="submit">Simpan Transaksi</button>
-                <p id="transaksi-message" class="error-message"></p>
-            </form>
+        <section id="public-data-container" class="container">
             
-            <hr>
-
-            <h3>Daftar Transaksi</h3>
+            <h3>Daftar Transaksi (Transparansi)</h3>
             <table id="data-transaksi">
                 <thead>
                     <tr>
@@ -177,7 +161,7 @@
                         <th>Nama</th>
                         <th>Alamat</th>
                         <th>Nominal</th>
-                        <th>Aksi</th>
+                        <th id="aksi-header" class="hidden">Aksi</th> 
                     </tr>
                 </thead>
                 <tbody id="transaksi-list">
@@ -186,6 +170,42 @@
             </table>
             
         </section>
+
+        <hr style="max-width: 900px; margin: 20px auto;">
+
+        <section id="auth-container" class="container">
+            <p id="logged-in-status" class="hidden">Anda masuk sebagai: <span id="user-display"></span></p>
+
+            <div id="input-section" class="hidden">
+                <h3>Input Transaksi Baru</h3>
+                <form id="transaksi-form">
+                    <div class="form-row">
+                        <input type="date" id="input-tanggal" required>
+                        <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="input-alamat" placeholder="Alamat" required>
+                        <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
+                    </div>
+                    <button type="submit">Simpan Transaksi</button>
+                    <p id="transaksi-message" class="error-message"></p>
+                </form>
+                <hr>
+            </div>
+            
+
+            <div id="login-section">
+                <h2>Akses Admin Input Data</h2>
+                <form id="login-form">
+                    <input type="email" id="auth-email" placeholder="Email" required>
+                    <input type="password" id="auth-password" placeholder="Password" required>
+                    <button type="submit" id="login-btn">Masuk Admin</button>
+                    <button type="button" id="register-btn">Daftar Admin</button>
+                </form>
+                <p id="auth-message" class="error-message"></p>
+            </div>
+        </section>
+
     </main>
     
     <script>
@@ -206,20 +226,26 @@
         const auth = app.auth();
         const db = app.database(); 
         
-        let currentUserId = null; // Menyimpan ID pengguna yang sedang login
+        let currentUserId = null; 
 
+        // --- PENTING! PATH DATA PUBLIK ---
+        // Karena data ini transparan, kita simpan di path umum (misal: 'public_transaksi')
+        const PUBLIC_DATA_PATH = 'transaksi_publik'; 
+        
         // --- BAGIAN 2: ELEMEN DOM (HTML) ---
         const authContainer = document.getElementById('auth-container');
-        const dashboardContainer = document.getElementById('dashboard-container');
+        const loginSection = document.getElementById('login-section');
+        const inputSection = document.getElementById('input-section');
         const loginForm = document.getElementById('login-form');
         const authEmail = document.getElementById('auth-email');
         const authPassword = document.getElementById('auth-password');
         const registerBtn = document.getElementById('register-btn');
         const authMessage = document.getElementById('auth-message');
         const userDisplay = document.getElementById('user-display');
+        const loggedInStatus = document.getElementById('logged-in-status');
         const authNav = document.getElementById('auth-nav');
         
-        // Elemen Form Transaksi
+        // Elemen Transaksi
         const transaksiForm = document.getElementById('transaksi-form');
         const inputTanggal = document.getElementById('input-tanggal');
         const inputNama = document.getElementById('input-nama');
@@ -227,22 +253,9 @@
         const inputNominal = document.getElementById('input-nominal');
         const transaksiMessage = document.getElementById('transaksi-message');
         const transaksiList = document.getElementById('transaksi-list');
+        const aksiHeader = document.getElementById('aksi-header');
 
         // --- BAGIAN 3: FUNGSI UTILITY ---
-        function toggleViews(isLoggedIn) {
-            if (isLoggedIn) {
-                authContainer.classList.add('hidden');
-                dashboardContainer.classList.remove('hidden');
-            } else {
-                authContainer.classList.remove('hidden');
-                dashboardContainer.classList.add('hidden');
-            }
-        }
-
-        function displayMessage(element, message, isError = false) {
-            element.textContent = message;
-            element.style.color = isError ? 'red' : 'green';
-        }
         
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', {
@@ -252,14 +265,32 @@
             }).format(number);
         }
 
-        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CREATE & READ) ---
+        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CREATE, READ, DELETE) ---
+
+        // Fungsi Hapus Transaksi (Hanya tersedia jika user login)
+        const deleteTransaksi = (id) => {
+            if (!currentUserId) {
+                alert("Anda harus login sebagai admin untuk menghapus data.");
+                return;
+            }
+            if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+                const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
+                itemRef.remove()
+                    .then(() => {
+                        console.log("Transaksi berhasil dihapus.");
+                    })
+                    .catch((error) => {
+                        alert(`Gagal menghapus: ${error.message}`);
+                    });
+            }
+        };
 
         // Menambahkan data transaksi ke Firebase
         const addTransaksi = (e) => {
             e.preventDefault();
             
             if (!currentUserId) {
-                displayMessage(transaksiMessage, 'Error: Pengguna belum terautentikasi.', true);
+                displayMessage(transaksiMessage, 'Error: Anda harus login untuk input data.', true);
                 return;
             }
 
@@ -267,34 +298,31 @@
                 tanggal: inputTanggal.value,
                 nama: inputNama.value,
                 alamat: inputAlamat.value,
-                nominal: parseInt(inputNominal.value) || 0, // Pastikan nominal adalah angka
-                createdAt: firebase.database.ServerValue.TIMESTAMP // Stempel waktu
+                nominal: parseInt(inputNominal.value) || 0,
+                createdAt: firebase.database.ServerValue.TIMESTAMP 
             };
 
-            // Menyimpan data ke path: users/[uid]/transaksi
-            const path = `users/${currentUserId}/transaksi`;
-            db.ref(path).push(newTransaksi)
+            // Menyimpan data ke path publik
+            db.ref(PUBLIC_DATA_PATH).push(newTransaksi)
                 .then(() => {
                     displayMessage(transaksiMessage, 'Transaksi berhasil disimpan!', false);
-                    transaksiForm.reset(); // Mengosongkan form
+                    transaksiForm.reset(); 
                 })
                 .catch((error) => {
                     displayMessage(transaksiMessage, `Gagal menyimpan: ${error.message}`, true);
                 });
         };
         
-        // Memuat dan Menampilkan data transaksi
-        const loadTransaksi = (uid) => {
-            const path = `users/${uid}/transaksi`;
-            // Listener untuk mengambil data secara real-time
-            db.ref(path).on('value', (snapshot) => {
-                transaksiList.innerHTML = ''; // Kosongkan tabel sebelum mengisi
+        // Memuat dan Menampilkan data transaksi (PUBLIK)
+        const loadTransaksi = (isLoggedIn) => {
+            // Listener untuk mengambil data secara real-time dari path publik
+            db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
+                transaksiList.innerHTML = ''; 
                 let data = snapshot.val();
                 let rows = [];
                 let no = 1;
 
                 if (data) {
-                    // Firebase mengembalikan data sebagai object, kita ubah ke array untuk diurutkan
                     Object.keys(data).forEach(key => {
                         rows.push({
                             id: key,
@@ -302,7 +330,7 @@
                         });
                     });
                     
-                    // Urutkan berdasarkan tanggal (atau createdAt, di sini kita gunakan tanggal input)
+                    // Urutkan berdasarkan tanggal (atau createdAt)
                     rows.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
                     // Tampilkan data ke tabel
@@ -315,15 +343,27 @@
                             <td>${item.nama}</td>
                             <td>${item.alamat}</td>
                             <td>${formatRupiah(item.nominal)}</td>
-                            <td>
-                                <button class="aksi-btn edit-btn" data-id="${item.id}">Edit</button>
-                                <button class="aksi-btn delete-btn" data-id="${item.id}">Hapus</button>
-                            </td>
+                            ${isLoggedIn ? 
+                                `<td>
+                                    <button class="aksi-btn edit-btn" data-id="${item.id}">Edit</button>
+                                    <button class="aksi-btn delete-btn" data-id="${item.id}">Hapus</button>
+                                </td>` : 
+                                ''
+                            }
                         `;
                     });
                     
+                    // Tambahkan event listener untuk tombol Hapus (jika ada)
+                    if (isLoggedIn) {
+                        document.querySelectorAll('.delete-btn').forEach(button => {
+                            button.addEventListener('click', (e) => {
+                                deleteTransaksi(e.target.dataset.id);
+                            });
+                        });
+                        // TODO: Tambahkan event listener untuk tombol Edit di langkah selanjutnya
+                    }
+
                 } else {
-                    // Jika tidak ada data
                     transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data transaksi.</td></tr>';
                 }
             }, (error) => {
@@ -332,6 +372,38 @@
         };
 
         // --- BAGIAN 5: AUTENTIKASI ---
+
+        // Fungsi untuk menyesuaikan tampilan dashboard (Input/Login Form)
+        function updateAdminView(user) {
+            if (user) {
+                // Admin Login
+                currentUserId = user.uid;
+                userDisplay.textContent = user.email;
+                loggedInStatus.classList.remove('hidden');
+                loginSection.classList.add('hidden');
+                inputSection.classList.remove('hidden');
+                authContainer.classList.add('logged-in'); 
+
+                // Tampilkan kolom Aksi dan muat ulang tabel dengan tombol Aksi
+                aksiHeader.classList.remove('hidden');
+                authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
+                document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
+                loadTransaksi(true); // Muat ulang data dengan tombol Aksi
+            } else {
+                // Admin Logout
+                currentUserId = null;
+                userDisplay.textContent = '';
+                loggedInStatus.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                inputSection.classList.add('hidden');
+                authContainer.classList.remove('logged-in');
+
+                // Sembunyikan kolom Aksi dan muat ulang tabel tanpa tombol Aksi
+                aksiHeader.classList.add('hidden');
+                authNav.innerHTML = ''; 
+                loadTransaksi(false); // Muat ulang data tanpa tombol Aksi
+            }
+        }
 
         // Fungsi Login
         const handleLogin = (e) => {
@@ -342,7 +414,7 @@
 
             auth.signInWithEmailAndPassword(email, password)
                 .then(() => {
-                    displayMessage(authMessage, 'Login berhasil! Memuat dashboard...');
+                    displayMessage(authMessage, 'Login berhasil!', false);
                     authEmail.value = ''; 
                     authPassword.value = '';
                 })
@@ -369,9 +441,6 @@
         // Tombol Logout
         const handleLogout = () => {
             auth.signOut()
-                .then(() => {
-                    displayMessage(authMessage, 'Anda berhasil keluar.', false);
-                })
                 .catch((error) => {
                     displayMessage(authMessage, `Logout Gagal: ${error.message}`, true);
                 });
@@ -379,35 +448,25 @@
 
         // State Listener (Handler utama untuk perubahan status login)
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Pengguna sudah login
-                currentUserId = user.uid; // Simpan UID pengguna
-                userDisplay.textContent = user.email;
-                toggleViews(true);
-                authMessage.textContent = ''; 
-                
-                // Buat tombol Logout di header
-                authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
-                document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
-
-                // Muat data pembukuan
-                loadTransaksi(user.uid);
-                
-            } else {
-                // Pengguna belum login atau sudah logout
-                currentUserId = null;
-                userDisplay.textContent = 'Tamu';
-                toggleViews(false);
-                authNav.innerHTML = ''; 
-                transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Silakan Login untuk melihat transaksi.</td></tr>';
-            }
+            updateAdminView(user);
         });
 
-        // --- BAGIAN 6: EVENT LISTENERS UTAMA ---
+        // --- BAGIAN 6: EVENT LISTENERS & INICIALISASI ---
         loginForm.addEventListener('submit', handleLogin);
         registerBtn.addEventListener('click', handleRegister);
         transaksiForm.addEventListener('submit', addTransaksi);
 
+        // Inisialisasi: Panggil loadTransaksi pertama kali (publik)
+        // Note: Panggilan ini akan digantikan oleh onAuthStateChanged setelah autentikasi dimuat
+        loadTransaksi(false); 
+
+        // Tambahkan fungsi Hapus (Delete) ke tabel setelah data dimuat
+        transaksiList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                deleteTransaksi(e.target.dataset.id);
+            }
+            // TODO: Tambahkan logika Edit di sini
+        });
     </script>
 </body>
 </html>
