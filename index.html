@@ -55,6 +55,7 @@
         .initial-jariyah-entry {
             background-color: #fff1d6; /* Light Yellow/Cream */
             border-left: 5px solid #f97316; /* Orange border */
+            font-weight: bold; /* Make the initial row stand out */
         }
         .data-row:nth-child(even) {
             background-color: #f9fafb; /* Subtle zebra striping */
@@ -339,19 +340,27 @@
     const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); 
 
     // --- Konfigurasi ---
-    const KATEGORI_MASUK = ['Donatur', 'Usaha', 'Pinjaman']; // Tambah Pinjaman
+    const KATEGORI_MASUK = ['Donatur (Otomatis)', 'Usaha', 'Pinjaman']; // Tambah Pinjaman
     const KATEGORI_KELUAR = ['Bisyaroh Kiai', 'Ongkos persewaan', 'Ongkos konsumsi', 'Ongkos pekerja', 'Bisyaroh khataman', 'Lain-Lain'];
 
 
     // Fungsi pembantu untuk UI (Modal/Notifikasi)
     const formatRupiah = (number) => {
-        const roundedNumber = Math.round(number);
+        // Pastikan input adalah angka yang valid, jika tidak, kembalikan 0
+        const validNumber = typeof number === 'number' && isFinite(number) ? number : 0;
+        const roundedNumber = Math.round(validNumber);
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(roundedNumber);
     };
+    
+    // Fungsi untuk memastikan angka valid sebelum perhitungan/formatting
+    const toValidNumber = (value) => {
+        const num = parseInt(value, 10);
+        return isFinite(num) ? num : 0;
+    }
 
     const showModal = (title, message, isConfirm = false, onConfirm = () => {}) => {
         const modalContainer = document.getElementById('modal-container');
@@ -438,9 +447,6 @@
         button.addEventListener('click', () => switchTab(button.dataset.target));
     });
     
-    // Hapus interaksi otomatis pada form. Baris pertama sekarang otomatis dari sistem.
-    // kasumumKategoriSelect.addEventListener('change', (e) => { ... }) Dihapus.
-
     // --- 2. Alur Otentikasi ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -533,11 +539,18 @@
         const ref = getCollectionRef('jariyah_records');
         if (!ref) return;
 
+        // Gunakan toValidNumber untuk memastikan jumlah adalah angka
+        const jumlahInput = toValidNumber(document.getElementById('jariyah-jumlah').value);
+        if (jumlahInput <= 0) {
+            showModal("Peringatan", "Jumlah Jariyah harus lebih dari 0.");
+            return;
+        }
+
         const data = {
             tanggal: document.getElementById('jariyah-tanggal').value,
             nama: document.getElementById('jariyah-nama').value,
             alamat: document.getElementById('jariyah-alamat').value || '-',
-            jumlah: parseInt(document.getElementById('jariyah-jumlah').value, 10),
+            jumlah: jumlahInput,
             timestamp: serverTimestamp() 
         };
         try {
@@ -565,19 +578,25 @@
              showModal("Peringatan", "Kategori wajib dipilih.");
              return;
         }
+        
+        // Gunakan toValidNumber untuk memastikan jumlah adalah angka
+        const jumlahInput = toValidNumber(document.getElementById('kasumum-jumlah').value);
+        if (jumlahInput <= 0) {
+            showModal("Peringatan", "Jumlah uang harus lebih dari 0.");
+            return;
+        }
 
         const data = {
             tanggal: document.getElementById('kasumum-tanggal').value,
             uraian: document.getElementById('kasumum-uraian').value,
             kategori: kategori,
-            jumlah: parseInt(document.getElementById('kasumum-jumlah').value, 10),
+            jumlah: jumlahInput,
             timestamp: serverTimestamp() 
         };
         try {
             await addDoc(ref, data);
             kasumumForm.reset();
             document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
-            // Tidak perlu lagi mereset readOnly/value karena tidak ada pengisian otomatis di form
             
         } catch (e) {
             console.error("Error adding kas umum document: ", e);
@@ -652,7 +671,8 @@
 
         // Hitung total Jariyah dan running total per baris
         records = records.map(record => {
-            const jariyah = record.jumlah || 0;
+            // PENTING: Gunakan toValidNumber untuk memastikan jumlah valid
+            const jariyah = toValidNumber(record.jumlah);
             totalJumlahGlobal += jariyah;
             runningTotal += jariyah;
             
@@ -677,7 +697,7 @@
         // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
         records.reverse();
 
-        totalJumlahJariyahElement.textContent = formatRupiah(totalJumlahGlobal);
+        totalJumlahJariyahElement.textContent = formatRupiah(globalTotalJariyah);
         jariyahList.innerHTML = ''; 
         if (records.length === 0) {
             jariyahList.innerHTML = `<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Belum ada catatan jariyah. Silakan tambahkan data baru.</td></tr>`;
@@ -739,20 +759,24 @@
                 jumlah: globalTotalJariyah,
                 danaMasuk: globalTotalJariyah,
                 danaKeluar: 0,
-                isInitial: true // Flag untuk penanda
+                isInitial: true, // Flag untuk penanda
+                timestamp: { toMillis: () => 0 } // Timestamp paling awal (0)
             });
             saldo += globalTotalJariyah;
         }
 
         // 2. Tambahkan Data Jurnal dari Database
         dbRecords.forEach(record => {
-            const jumlah = record.jumlah || 0;
+            // PENTING: Gunakan toValidNumber untuk memastikan jumlah valid
+            const jumlah = toValidNumber(record.jumlah); 
             const kategori = record.kategori;
+            // Cek apakah kategori termasuk Dana Masuk atau Keluar
             const jenis = KATEGORI_MASUK.includes(kategori) ? 'Masuk' : 'Keluar';
             
             const danaMasuk = jenis === 'Masuk' ? jumlah : 0;
             const danaKeluar = jenis === 'Keluar' ? jumlah : 0;
             
+            // Hitung saldo
             saldo += danaMasuk - danaKeluar;
 
             records.push({
@@ -764,14 +788,15 @@
             });
         });
 
-        // 3. Hitung Saldo Berjalan (Running Balance)
-        // Karena kita menggunakan .push(), saldo sudah terhitung secara berurutan.
-        // Sekarang balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
+        // 3. Tentukan Urutan Tampilan (Tampilan terbalik/reverse dari urutan perhitungan)
+        // Kita hitung dari terlama ke terbaru (ascending), lalu tampilkan dari terbaru ke terlama (descending).
         records.reverse();
         
-        // Saldo akhir adalah saldo dari transaksi terakhir (atau saldo awal jika hanya ada 1 baris)
+        // 4. Update Saldo Akhir Global
+        // Saldo akhir adalah saldo dari transaksi terakhir (yang sekarang ada di index 0 setelah di-reverse)
         const finalSaldo = records.length > 0 ? records[0].saldo : 0;
 
+        // PENTING: Gunakan formatRupiah dengan finalSaldo yang sudah pasti angka
         totalSaldoKasUmumElement.textContent = formatRupiah(finalSaldo);
         kasumumList.innerHTML = ''; 
         
@@ -780,12 +805,13 @@
             return;
         }
 
+        // 5. Render Data
         records.forEach((record, index) => {
             const row = document.createElement('tr');
             
             // Tambahkan kelas khusus untuk baris Saldo Awal
             if (record.isInitial) {
-                row.className = 'initial-jariyah data-row transition duration-150';
+                row.className = 'initial-jariyah-entry data-row transition duration-150';
             } else {
                 row.className = 'data-row hover:bg-indigo-50 transition duration-150';
             }
@@ -796,8 +822,8 @@
                 day: 'numeric'
             }) : '-';
             
-            // Hitung NO dari bawah ke atas agar Saldo Awal selalu NO. 1
-            const no = records.length - index;
+            // Hitung NO dari atas ke bawah (paling atas adalah NO. 1)
+            const no = index + 1;
 
             row.innerHTML = `
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${no}</td>
