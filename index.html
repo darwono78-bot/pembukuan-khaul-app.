@@ -300,6 +300,7 @@
     let userId = null;
     let isAuthReady = false;
     let currentTab = 'jariyah'; // State for current active tab
+    let globalTotalJariyah = 0; // NEW: Global variable to store total Jariyah
 
     // --- DOM elements ---
     const appContent = document.getElementById('app-content');
@@ -326,6 +327,8 @@
     const kasumumForm = document.getElementById('kasumum-form');
     const kasumumList = document.getElementById('kasumum-list');
     const totalSaldoKasUmumElement = document.getElementById('total-saldo-kasumum');
+    const kasumumKategoriSelect = document.getElementById('kasumum-kategori'); // NEW
+    const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); // NEW
 
     // --- Configuration ---
     const KATEGORI_MASUK = ['Donatur', 'Usaha'];
@@ -415,16 +418,28 @@
         });
         
         // Ensure the correct listener is active/inactive
-        if (currentTab === 'jariyah' && userId) {
-            setupRealtimeListener('jariyah');
-        } else if (currentTab === 'kasumum' && userId) {
-            setupRealtimeListener('kasumum');
-        }
+        // Since both listeners run constantly, we just need to ensure they are set up once logged in
     }
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.target));
     });
+    
+    // NEW: Handle automatic fill when category changes
+    kasumumKategoriSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'Donatur') {
+            // Automatically fill with the global total Jariyah
+            kasumumJumlahInput.value = globalTotalJariyah;
+            kasumumJumlahInput.readOnly = true;
+            kasumumJumlahInput.title = 'Terisi otomatis dari Total Akhir Semua Jariyah';
+        } else {
+            // Clear and allow editing for other categories
+            kasumumJumlahInput.value = '';
+            kasumumJumlahInput.readOnly = false;
+            kasumumJumlahInput.title = 'Jumlah Uang';
+        }
+    });
+
 
     // --- 2. Authentication Flow ---
     onAuthStateChanged(auth, (user) => {
@@ -447,7 +462,8 @@
             appContent.classList.add('hidden');
             authModal.classList.remove('hidden');
             isAuthReady = false;
-            // Clear UI
+            // Clear UI and global state
+            globalTotalJariyah = 0; // Reset global total on logout
             jariyahList.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Jariyah.</td></tr>';
             totalJumlahJariyahElement.textContent = formatRupiah(0);
             kasumumList.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Kas Umum.</td></tr>';
@@ -507,7 +523,7 @@
         return collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
     };
 
-    // --- Jariyah Handlers (Modified slightly for new IDs) ---
+    // --- Jariyah Handlers ---
     jariyahForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
@@ -534,7 +550,7 @@
         }
     });
     
-    // --- Kas Umum Handlers (New) ---
+    // --- Kas Umum Handlers ---
     kasumumForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
@@ -561,6 +577,12 @@
             await addDoc(ref, data);
             kasumumForm.reset();
             document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
+            // Reset input readOnly and value after successful submission
+            kasumumJumlahInput.value = '';
+            kasumumJumlahInput.readOnly = false;
+            kasumumJumlahInput.title = 'Jumlah Uang';
+            kasumumKategoriSelect.value = ''; // Reset select to default
+            
         } catch (e) {
             console.error("Error adding kas umum document: ", e);
             showModal("Gagal Mencatat Kas Umum", "Terjadi kesalahan saat menyimpan data ke database. Coba lagi.");
@@ -594,7 +616,7 @@
         const ref = getCollectionRef(collectionName);
         if (!ref) return;
 
-        // Clean up previous listener
+        // Clean up previous listener (optional for this simple case, but good practice)
         if (type === 'jariyah' && unsubscribeJariyah) { unsubscribeJariyah(); }
         if (type === 'kasumum' && unsubscribeKasUmum) { unsubscribeKasUmum(); }
 
@@ -650,6 +672,9 @@
             };
         });
         
+        // NEW: Update global total variable
+        globalTotalJariyah = totalJumlahGlobal;
+
         // Reverse back to descending order (newest first) for display
         records.reverse();
 
@@ -696,7 +721,7 @@
         });
     };
     
-    // --- Kas Umum Rendering Logic (New) ---
+    // --- Kas Umum Rendering Logic ---
     const calculateAndRenderKasUmum = (records) => {
         let saldo = 0;
         
