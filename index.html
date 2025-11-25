@@ -51,6 +51,11 @@
             color: #4338ca; /* Dark indigo text */
             font-weight: 800;
         }
+        /* Style for the initial Jariyah entry (Auto-generated first row) */
+        .initial-jariyah-entry {
+            background-color: #fff1d6; /* Light Yellow/Cream */
+            border-left: 5px solid #f97316; /* Orange border */
+        }
         .data-row:nth-child(even) {
             background-color: #f9fafb; /* Subtle zebra striping */
         }
@@ -172,13 +177,13 @@
             <form id="kasumum-form" class="grid grid-cols-1 md:grid-cols-6 gap-4">
                 <input type="date" id="kasumum-tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Tanggal">
                 
-                <input type="text" id="kasumum-uraian" placeholder="Uraian (Contoh: Dana dari Donatur A)" required class="col-span-2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Uraian Transaksi">
+                <input type="text" id="kasumum-uraian" placeholder="Uraian (Contoh: Beli konsumsi panitia)" required class="col-span-2 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Uraian Transaksi">
                 
                 <select id="kasumum-kategori" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" title="Kategori Transaksi">
                     <option value="" disabled selected>Pilih Kategori</option>
                     <optgroup label="Dana Masuk">
-                        <option value="Donatur">Donatur</option>
                         <option value="Usaha">Usaha</option>
+                        <option value="Pinjaman">Pinjaman</option>
                     </optgroup>
                     <optgroup label="Dana Keluar">
                         <option value="Bisyaroh Kiai">Bisyaroh Kiai</option>
@@ -196,6 +201,9 @@
                     Catat Jurnal
                 </button>
             </form>
+            <p class="mt-4 text-sm text-gray-500 italic">
+                * Catatan: Dana Masuk dari Donatur (Jariyah) otomatis dicatat sebagai baris pertama di tabel di bawah.
+            </p>
         </div>
 
         <!-- Data Table Kas Umum -->
@@ -331,7 +339,7 @@
     const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); 
 
     // --- Konfigurasi ---
-    const KATEGORI_MASUK = ['Donatur', 'Usaha'];
+    const KATEGORI_MASUK = ['Donatur', 'Usaha', 'Pinjaman']; // Tambah Pinjaman
     const KATEGORI_KELUAR = ['Bisyaroh Kiai', 'Ongkos persewaan', 'Ongkos konsumsi', 'Ongkos pekerja', 'Bisyaroh khataman', 'Lain-Lain'];
 
 
@@ -355,7 +363,7 @@
         modalActions.innerHTML = ''; 
 
         modalTitle.textContent = title;
-        modalMessage.textContent = message;
+        modalMessage.innerHTML = message; // Use innerHTML for formatting
         
         if (isConfirm) {
             // Setup Tombol Konfirmasi/Batal
@@ -416,29 +424,22 @@
                 button.classList.remove('tab-active');
             }
         });
+        
+        // Atur ulang formulir Kas Umum saat berpindah tab
+        if (currentTab === 'kasumum') {
+            kasumumForm.reset();
+            // Pastikan tidak ada readOnly saat berpindah ke tab kasumum
+            kasumumJumlahInput.readOnly = false;
+            kasumumJumlahInput.classList.remove('bg-gray-100');
+        }
     }
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.target));
     });
     
-    // LOGIKA PENTING: Mengisi Jumlah Kas Umum secara otomatis saat Kategori = Donatur
-    kasumumKategoriSelect.addEventListener('change', (e) => {
-        if (e.target.value === 'Donatur') {
-            // Otomatis isi dengan total Jariyah Global
-            kasumumJumlahInput.value = globalTotalJariyah;
-            kasumumJumlahInput.readOnly = true;
-            kasumumJumlahInput.title = 'Terisi otomatis dari Total Akhir Semua Jariyah';
-            kasumumJumlahInput.classList.add('bg-gray-100'); // Tambahkan gaya visual read-only
-        } else {
-            // Kosongkan dan izinkan pengeditan untuk kategori lain
-            kasumumJumlahInput.value = '';
-            kasumumJumlahInput.readOnly = false;
-            kasumumJumlahInput.title = 'Jumlah Uang';
-            kasumumJumlahInput.classList.remove('bg-gray-100');
-        }
-    });
-
+    // Hapus interaksi otomatis pada form. Baris pertama sekarang otomatis dari sistem.
+    // kasumumKategoriSelect.addEventListener('change', (e) => { ... }) Dihapus.
 
     // --- 2. Alur Otentikasi ---
     onAuthStateChanged(auth, (user) => {
@@ -576,12 +577,7 @@
             await addDoc(ref, data);
             kasumumForm.reset();
             document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
-            // Reset input readOnly dan value setelah submit berhasil
-            kasumumJumlahInput.value = '';
-            kasumumJumlahInput.readOnly = false;
-            kasumumJumlahInput.title = 'Jumlah Uang';
-            kasumumJumlahInput.classList.remove('bg-gray-100');
-            kasumumKategoriSelect.value = ''; // Reset select ke default
+            // Tidak perlu lagi mereset readOnly/value karena tidak ada pengisian otomatis di form
             
         } catch (e) {
             console.error("Error adding kas umum document: ", e);
@@ -654,11 +650,13 @@
         let runningTotal = 0;
         let totalJumlahGlobal = 0;
 
+        // Hitung total Jariyah dan running total per baris
         records = records.map(record => {
             const jariyah = record.jumlah || 0;
             totalJumlahGlobal += jariyah;
             runningTotal += jariyah;
             
+            // Perhitungan presentase
             const perawatanMakam = Math.round(jariyah * 0.15);
             const ongkosPanitia = Math.round(jariyah * 0.15);
             const biayaHaul = Math.round(jariyah * 0.70);
@@ -675,12 +673,7 @@
         // PENTING: Update variabel total global
         globalTotalJariyah = totalJumlahGlobal;
         
-        // PENTING: Cek jika Kas Umum sedang dalam mode 'Donatur' saat ini, update angkanya
-        if (kasumumKategoriSelect.value === 'Donatur') {
-             kasumumJumlahInput.value = globalTotalJariyah;
-        }
-
-
+        // Render Jariyah
         // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
         records.reverse();
 
@@ -701,8 +694,11 @@
                 day: 'numeric'
             }) : '-';
             
+            // Gunakan total item yang sebenarnya untuk NO, bukan index array terbalik
+            const no = records.length - index; 
+
             row.innerHTML = `
-                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${no}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${formattedDate}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">${record.nama}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${record.alamat}</td>
@@ -727,11 +723,29 @@
         });
     };
     
-    // --- Logika Rendering Kas Umum ---
-    const calculateAndRenderKasUmum = (records) => {
+    // --- Logika Rendering Kas Umum (Updated to include Initial Jariyah Entry) ---
+    const calculateAndRenderKasUmum = (dbRecords) => {
         let saldo = 0;
-        
-        records = records.map(record => {
+        let records = [];
+
+        // 1. Tambahkan Saldo Awal Jariyah sebagai BARIS PERTAMA (virtual)
+        if (globalTotalJariyah > 0) {
+            records.push({
+                // Ini adalah entri virtual, tidak memiliki ID dokumen
+                id: 'initial_jariyah', 
+                tanggal: new Date().toISOString().split('T')[0], // Tanggal hari ini
+                uraian: 'SALDO AWAL KAS DARI TOTAL DONASI JARIYAH',
+                kategori: 'Donatur (Otomatis)',
+                jumlah: globalTotalJariyah,
+                danaMasuk: globalTotalJariyah,
+                danaKeluar: 0,
+                isInitial: true // Flag untuk penanda
+            });
+            saldo += globalTotalJariyah;
+        }
+
+        // 2. Tambahkan Data Jurnal dari Database
+        dbRecords.forEach(record => {
             const jumlah = record.jumlah || 0;
             const kategori = record.kategori;
             const jenis = KATEGORI_MASUK.includes(kategori) ? 'Masuk' : 'Keluar';
@@ -741,19 +755,26 @@
             
             saldo += danaMasuk - danaKeluar;
 
-            return {
+            records.push({
                 ...record,
                 danaMasuk: danaMasuk,
                 danaKeluar: danaKeluar,
-                saldo: saldo
-            };
+                saldo: saldo,
+                isInitial: false
+            });
         });
-        
-        // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
-        records.reverse();
 
-        totalSaldoKasUmumElement.textContent = formatRupiah(saldo);
+        // 3. Hitung Saldo Berjalan (Running Balance)
+        // Karena kita menggunakan .push(), saldo sudah terhitung secara berurutan.
+        // Sekarang balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
+        records.reverse();
+        
+        // Saldo akhir adalah saldo dari transaksi terakhir (atau saldo awal jika hanya ada 1 baris)
+        const finalSaldo = records.length > 0 ? records[0].saldo : 0;
+
+        totalSaldoKasUmumElement.textContent = formatRupiah(finalSaldo);
         kasumumList.innerHTML = ''; 
+        
         if (records.length === 0) {
             kasumumList.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-500 italic">Belum ada catatan Kas Umum. Silakan tambahkan data baru.</td></tr>`;
             return;
@@ -761,7 +782,13 @@
 
         records.forEach((record, index) => {
             const row = document.createElement('tr');
-            row.className = 'data-row hover:bg-indigo-50 transition duration-150';
+            
+            // Tambahkan kelas khusus untuk baris Saldo Awal
+            if (record.isInitial) {
+                row.className = 'initial-jariyah data-row transition duration-150';
+            } else {
+                row.className = 'data-row hover:bg-indigo-50 transition duration-150';
+            }
 
             const formattedDate = record.tanggal ? new Date(record.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
                 year: 'numeric',
@@ -769,25 +796,32 @@
                 day: 'numeric'
             }) : '-';
             
+            // Hitung NO dari bawah ke atas agar Saldo Awal selalu NO. 1
+            const no = records.length - index;
+
             row.innerHTML = `
-                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${no}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${formattedDate}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${record.uraian}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold ${KATEGORI_MASUK.includes(record.kategori) ? 'text-green-600' : 'text-red-600'}">${record.kategori}</td>
+                <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold ${record.danaMasuk > 0 ? 'text-green-600' : 'text-red-600'}">${record.kategori}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-green-700">${record.danaMasuk > 0 ? formatRupiah(record.danaMasuk) : '-'}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right font-semibold text-red-700">${record.danaKeluar > 0 ? formatRupiah(record.danaKeluar) : '-'}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-right running-saldo-cell-kas">${formatRupiah(record.saldo)}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
-                    <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="kasumum" title="Hapus Catatan">
-                        Hapus
-                    </button>
+                    ${record.isInitial 
+                        ? '<span class="text-xs text-orange-500 font-bold">Otomatis</span>' 
+                        : `<button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" data-type="kasumum" title="Hapus Catatan">Hapus</button>`
+                    }
                 </td>
             `;
-
-            row.querySelector('.delete-btn').addEventListener('click', (e) => {
-                const docId = e.currentTarget.dataset.id;
-                showModal("Konfirmasi Hapus Jurnal", `Apakah Anda yakin ingin menghapus jurnal: ${record.uraian}?`, true, () => deleteRecord(docId, 'kasumum'));
-            });
+            
+            // Pasang event listener hanya untuk baris yang berasal dari database (bukan baris virtual)
+            if (!record.isInitial) {
+                row.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    const docId = e.currentTarget.dataset.id;
+                    showModal("Konfirmasi Hapus Jurnal", `Apakah Anda yakin ingin menghapus jurnal: ${record.uraian}?`, true, () => deleteRecord(docId, 'kasumum'));
+                });
+            }
 
             kasumumList.appendChild(row);
         });
