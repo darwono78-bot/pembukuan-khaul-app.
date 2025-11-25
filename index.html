@@ -56,9 +56,10 @@
 
         #input-fields-container input, 
         #input-fields-container select {
-            flex-grow: 1; 
+            /* Perbaikan: Atur lebar dasar menjadi 25% dikurangi gap untuk memastikan 4 kolom muat */
+            width: calc(25% - 10px); 
+            flex-grow: 1; /* Biarkan mereka tumbuh merata */
             min-width: 150px; 
-            width: auto; 
             margin: 0; 
         }
 
