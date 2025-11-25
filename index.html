@@ -45,21 +45,20 @@
             font-size: 16px;
         }
 
-        /* Styling Form Transaksi BARU (4 kolom, 1 baris) */
-        #input-fields-container {
-            display: flex;
-            flex-wrap: wrap; 
-            gap: 10px; 
+        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan float) */
+        #transaksi-form input, 
+        #transaksi-form select {
+            width: calc(24.5% - 5px); 
+            margin-right: 5px; 
+            float: left; 
             margin-bottom: 10px;
         }
 
-        #input-fields-container input, 
-        #input-fields-container select {
-            /* Lebar setiap input: 25% dikurangi sedikit untuk menampung gap */
-            width: calc(25% - 10px); 
-            margin: 0; 
-            flex-grow: 1; 
-            min-width: 150px; 
+        /* Clearfix untuk memastikan tombol di bawahnya tidak terganggu float */
+        #transaksi-form::after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         #transaksi-form button {
@@ -192,13 +191,11 @@
                 <form id="transaksi-form">
                     <input type="hidden" id="edit-id" value=""> 
                     
-                    <div id="input-fields-container"> 
-                        <input type="date" id="input-tanggal" required>
-                        <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
-                        <input type="text" id="input-alamat" placeholder="Alamat" required>
-                        <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
-                    </div>
-
+                    <input type="date" id="input-tanggal" required>
+                    <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
+                    <input type="text" id="input-alamat" placeholder="Alamat" required>
+                    <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
+                    
                     <button type="submit" id="submit-btn">Simpan Transaksi</button>
                     <button type="button" id="cancel-edit-btn" class="hidden">Batal Edit</button>
                     <p id="transaksi-message" class="error-message"></p>
