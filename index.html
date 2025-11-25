@@ -6,6 +6,7 @@
     <title>Aplikasi Pembukuan Transparansi Publik</title>
     
     <style>
+        /* ... (CSS Anda di sini, tidak ada perubahan) ... */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -218,18 +219,15 @@
     <script>
         // --- BAGIAN 1: KONFIGURASI FIREBASE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w", // Kredensial Anda
+            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w", 
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app", 
+            // PENTING: GANTI DENGAN URL DATABASE ANDA YANG BENAR
+            databaseURL: "URL_DATABASE_ANDA_YANG_BENAR", 
             projectId: "catatan-keuangan-haul",
             storageBucket: "catatan-keuangan-haul.firebasestorage.app",
             messagingSenderId: "955355049778",
             appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
-        
-        // PENTING: Tambahkan databaseURL karena tidak ada di konfigurasi Anda sebelumnya
-        // Saya berasumsi formatnya seperti ini: "https://[projectId]-default-rtdb.asia-southeast1.firebasedatabase.app"
-        // Jika Anda menggunakan region lain, mohon perbaiki databaseURL ini.
 
         // Inisialisasi Firebase
         const app = firebase.initializeApp(firebaseConfig);
@@ -237,8 +235,8 @@
         const db = app.database(); 
         
         let currentUserId = null; 
-        let isEditMode = false; // Status mode edit
-        let currentTransactionData = {}; // Cache data transaksi
+        let isEditMode = false; 
+        let currentTransactionData = {}; 
 
         // --- PENTING! PATH DATA PUBLIK ---
         const PUBLIC_DATA_PATH = 'transaksi_publik'; 
@@ -278,6 +276,12 @@
                 currency: 'IDR',
                 minimumFractionDigits: 0
             }).format(number);
+        }
+
+        // FUNGSI INI DIPINDAHKAN KE ATAS (GLOBAL SCOPE) UNTUK MENGATASI REFERENCE ERROR
+        function displayMessage(element, message, isError = false) {
+            element.textContent = message;
+            element.style.color = isError ? 'red' : 'green';
         }
         
         // Mengubah form ke mode Input Baru
@@ -353,10 +357,10 @@
             };
 
             if (isEditMode) {
-                // Mode Edit: Panggil fungsi edit
+                // Mode Edit
                 editTransaksi(editId.value, dataToSave);
             } else {
-                // Mode Tambah: Panggil fungsi tambah
+                // Mode Tambah
                 dataToSave.createdAt = firebase.database.ServerValue.TIMESTAMP;
                 addTransaksi(dataToSave);
             }
@@ -385,7 +389,7 @@
             // Listener untuk mengambil data secara real-time dari path publik
             db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
                 transaksiList.innerHTML = ''; 
-                currentTransactionData = {}; // Reset cache data
+                currentTransactionData = {}; 
                 let data = snapshot.val();
                 let rows = [];
                 let no = 1;
@@ -394,7 +398,7 @@
                     Object.keys(data).forEach(key => {
                         const item = { id: key, ...data[key] };
                         rows.push(item);
-                        currentTransactionData[key] = item; // Simpan ke cache
+                        currentTransactionData[key] = item; 
                     });
                     
                     // Urutkan berdasarkan tanggal
@@ -419,8 +423,6 @@
                             }
                         `;
                     });
-                    
-                    
                 } else {
                     transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data transaksi.</td></tr>';
                 }
@@ -441,13 +443,13 @@
                 loginSection.classList.add('hidden');
                 inputSection.classList.remove('hidden');
                 authContainer.classList.add('logged-in'); 
-                resetForm(); // Pastikan form dalam mode input baru
+                resetForm(); 
 
                 // Tampilkan kolom Aksi dan muat ulang tabel dengan tombol Aksi
                 aksiHeader.classList.remove('hidden');
                 authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
                 document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
-                loadTransaksi(true); // Muat ulang data dengan tombol Aksi
+                loadTransaksi(true); 
             } else {
                 // Admin Logout
                 currentUserId = null;
@@ -460,16 +462,17 @@
                 // Sembunyikan kolom Aksi dan muat ulang tabel tanpa tombol Aksi
                 aksiHeader.classList.add('hidden');
                 authNav.innerHTML = ''; 
-                loadTransaksi(false); // Muat ulang data tanpa tombol Aksi
+                loadTransaksi(false); 
             }
         }
         
-        // Fungsi Login, Register, Logout (Sama seperti sebelumnya)
+        // Fungsi Login
         const handleLogin = (e) => {
             e.preventDefault();
             const email = authEmail.value;
             const password = authPassword.value;
-            displayMessage(authMessage, 'Sedang memproses...');
+            // FUNGSI displayMessage SEKARANG SUDAH DIDEFINISIKAN DI GLOBAL SCOPE
+            displayMessage(authMessage, 'Sedang memproses...'); 
 
             auth.signInWithEmailAndPassword(email, password)
                 .then(() => {
@@ -483,7 +486,6 @@
         };
 
         const handleRegister = () => {
-            // ... (Kode handleRegister sama) ...
             const email = authEmail.value;
             const password = authPassword.value;
             displayMessage(authMessage, 'Sedang mendaftarkan pengguna...');
@@ -504,7 +506,7 @@
                 });
         };
 
-        // State Listener (Handler utama untuk perubahan status login)
+        // State Listener
         auth.onAuthStateChanged((user) => {
             updateAdminView(user);
         });
@@ -522,7 +524,6 @@
             if (e.target.classList.contains('delete-btn')) {
                 deleteTransaksi(id);
             } else if (e.target.classList.contains('edit-btn')) {
-                // Ambil data dari cache dan isi form
                 if (currentTransactionData[id]) {
                     populateEditForm(id, currentTransactionData[id]);
                 } else {
