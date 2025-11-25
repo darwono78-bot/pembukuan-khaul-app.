@@ -292,7 +292,7 @@
             </form>
         </div>
         
-        <div id="admin-actions-container" class="hidden flex justify-end items-center mt-4 pt-4 border-t gap-4">
+        <div id="admin-actions-container" class="hidden flex justify-between items-center mt-4 pt-4 border-t gap-4">
             <button onclick="confirmResetData()" class="btn-admin-small bg-yellow-600 text-white font-bold rounded hover:bg-yellow-700 transition duration-150">
                 Reset Semua Data
             </button>
@@ -300,8 +300,7 @@
                 Logout Admin
             </button>
         </div>
-
-    </div>
+        </div>
 
     <script>
         const { jsPDF } = window.jspdf;
@@ -314,13 +313,12 @@
         // ====================================================================================
         const firebaseConfig = {
           // HARUS DIGANTI DENGAN DATA PROYEK FIREBASE KAKAK
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
-            authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+          apiKey: "YOUR_API_KEY", 
+          authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+          projectId: "YOUR_PROJECT_ID",
+          storageBucket: "YOUR_PROJECT_ID.appspot.com",
+          messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+          appId: "YOUR_APP_ID"
         };
         // ====================================================================================
 
