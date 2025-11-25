@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Pembukuan Keuangan Haul</title>
+    <!-- Memuat Tailwind CSS untuk styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Menggunakan Font Inter */
@@ -12,22 +13,24 @@
             background-color: #f7f7f7; 
             min-height: 100vh;
         }
-        .container { max-width: 800px; }
+        /* Kontainer Utama, memastikan konten di tengah dan responsif */
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; /* Tengah di layar desktop */
+        }
         
         /* Gaya Kustom untuk Input */
         .input-style {
-            /* Warna border yang lebih gelap untuk kontras yang lebih baik */
             border: 1px solid #d1d5db; 
-            /* Menggunakan bayangan input standar */
             box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            /* Transisi untuk fokus */
             transition: all 0.15s ease-in-out;
+            padding: 0.75rem; /* Padding lebih baik */
         }
         .input-style:focus {
-            /* Menghapus ring default Tailwind dan menggunakan ring kustom */
             --tw-ring-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5); 
             box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow), var(--tw-shadow);
             border-color: #6366f1; /* Indigo-500 */
+            outline: none; /* Menghapus outline default browser */
         }
         
         /* Gaya untuk Tombol Simpan */
@@ -35,6 +38,7 @@
             background-color: #4f46e5; /* Indigo-600 */
             border-radius: 0.5rem; /* rounded-lg */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.15s ease-in-out;
         }
         #submitButton:hover {
             background-color: #4338ca; /* Indigo-700 */
@@ -44,28 +48,28 @@
 <body>
 
     <div id="app" class="container mx-auto p-4 md:p-8">
-        <!-- JUDUL UTAMA SUDAH DIKEMBALIKAN KE NAMA APLIKASI -->
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">Aplikasi Pembukuan Keuangan Haul</h1>
+        <!-- JUDUL UTAMA -->
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b-2 border-indigo-200 pb-2">Aplikasi Pembukuan Keuangan Haul</h1>
         
         <!-- Kartu Input Data -->
         <div class="bg-white p-8 rounded-xl shadow-2xl mb-8">
             <h2 class="text-2xl font-semibold text-indigo-700 mb-6">Input Data Baru</h2>
+            <!-- Status Autentikasi -->
             <div id="auth-status" class="text-xs text-red-500 mb-4 font-mono"></div>
             
             <form id="dataForm" class="space-y-6">
                 <div>
                     <label for="tanggalInput" class="block text-sm font-semibold text-gray-700 mb-1">Tanggal:</label>
-                    <!-- Input type="date" akan menyimpan format YYYY-MM-DD, yang penting untuk urutan string -->
                     <input type="date" id="tanggalInput" required 
-                           class="mt-1 block w-full rounded-lg input-style p-3">
+                           class="mt-1 block w-full rounded-lg input-style">
                 </div>
                 <div>
                     <label for="deskripsiInput" class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi/Keterangan:</label>
                     <textarea id="deskripsiInput" rows="3" required 
-                              class="mt-1 block w-full rounded-lg input-style p-3"></textarea>
+                              class="mt-1 block w-full rounded-lg input-style"></textarea>
                 </div>
                 <button type="submit" id="submitButton"
-                        class="w-full py-3 px-4 text-white hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition duration-150 ease-in-out">
+                        class="w-full py-3 px-4 text-white font-semibold focus:outline-none focus:ring-4 focus:ring-indigo-300">
                     Simpan Data
                 </button>
             </form>
@@ -73,7 +77,7 @@
         </div>
 
         <!-- Daftar Data Terurut -->
-        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Daftar Data (Terurut: Tanggal Terlama di Atas)</h2>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Daftar Data (Urutan: Tanggal Terlama di Atas)</h2>
         <div id="dataList" class="space-y-4">
             <p class="text-gray-500 text-center py-8" id="loadingMessage">Memuat data...</p>
         </div>
@@ -87,8 +91,6 @@
             getFirestore, collection, addDoc, onSnapshot, query, 
             doc, deleteDoc, setDoc, serverTimestamp, setLogLevel 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        // orderBy dihapus dari import karena kita akan sorting di JS
-
         // setLogLevel('Debug'); // Opsional: Aktifkan untuk melihat log detail di konsol
 
         // 1. Inisialisasi Firebase & Variabel Global (Wajib Ada)
@@ -116,8 +118,8 @@
         async function setupFirebase() {
             try {
                 if (Object.keys(firebaseConfig).length === 0) {
-                    console.error("Firebase Config tidak ditemukan.");
-                    authStatusEl.textContent = "Error: Konfigurasi Firebase hilang.";
+                    // Coba atasi masalah "Error: Konfigurasi Firebase hilang."
+                    authStatusEl.textContent = "Error: Konfigurasi Firebase hilang. Fungsi database dinonaktifkan.";
                     return;
                 }
 
@@ -158,14 +160,14 @@
         async function saveData(tanggal, deskripsi) {
             if (!db) return showMessage("Database belum siap.", true);
 
+            // Menyimpan data ke koleksi publik agar dapat dilihat bersama
             const collectionPath = `/artifacts/${appId}/public/data/urutan_data`;
             
-            // PENTING: Pastikan tanggal disimpan dalam format YYYY-MM-DD
+            // Data tanggal disimpan sebagai string YYYY-MM-DD untuk sorting yang andal
             const dataToSave = {
-                tanggal: tanggal, // Format YYYY-MM-DD (String)
+                tanggal: tanggal, 
                 deskripsi: deskripsi,
-                // serverTimestamp() digunakan untuk urutan sekunder/pemecah seri
-                createdAt: serverTimestamp(), 
+                createdAt: serverTimestamp(), // Digunakan sebagai pemecah seri jika tanggal sama
                 userId: userId
             };
 
@@ -184,7 +186,7 @@
 
             const collectionPath = `/artifacts/${appId}/public/data/urutan_data`;
             
-            // Query hanya mengambil data tanpa orderBy (untuk menghindari isu index)
+            // Query hanya mengambil data tanpa orderBy (sorting dilakukan di JS)
             const dataQuery = query(collection(db, collectionPath));
 
             onSnapshot(dataQuery, (snapshot) => {
@@ -195,45 +197,41 @@
                     return;
                 }
                 
-                // ----------------------------------------------------
-                // PERBAIKAN UTAMA: Mengurutkan data di sisi KLIEN (JavaScript)
-                // ----------------------------------------------------
+                // Mengumpulkan data
                 let dataArray = [];
                 snapshot.docs.forEach(doc => {
                     const data = doc.data();
                     dataArray.push({ id: doc.id, ...data });
                 });
 
-                // Urutkan data: Tanggal Terlama di Atas (ASCENDING)
+                // Mengurutkan data di sisi KLIEN (JavaScript)
+                // Urutan: Tanggal Terlama di Atas (ASCENDING)
                 dataArray.sort((a, b) => {
-                    // Konversi string tanggal (YYYY-MM-DD) menjadi nilai yang dapat dibandingkan
-                    // Contoh: '2025-01-01' vs '2024-12-31'
-                    if (a.tanggal < b.tanggal) return -1; // a (lebih lama) di atas b
-                    if (a.tanggal > b.tanggal) return 1;  // a (lebih baru) di bawah b
+                    // 1. Bandingkan tanggal (YYYY-MM-DD)
+                    if (a.tanggal < b.tanggal) return -1; 
+                    if (a.tanggal > b.tanggal) return 1; 
 
-                    // Jika tanggal sama, gunakan createdAt (Timestamp) sebagai pemecah seri
-                    // serverTimestamp() adalah objek Firebase, kita bandingkan .seconds
+                    // 2. Jika tanggal sama, bandingkan waktu pembuatan (createdAt)
                     const aTime = a.createdAt?.seconds || 0;
                     const bTime = b.createdAt?.seconds || 0;
                     
-                    if (aTime < bTime) return -1; // a (lebih dulu dibuat) di atas b
-                    if (aTime > bTime) return 1;  // a (lebih lambat dibuat) di bawah b
+                    if (aTime < bTime) return -1;
+                    if (aTime > bTime) return 1;
                     
-                    return 0; // Urutan sama
+                    return 0; 
                 });
                 
-                // Kosongkan daftar data lama
+                // Merender Data
                 dataListEl.innerHTML = ''; 
-                // Ambil tanggal hari ini dalam format YYYY-MM-DD
                 const today = new Date().toISOString().slice(0, 10);
 
                 dataArray.forEach((data) => {
                     const docId = data.id;
                     
-                    // Format tanggal agar lebih mudah dibaca
+                    // Mengubah format tanggal agar mudah dibaca (misalnya: 1 Jan 2025)
                     const dateObj = new Date(data.tanggal + 'T00:00:00');
                     const formattedDate = dateObj.toLocaleDateString('id-ID', {
-                        year: 'numeric', month: 'short', day: 'numeric' // Contoh: 1 Jan 2025
+                        year: 'numeric', month: 'short', day: 'numeric' 
                     });
 
                     const isToday = data.tanggal === today;
@@ -245,10 +243,10 @@
                                     <span class="font-bold text-base ${isToday ? 'text-red-600' : 'text-indigo-600'}">${formattedDate}</span>
                                     ${isToday ? '<span class="ml-2 text-xs text-red-500 font-bold">(HARI INI)</span>' : ''}
                                 </p>
-                                <p class="text-gray-900 font-medium">${data.deskripsi}</p>
+                                <p class="text-gray-900 font-medium whitespace-pre-wrap">${data.deskripsi}</p>
                             </div>
-                            <!-- Tombol Hapus (Contoh interaksi) -->
-                            <button data-id="${docId}" class="delete-btn text-red-500 hover:text-white hover:bg-red-600 ml-4 p-2 rounded-lg transition duration-150 shadow-sm">
+                            <!-- Tombol Hapus -->
+                            <button data-id="${docId}" class="delete-btn text-red-500 hover:text-white hover:bg-red-600 ml-4 p-2 rounded-full transition duration-150 shadow-sm" title="Hapus Data">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                                 </svg>
@@ -258,7 +256,7 @@
                     dataListEl.insertAdjacentHTML('beforeend', itemHtml);
                 });
 
-                // Tambahkan listener ke tombol hapus setelah rendering
+                // Tambahkan listener ke tombol hapus
                 document.querySelectorAll('.delete-btn').forEach(button => {
                     button.addEventListener('click', handleDelete);
                 });
@@ -269,13 +267,12 @@
             });
         }
 
-        // 5. Fungsi Hapus Data (Contoh Interaksi)
+        // 5. Fungsi Hapus Data 
         async function handleDelete(event) {
             const docId = event.currentTarget.dataset.id;
             if (!db || !docId) return;
 
-            // PENGGANTIAN ALERT/CONFIRM dengan custom modal/message
-            // Untuk mempermudah, kita gunakan fungsi confirm() bawaan, tetapi Anda bisa menggantinya dengan modal kustom.
+            // Menggunakan window.confirm() sebagai pengganti modal kustom
             const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus data ini?"); 
             if (!isConfirmed) return; 
 
@@ -297,7 +294,7 @@
             
             if (tanggal && deskripsi) {
                 saveData(tanggal, deskripsi);
-                dataForm.reset(); // Kosongkan form setelah submit
+                dataForm.reset(); 
             } else {
                 showMessage("Mohon lengkapi semua field.", true);
             }
