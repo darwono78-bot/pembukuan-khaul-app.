@@ -340,7 +340,7 @@
     const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); 
 
     // --- Konfigurasi ---
-    const KATEGORI_MASUK = ['Donatur (Otomatis)', 'Usaha', 'Pinjaman']; // Tambah Pinjaman
+    const KATEGORI_MASUK = ['Donatur (Otomatis)', 'Usaha', 'Pinjaman']; 
     const KATEGORI_KELUAR = ['Bisyaroh Kiai', 'Ongkos persewaan', 'Ongkos konsumsi', 'Ongkos pekerja', 'Bisyaroh khataman', 'Lain-Lain'];
 
 
@@ -437,7 +437,6 @@
         // Atur ulang formulir Kas Umum saat berpindah tab
         if (currentTab === 'kasumum') {
             kasumumForm.reset();
-            // Pastikan tidak ada readOnly saat berpindah ke tab kasumum
             kasumumJumlahInput.readOnly = false;
             kasumumJumlahInput.classList.remove('bg-gray-100');
         }
@@ -664,14 +663,13 @@
         if (type === 'kasumum') { unsubscribeKasUmum = unsubscribe; }
     };
     
-    // --- Logika Rendering Jariyah ---
+    // --- Logika Rendering Jariyah (Diperbaiki untuk Urutan NO 1, 2, 3...) ---
     const calculateAndRenderJariyah = (records) => {
         let runningTotal = 0;
         let totalJumlahGlobal = 0;
 
-        // Hitung total Jariyah dan running total per baris
+        // 1. Hitung running total (Records sudah terurut ASC: Terlama -> Terbaru)
         records = records.map(record => {
-            // PENTING: Gunakan toValidNumber untuk memastikan jumlah valid
             const jariyah = toValidNumber(record.jumlah);
             totalJumlahGlobal += jariyah;
             runningTotal += jariyah;
@@ -690,12 +688,9 @@
             };
         });
         
-        // PENTING: Update variabel total global
         globalTotalJariyah = totalJumlahGlobal;
         
-        // Render Jariyah
-        // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
-        records.reverse();
+        // 2. Render Data (Records sudah dalam urutan ASC: Lama ke Baru)
 
         totalJumlahJariyahElement.textContent = formatRupiah(globalTotalJariyah);
         jariyahList.innerHTML = ''; 
@@ -714,8 +709,8 @@
                 day: 'numeric'
             }) : '-';
             
-            // Gunakan total item yang sebenarnya untuk NO, bukan index array terbalik
-            const no = records.length - index; 
+            // Penomoran NO 1, 2, 3... dari atas ke bawah
+            const no = index + 1; 
 
             row.innerHTML = `
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${no}</td>
@@ -743,7 +738,7 @@
         });
     };
     
-    // --- Logika Rendering Kas Umum (Updated to include Initial Jariyah Entry) ---
+    // --- Logika Rendering Kas Umum (Diperbaiki untuk Urutan NO 1, 2, 3...) ---
     const calculateAndRenderKasUmum = (dbRecords) => {
         let saldo = 0;
         let records = [];
@@ -751,7 +746,6 @@
         // 1. Tambahkan Saldo Awal Jariyah sebagai BARIS PERTAMA (virtual)
         if (globalTotalJariyah > 0) {
             records.push({
-                // Ini adalah entri virtual, tidak memiliki ID dokumen
                 id: 'initial_jariyah', 
                 tanggal: new Date().toISOString().split('T')[0], // Tanggal hari ini
                 uraian: 'SALDO AWAL KAS DARI TOTAL DONASI JARIYAH',
@@ -759,24 +753,22 @@
                 jumlah: globalTotalJariyah,
                 danaMasuk: globalTotalJariyah,
                 danaKeluar: 0,
-                isInitial: true, // Flag untuk penanda
+                isInitial: true, 
                 timestamp: { toMillis: () => 0 } // Timestamp paling awal (0)
             });
             saldo += globalTotalJariyah;
         }
 
-        // 2. Tambahkan Data Jurnal dari Database
+        // 2. Tambahkan Data Jurnal dari Database dan hitung saldo
+        // dbRecords sudah terurut ASC (Terlama -> Terbaru)
         dbRecords.forEach(record => {
-            // PENTING: Gunakan toValidNumber untuk memastikan jumlah valid
             const jumlah = toValidNumber(record.jumlah); 
             const kategori = record.kategori;
-            // Cek apakah kategori termasuk Dana Masuk atau Keluar
             const jenis = KATEGORI_MASUK.includes(kategori) ? 'Masuk' : 'Keluar';
             
             const danaMasuk = jenis === 'Masuk' ? jumlah : 0;
             const danaKeluar = jenis === 'Keluar' ? jumlah : 0;
             
-            // Hitung saldo
             saldo += danaMasuk - danaKeluar;
 
             records.push({
@@ -788,15 +780,9 @@
             });
         });
 
-        // 3. Tentukan Urutan Tampilan (Tampilan terbalik/reverse dari urutan perhitungan)
-        // Kita hitung dari terlama ke terbaru (ascending), lalu tampilkan dari terbaru ke terlama (descending).
-        records.reverse();
-        
-        // 4. Update Saldo Akhir Global
-        // Saldo akhir adalah saldo dari transaksi terakhir (yang sekarang ada di index 0 setelah di-reverse)
-        const finalSaldo = records.length > 0 ? records[0].saldo : 0;
+        // 3. Update Saldo Akhir Global (Saldo adalah hasil dari transaksi terakhir)
+        const finalSaldo = records.length > 0 ? records[records.length - 1].saldo : 0;
 
-        // PENTING: Gunakan formatRupiah dengan finalSaldo yang sudah pasti angka
         totalSaldoKasUmumElement.textContent = formatRupiah(finalSaldo);
         kasumumList.innerHTML = ''; 
         
@@ -805,11 +791,10 @@
             return;
         }
 
-        // 5. Render Data
+        // 4. Render Data (Records sudah dalam urutan ASC: Lama ke Baru)
         records.forEach((record, index) => {
             const row = document.createElement('tr');
             
-            // Tambahkan kelas khusus untuk baris Saldo Awal
             if (record.isInitial) {
                 row.className = 'initial-jariyah-entry data-row transition duration-150';
             } else {
@@ -822,7 +807,7 @@
                 day: 'numeric'
             }) : '-';
             
-            // Hitung NO dari atas ke bawah (paling atas adalah NO. 1)
+            // Penomoran NO 1, 2, 3... dari atas ke bawah
             const no = index + 1;
 
             row.innerHTML = `
@@ -841,7 +826,6 @@
                 </td>
             `;
             
-            // Pasang event listener hanya untuk baris yang berasal dari database (bukan baris virtual)
             if (!record.isInitial) {
                 row.querySelector('.delete-btn').addEventListener('click', (e) => {
                     const docId = e.currentTarget.dataset.id;
