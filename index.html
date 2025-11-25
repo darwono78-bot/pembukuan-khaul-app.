@@ -38,7 +38,7 @@
 
     <!-- Area Konten Utama (Terproteksi, akan ditampilkan setelah login) -->
     <div id="app-content" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex-grow hidden">
-        <!-- Header Utama (dikosongkan dari tombol logout) -->
+        <!-- Header Utama -->
         <header class="bg-white shadow-md rounded-lg p-6 mb-6 flex justify-between items-center">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Pembukuan Keuangan Jariyah (Dashboard Admin)</h1>
@@ -47,10 +47,10 @@
                     <!-- Email Pengguna akan ditampilkan di sini -->
                 </div>
             </div>
-            <!-- Tombol Logout dihapus dari sini -->
         </header>
 
         <!-- Tampilan Data Pembukuan PRIBADI (Sudah Lengkap dengan Aksi) -->
+        <!-- Catatan: Tabel Pribadi tetap memiliki kolom Kategori/Alamat, tetapi semua data baru yang masuk adalah 'Pemasukan' -->
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">Daftar Catatan Keuangan PRIBADI (Admin)</h2>
             
@@ -110,44 +110,39 @@
             </button>
         </div>
 
-        <!-- Formulir Input Data (Di bawah tabel catatan pribadi, 1 baris 4 kolom) -->
+        <!-- Formulir Input Data (Di bawah tabel catatan pribadi) -->
         <div class="bg-white shadow-md rounded-lg p-6 mb-6 border-t-4 border-blue-600">
             <h2 class="text-xl font-semibold text-gray-700 mb-4" id="form-title">Tambah Catatan Baru</h2>
-            <!-- Diubah dari md:grid-cols-2 menjadi grid-cols-4 untuk 1 baris input -->
+            <!-- Diubah dari 4 kolom menjadi 4 kolom, tetapi kolom Alamat/Kategori diubah menjadi input biasa -->
             <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                 <input type="hidden" id="transaction-id">
                 
-                <!-- Tanggal (Kolom 1) -->
+                <!-- 1. Tanggal -->
                 <div>
                     <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
                     <input type="date" id="tanggal" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
-                <!-- Nama/Deskripsi (Kolom 2) -->
+                <!-- 2. Nama/Deskripsi -->
                 <div>
                     <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi/Nama Item</label>
                     <input type="text" id="nama" placeholder="Contoh: Donasi dari Bpk. Budi" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                 </div>
 
-                <!-- Alamat/Kategori (Kolom 3) -->
+                <!-- 3. Alamat (Diubah dari Select Kategori menjadi Input Text Alamat) -->
                 <div>
-                    <label for="alamat" class="block text-sm font-medium text-gray-700 mb-1">Kategori/Sumber (Alamat)</label>
-                    <select id="alamat" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Pilih Kategori</option>
-                        <option value="Pemasukan">Pemasukan (Jariyah)</option>
-                        <option value="Pengeluaran">Pengeluaran</option>
-                        <option value="Internal">Internal (Kas)</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
+                    <label for="alamat" class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                    <input type="text" id="alamat" placeholder="Contoh: Ngablak (Opsional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <!-- Input alamat TIDAK diwajibkan (required dihapus) -->
                 </div>
                 
-                <!-- Jariyah/Nominal (Kolom 4) -->
+                <!-- 4. Jariyah/Nominal -->
                 <div>
                     <label for="jariyah" class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
                     <input type="number" id="jariyah" placeholder="Contoh: 500000" required min="0" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
-                <!-- Tombol Aksi (Tambahkan div baru agar tombol di baris terpisah atau bisa disesuaikan) -->
+                <!-- Tombol Aksi (Tetap 1 baris di bawah) -->
                 <div class="col-span-1 sm:col-span-2 lg:col-span-4 flex justify-end space-x-3 mt-2">
                     <button type="button" id="cancel-edit" class="hidden px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md">Batal Edit</button>
                     <button type="submit" id="submit-button" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">Simpan Catatan</button>
@@ -177,6 +172,7 @@
                             <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-1/12">No</th>
                             <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Tanggal</th>
                             <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-4/12">Nama Donatur</th>
+                            <!-- Kategori diubah menjadi Alamat di tabel publik -->
                             <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Alamat</th>
                             <th class="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider w-3/12">Jariyah (Rp)</th>
                             <!-- Tambahkan kolom Total Jariyah (Akumulasi) -->
@@ -186,7 +182,6 @@
                     <tbody id="public-donors-list" class="bg-white divide-y divide-gray-200">
                         <!-- Data publik akan dimasukkan di sini oleh JavaScript -->
                     </tbody>
-                    <!-- Footer tabel TIDAK digunakan untuk total keseluruhan, akan diletakkan di luar tbody/tfoot -->
                 </table>
             </div>
 
@@ -308,8 +303,8 @@
             const loginErrorMessage = document.getElementById('login-error-message');
             
             // Elemen Private App Content
-            const logoutButton = document.getElementById('logout-button'); // DIPINDAH
-            const resetButton = document.getElementById('reset-data-button'); // BARU
+            const logoutButton = document.getElementById('logout-button'); 
+            const resetButton = document.getElementById('reset-data-button'); 
             const form = document.getElementById('transaction-form');
             const list = document.getElementById('transactions-list');
             const formTitle = document.getElementById('form-title');
@@ -320,6 +315,13 @@
             const errorMessageData = document.getElementById('error-message-data');
             const userInfo = document.getElementById('user-info');
             const totalBalanceEl = document.getElementById('total-balance');
+            
+            // Input Form
+            const inputTanggal = document.getElementById('tanggal');
+            const inputNama = document.getElementById('nama');
+            const inputAlamat = document.getElementById('alamat'); // Sekarang input teks
+            const inputJariyah = document.getElementById('jariyah');
+
 
             // Elemen Public List
             const publicDonorsList = document.getElementById('public-donors-list');
@@ -349,7 +351,7 @@
                     snapshot.forEach(doc => {
                         const data = doc.data();
                         
-                        // Hanya ambil jika alamat/kategori adalah 'Pemasukan'
+                        // HANYA ambil jika alamat/kategori adalah 'Pemasukan'
                         if (data.alamat === 'Pemasukan') {
                             publicTransactions.push({ id: doc.id, ...data });
                         }
@@ -365,17 +367,17 @@
                     // Hitung akumulasi total
                     let overallTotal = 0;
                     // Lakukan iterasi dari data yang SUDAH diurutkan dari terbaru ke terlama
-                    // Kita akan membalik array ini hanya untuk tujuan perhitungan akumulasi dari bawah ke atas (terlama ke terbaru)
                     const reversedTransactions = [...publicTransactions].reverse();
                     
                     let accumulatedTotal = 0;
                     reversedTransactions.forEach(t => {
+                        // Accumulated dihitung dari yang paling lama hingga yang paling baru
                         accumulatedTotal += t.jariyah || 0;
                         t.accumulated = accumulatedTotal;
                     });
-                    overallTotal = accumulatedTotal; // Total akhir adalah akumulasi keseluruhan
+                    overallTotal = accumulatedTotal; 
 
-                    // Kembalikan ke urutan terbaru di atas untuk ditampilkan
+                    // Kembalikan ke urutan terbaru di atas untuk ditampilkan (karena kita reverse 2x)
                     publicTransactions.reverse();
                     
                     renderPublicDonors(publicTransactions, overallTotal);
@@ -396,11 +398,13 @@
                 publicTotalJariyahEl.textContent = formatRupiah(overallTotal);
                 publicOverallTotalDiv.classList.remove('hidden');
 
-                // Hanya tampilkan 10 data teratas di daftar (sesuai gambar)
+                // Hanya tampilkan 10 data teratas di daftar
                 transactions.slice(0, 10).forEach((t, index) => {
                     const row = document.createElement('tr');
                     
                     const description = t.nama || 'Donatur Anonim';
+                    // Jika alamat kosong di database, tampilkan "-"
+                    const alamatText = t.alamat || '-';
                     const nominalText = formatRupiah(t.jariyah || 0);
                     // Ambil nilai akumulasi (sudah dihitung)
                     const accumulatedText = formatRupiah(t.accumulated || 0);
@@ -411,7 +415,7 @@
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${formatDate(t.tanggal, true)}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${description}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${t.alamat || '-'}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${alamatText}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium text-right">${nominalText}</td>
                         <td class="px-4 py-2 whitespace-nowrap text-sm text-right total-jariyah-cell">${accumulatedText}</td>
                     `;
@@ -477,14 +481,11 @@
                     console.log('Anda telah berhasil keluar.');
                 } catch (error) {
                     console.error("Gagal Logout:", error);
-                    // Menggunakan alert karena berada di konteks admin
-                    // Sebaiknya diganti dengan modal custom jika memungkinkan
-                    // alert(`Gagal keluar: ${error.message}`); 
                 }
             });
 
             // --- 4. Handle Reset Form ---
-            resetButton.addEventListener('click', resetForm); // Memanggil fungsi resetForm yang sudah ada
+            resetButton.addEventListener('click', resetForm);
 
 
             // --- 5. Setup Listener Data PRIBADI (Hanya setelah login) ---
@@ -506,13 +507,13 @@
                         const data = doc.data();
                         transactions.push({ id: doc.id, ...data });
                         
-                        // Hitung saldo
+                        // Hitung saldo: Hanya 'Pemasukan' yang menambah saldo.
                         const nominal = data.jariyah || 0;
-                        if (data.alamat === 'Pemasukan') {
+                        if (data.alamat === 'Pemasukan') { // 'alamat' di database menyimpan 'Pemasukan' atau 'Pengeluaran'
                             totalBalance += nominal;
-                        } else if (data.alamat === 'Pengeluaran') {
-                            totalBalance -= nominal;
-                        }
+                        } 
+                        // Jika Anda ingin mengaktifkan Pengeluaran lagi di masa depan, gunakan:
+                        // else if (data.alamat === 'Pengeluaran') { totalBalance -= nominal; }
                     });
 
                     // Urutkan berdasarkan tanggal (paling baru di atas)
@@ -522,7 +523,7 @@
                         const timestampA = a.timestamp?.toMillis() || 0;
                         const timestampB = b.timestamp?.toMillis() || 0;
 
-                        // Urutkan berdasarkan Tanggal string jika valid, atau Timestamp jika tidak.
+                        // Prioritas: Tanggal > Timestamp
                         if (dateA.toString() !== 'Invalid Date' && dateB.toString() !== 'Invalid Date') {
                              return dateB.getTime() - dateA.getTime();
                         }
@@ -552,6 +553,8 @@
                     
                     let rowClass = 'hover:bg-gray-50 transition duration-100';
                     let nominalColor = 'text-gray-800';
+                    
+                    // Semua data yang masuk dari form baru akan memiliki t.alamat === 'Pemasukan'
                     if (t.alamat === 'Pemasukan') {
                         nominalColor = 'text-green-600 font-medium';
                     } else if (t.alamat === 'Pengeluaran') {
@@ -600,30 +603,36 @@
                 e.preventDefault();
                 
                 if (!userId) {
-                    // Menggunakan alert karena berada di konteks admin
-                    // alert('Anda harus login untuk menyimpan data pribadi.'); 
                     return;
                 }
 
                 const transactionId = document.getElementById('transaction-id').value;
-                const tanggal = document.getElementById('tanggal').value;
-                const nama = document.getElementById('nama').value.trim();
-                const alamat = document.getElementById('alamat').value;
-                const jariyah = parseFloat(document.getElementById('jariyah').value);
+                const tanggal = inputTanggal.value;
+                const nama = inputNama.value.trim();
+                const alamatDonatur = inputAlamat.value.trim(); // Alamat donatur, bukan kategori
+                const jariyah = parseFloat(inputJariyah.value);
+                
+                // KATEGORI DITETAPKAN SECARA OTOMATIS SEBAGAI PEMASUKAN JARIYAH
+                const kategori = 'Pemasukan'; 
 
-                if (!tanggal || !nama || !alamat || isNaN(jariyah)) {
-                    // Menggunakan alert karena berada di konteks admin
-                    // alert('Semua field wajib diisi dengan benar.');
+                if (!tanggal || !nama || isNaN(jariyah) || jariyah < 0) {
+                    // Cek minimal field yang required
                     return;
                 }
 
                 const transactionData = {
                     tanggal: tanggal, 
                     nama: nama,
-                    alamat: alamat,
+                    alamat: kategori, // Simpan kategori 'Pemasukan' ke field 'alamat'
                     jariyah: jariyah,
                     timestamp: serverTimestamp() 
                 };
+                
+                // Tambahkan alamat donatur jika ada dan jika kategorinya adalah Pemasukan
+                if (alamatDonatur && kategori === 'Pemasukan') {
+                    // Gunakan field 'nama' untuk menyimpan alamat
+                    transactionData.nama = `${nama} (Alamat: ${alamatDonatur})`; 
+                }
 
                 const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
 
@@ -641,10 +650,23 @@
                     }
                     
                     // Update/Add to Public List jika itu Pemasukan
-                    if (alamat === 'Pemasukan') {
-                         // Catatan: Tidak ada ID, sehingga akan ditambahkan sebagai dokumen baru di publik
-                         // Ini akan memicu perubahan di daftar publik secara otomatis karena menggunakan onSnapshot di koleksi publik.
-                         await addDoc(collection(db, publicCollectionPath), transactionData);
+                    if (kategori === 'Pemasukan') {
+                         const publicData = {
+                            tanggal: tanggal, 
+                            nama: nama,
+                            alamat: alamatDonatur || '-', // Simpan Alamat Donatur ke field 'alamat' publik
+                            jariyah: jariyah,
+                            timestamp: serverTimestamp()
+                         };
+
+                         // Jika alamat donatur ada, masukkan ke nama di publik agar terlihat lengkap
+                         if (alamatDonatur) {
+                            publicData.nama = nama; 
+                         } else {
+                            publicData.nama = nama;
+                         }
+
+                         await addDoc(collection(db, publicCollectionPath), publicData);
                          console.log('Catatan Pemasukan (Donasi) ditambahkan ke daftar publik.');
                     }
                     
@@ -652,8 +674,6 @@
                     
                 } catch (error) {
                     console.error("Error saat menyimpan data:", error);
-                    // Menggunakan alert karena berada di konteks admin
-                    // alert(`Gagal menyimpan data: ${error.message}`);
                 }
             });
 
@@ -668,10 +688,21 @@
                         const transaction = docSnap.data();
                         
                         document.getElementById('transaction-id').value = id;
-                        document.getElementById('tanggal').value = transaction.tanggal || '';
-                        document.getElementById('nama').value = transaction.nama || '';
-                        document.getElementById('alamat').value = transaction.alamat || '';
-                        document.getElementById('jariyah').value = transaction.jariyah || 0;
+                        inputTanggal.value = transaction.tanggal || '';
+                        
+                        let namaBersih = transaction.nama || '';
+                        let alamatTersimpan = '';
+                        
+                        // Logika untuk memisahkan Nama dan Alamat yang mungkin digabungkan
+                        const match = namaBersih.match(/\s\(Alamat:\s(.*?)\)$/);
+                        if (match) {
+                            alamatTersimpan = match[1];
+                            namaBersih = namaBersih.replace(match[0], '');
+                        }
+
+                        inputNama.value = namaBersih;
+                        inputAlamat.value = alamatTersimpan; 
+                        inputJariyah.value = transaction.jariyah || 0;
 
                         formTitle.textContent = 'Edit Catatan';
                         submitButton.textContent = 'Update Catatan';
@@ -679,7 +710,6 @@
                         submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
                         cancelButton.classList.remove('hidden');
                         
-                        // Gulirkan ke atas untuk fokus pada formulir edit
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                 } catch (error) {
@@ -718,14 +748,9 @@
                     await deleteDoc(doc(db, privateCollectionPath, id));
                     deleteModal.classList.add('hidden');
                     console.log('Catatan pribadi berhasil dihapus!');
-                    // Catatan: Penghapusan dari daftar publik harus dilakukan secara terpisah jika diperlukan
-                    // (misalnya dengan menghapus semua data publik dan meregenerasinya, atau mencari dokumen publik yang sesuai)
-                    // Untuk kesederhanaan, kita hanya menghapus data pribadi, dan data publik akan terus bertambah.
                 } catch (error) {
                     console.error("Error saat menghapus data:", error);
                     deleteModal.classList.add('hidden');
-                    // Menggunakan alert karena berada di konteks admin
-                    // alert(`Gagal menghapus data: ${error.message}`);
                 }
             });
 
