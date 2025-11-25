@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
         /* Gaya agar tabel bisa digeser jika terlalu lebar */
         .table-wrapper {
@@ -337,7 +337,7 @@
         const { jsPDF } = window.jspdf;
         
         // ********************************************************************************
-        // 1. KONFIGURASI FIREBASE DAN INISIALISASI
+        // 1. KONFIGURASI FIREBASE DAN DEKLARASI GLOBAL
         // ********************************************************************************
         // ====================================================================================
         // !!! GANTI DENGAN KONFIGURASI PROYEK FIREBASE ANDA !!!
@@ -353,10 +353,10 @@
         };
         // ====================================================================================
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth(); 
-
+        // DEKLARASI GLOBAL (Tidak diinisialisasi di sini)
+        let db; 
+        let auth;
+        
         // Data Utama (Untuk menampung data yang diambil dari Firebase)
         let allTransactions = []; 
         let jurnalTransactions = []; 
@@ -418,7 +418,7 @@
         // ********************************************************************************
         const loadTransactions = async () => {
             try {
-                // READ OPERATION. Jika Rules tidak mengizinkan, maka akan muncul error merah.
+                // READ OPERATION.
                 const donaturRef = db.collection('donaturHaulData').orderBy('timestamp', 'asc');
                 const donaturSnapshot = await donaturRef.get();
                 allTransactions = donaturSnapshot.docs.map(doc => ({
@@ -436,9 +436,7 @@
                 }));
                 
             } catch (error) {
-                // Error ini yang muncul jika Rules Firestore belum di set "allow read"
-                console.error("Error saat memuat data dari Firebase: ", error);
-                // Biarkan data kosong jika gagal, alert hanya pada CRUD
+                console.error("Error saat memuat data dari Firebase. Pastikan Rules Firestore sudah diset 'allow read'. Error: ", error);
             }
         };
 
@@ -1335,12 +1333,19 @@
         // --------------------------------------------------------------------------------
 
         const renderAllTables = () => {
+            // Urutkan donatur sebelum merender
             allTransactions.sort((a, b) => a.timestamp - b.timestamp);
             const totalDonasi = renderDonaturTable(allTransactions, currentDonaturPage);
             renderJurnalTable(totalDonasi, currentJurnalPage);
         };
 
-        window.onload = async () => {
+        window.onload = async () => { 
+            
+            // PERBAIKAN UTAMA: INI HARUS DIJALANKAN DI SINI UNTUK MENGHILANGKAN ERROR MERAH
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth(); 
+            
             await loadTransactions(); 
             
             // Listener status autentikasi: fungsi handleAuthStateChange akan dipanggil
@@ -1357,4 +1362,3 @@
 
 </body>
 </html>
-
