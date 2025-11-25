@@ -45,12 +45,12 @@
             font-size: 16px;
         }
 
-        /* Styling Form Transaksi (SOLUSI AKHIR 1 BARIS, 4 KOLOM KETAT) */
+        /* --- STYLING FORM INPUT (1 BARIS, 4 KOLOM) --- */
 
         #input-fields-container {
             display: flex;
-            flex-wrap: nowrap; /* PENTING: Mencegah elemen pindah ke baris baru */
-            gap: 0; /* Hapus gap/jarak antar kolom */
+            flex-wrap: nowrap; 
+            gap: 0; 
             margin-bottom: 10px;
             width: 100%;
         }
@@ -58,24 +58,23 @@
         /* Setiap input diatur tepat 25% */
         #input-fields-container input, 
         #input-fields-container select {
-            width: 25%; /* Memaksa setiap item mengambil 1/4 dari lebar */
-            flex-grow: 0; /* Mencegah mereka tumbuh melebihi 25% */
-            flex-shrink: 0; /* Mencegah mereka menyusut */
-            box-sizing: border-box; /* PENTING: Padding dihitung di dalam 25% */
-            margin: 0 2px; /* BERI JARAK MINIMAL: Jarak 2px di kiri dan kanan */
+            width: 25%; 
+            flex-grow: 0; 
+            flex-shrink: 0; 
+            box-sizing: border-box; 
+            margin: 0 2px; /* Jarak minimal antar kolom */
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        /* Tombol dan input yang bukan di dalam container input tetap 100% */
+        /* Tombol dan input di luar container input tetap 100% */
         #transaksi-form button {
             width: 100%;
             clear: both;
             margin-top: 5px; 
         }
 
-        /* Input form di luar container input (Login/Logout) tetap 100% */
         #transaksi-form input:not(#input-fields-container input) {
             width: 100%;
         }
@@ -113,22 +112,27 @@
             background-color: #c82333;
         }
 
-        /* Styling Tabel */
+        /* --- STYLING TABEL (DISEIMBANGKAN DENGAN INPUT) --- */
         #data-transaksi {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            table-layout: fixed; /* PENTING: Memastikan lebar kolom dihormati */
         }
+
+        /* Atur lebar kolom tabel agar seimbang dengan 4 kolom input */
+        #data-transaksi thead tr th:nth-child(1) { width: 5%; }    /* No */
+        #data-transaksi thead tr th:nth-child(2) { width: 17%; }   /* Tanggal */
+        #data-transaksi thead tr th:nth-child(3) { width: 22%; }   /* Nama */
+        #data-transaksi thead tr th:nth-child(4) { width: 22%; }   /* Alamat */
+        #data-transaksi thead tr th:nth-child(5) { width: 24%; }   /* Nominal */
+        #data-transaksi thead tr th:nth-child(6) { width: 10%; }   /* Aksi */
 
         #data-transaksi th, #data-transaksi td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: left;
-        }
-
-        #data-transaksi th {
-            background-color: #f2f2f2;
-            color: #333;
+            overflow: hidden; 
         }
         
         .aksi-btn {
