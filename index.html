@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catatan Jariyah Haul - Pencatatan Keuangan</title>
+    <title>Catatan Jariyah Haul - Laporan Rinci</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Font: Inter for modern look -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         /* Custom styles for elegance and readability */
         body {
@@ -24,21 +24,27 @@
                 padding: 2rem;
             }
         }
-        .table-header {
-            background-color: #1f2937; /* Dark header */
-            color: white;
-            font-weight: 600;
-        }
-        .data-row:nth-child(even) {
-            background-color: #f9fafb; /* Subtle zebra striping */
-        }
+        /* Custom scrollbar for table on mobile */
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
         }
+        /* Style for overall total box */
         .total-box {
-            background-color: #4f46e5; /* Primary purple color */
+            background-color: #10b981; /* Emerald Green */
             color: white;
+        }
+        /* Style for the Total Jariyah column (Running Total) */
+        .running-total-cell {
+            background-color: #d1fae5; /* Light green background */
+            color: #047857; /* Dark green text */
+            font-weight: 800; /* Extra bold */
+        }
+        .data-row:nth-child(even) {
+            background-color: #f9fafb; /* Subtle zebra striping */
+        }
+        .data-row:hover {
+            background-color: #eef2ff; /* Light indigo on hover */
         }
     </style>
 </head>
@@ -68,13 +74,21 @@
     
     <!-- Header -->
     <header class="text-center py-6 bg-white shadow-lg rounded-xl mb-6">
-        <h1 class="text-3xl font-extrabold text-gray-900">Catatan Keuangan Jariyah Haul</h1>
-        <p class="text-sm text-gray-500 mt-1">Aplikasi Pencatatan Jariyah Real-time dan Responsif</p>
+        <h1 class="text-3xl font-extrabold text-gray-900">2. Laporan List Donatur Jariyah</h1>
+        <p class="text-sm text-gray-500 mt-1">Total jariyah akan dibagi secara otomatis: Perawatan Makam (15%), Ongkos Panitia (15%), Biaya Haul (70%).</p>
     </header>
+
+    <!-- Overall Summary Box -->
+    <div class="flex justify-end mb-6">
+        <div class="total-box p-4 rounded-xl text-center shadow-lg min-w-[250px]">
+            <p class="text-sm font-light opacity-80">Total Akhir Semua Jariyah</p>
+            <p id="total-jumlah" class="text-3xl font-extrabold">Rp 0</p>
+        </div>
+    </div>
 
     <!-- Data Entry Form -->
     <div class="bg-white p-6 shadow-xl rounded-xl mb-6 border border-indigo-200">
-        <h2 class="text-xl font-semibold mb-4 text-indigo-700">Input Data Jariyah Baru</h2>
+        <h2 class="text-xl font-semibold mb-4 text-indigo-700">1. Input Data Jariyah Baru</h2>
         <form id="jariyah-form" class="grid grid-cols-1 md:grid-cols-5 gap-4">
             <!-- Tanggal (Date) -->
             <input type="date" id="tanggal" required class="col-span-1 p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150" title="Tanggal">
@@ -95,34 +109,40 @@
         </form>
     </div>
 
-    <!-- Data Table & Summary -->
+    <!-- Data Table -->
     <div class="bg-white p-6 shadow-xl rounded-xl border border-gray-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-            <h2 class="text-xl font-semibold text-gray-800 mb-2 sm:mb-0">Daftar Catatan Jariyah</h2>
-            <!-- Total Jariyah Box -->
-            <div class="total-box p-3 rounded-lg text-center shadow-lg min-w-[200px]">
-                <p class="text-xs font-light opacity-80">Total Jariyah</p>
-                <p id="total-jumlah" class="text-2xl font-extrabold">Rp 0</p>
-            </div>
-        </div>
 
         <!-- Table Wrapper for horizontal scrolling on mobile -->
         <div class="table-wrapper">
             <table class="min-w-full divide-y divide-gray-200">
-                <thead class="table-header">
+                <thead class="text-white">
+                    <!-- Row 1: Group Headers -->
+                    <tr class="table-header">
+                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider rounded-tl-lg w-12 bg-indigo-800 border-r border-gray-600">NO</th>
+                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider w-24 bg-indigo-800">TANGGAL</th>
+                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[150px] bg-indigo-800">NAMA DONATUR</th>
+                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[200px] bg-indigo-800">ALAMAT</th>
+                        <th rowspan="2" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[120px] bg-indigo-800 border-r border-gray-600">JARIYAH (RP)</th>
+                        
+                        <!-- TOTAL JARIYAH (Running Total) -->
+                        <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider min-w-[150px] bg-green-700 border-r border-gray-600">TOTAL JARIYAH (RP)</th>
+                        
+                        <!-- PRESENSTASE DONASI -->
+                        <th colspan="3" class="px-3 py-2 text-center text-xs uppercase tracking-wider bg-amber-700 rounded-tr-lg">PRESENTASE DONASI</th>
+                        
+                        <th rowspan="2" class="px-3 py-3 text-center text-xs uppercase tracking-wider w-16 bg-indigo-800">AKSI</th>
+                    </tr>
+                    <!-- Row 2: Sub-Headers for PRESENTASE DONASI -->
                     <tr>
-                        <th scope="col" class="px-3 py-3 text-left text-xs uppercase tracking-wider rounded-tl-lg w-12">No.</th>
-                        <th scope="col" class="px-3 py-3 text-left text-xs uppercase tracking-wider w-24">Tanggal</th>
-                        <th scope="col" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[150px]">Nama Donatur</th>
-                        <th scope="col" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[200px]">Alamat</th>
-                        <th scope="col" class="px-3 py-3 text-left text-xs uppercase tracking-wider min-w-[120px]">Jariyah</th>
-                        <th scope="col" class="px-3 py-3 text-center text-xs uppercase tracking-wider rounded-tr-lg w-16">Aksi</th>
+                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">PERAWATAN MAKAM (15%)</th>
+                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">ONGKOS PANITIA (15%)</th>
+                        <th class="px-3 py-3 text-center text-xs uppercase tracking-wider bg-amber-700 border-t border-gray-600">BIAYA HAUL (70%)</th>
                     </tr>
                 </thead>
                 <tbody id="jariyah-list" class="bg-white divide-y divide-gray-200">
                     <!-- Data will be inserted here by JavaScript -->
                     <tr>
-                        <td colspan="6" class="p-4 text-center text-gray-500">Memuat data...</td>
+                        <td colspan="10" class="p-4 text-center text-gray-500">Memuat data...</td>
                     </tr>
                 </tbody>
             </table>
@@ -207,16 +227,16 @@
     let userId = null;
     let isAuthReady = false;
 
-    // DOM elements
+    // DOM elements for Auth
     const appContent = document.getElementById('app-content');
     const authModal = document.getElementById('auth-modal');
     const authForm = document.getElementById('auth-form');
     const authEmail = document.getElementById('auth-email');
     const authPassword = document.getElementById('auth-password');
     const authMessage = document.getElementById('auth-message');
-    const loginButton = document.getElementById('login-button');
     const registerButton = document.getElementById('register-button');
 
+    // DOM elements for Main App
     const jariyahForm = document.getElementById('jariyah-form');
     const jariyahList = document.getElementById('jariyah-list');
     const totalJumlahElement = document.getElementById('total-jumlah');
@@ -226,11 +246,13 @@
 
     // Helper functions for UI (Modal/Notification)
     const formatRupiah = (number) => {
+        // Round to the nearest whole number for display consistency
+        const roundedNumber = Math.round(number);
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
             minimumFractionDigits: 0
-        }).format(number);
+        }).format(roundedNumber);
     };
 
     const showModal = (title, message, isConfirm = false, onConfirm = () => {}) => {
@@ -239,30 +261,41 @@
         const modalTitle = document.getElementById('modal-title');
         const modalMessage = document.getElementById('modal-message');
         const modalActions = document.getElementById('modal-actions');
+        
+        // Clear previous buttons
+        modalActions.innerHTML = ''; 
 
         modalTitle.textContent = title;
         modalMessage.textContent = message;
         
         if (isConfirm) {
-            modalActions.classList.remove('hidden');
-            document.getElementById('modal-confirm').onclick = () => {
-                onConfirm();
-                hideModal();
-            };
-            document.getElementById('modal-cancel').onclick = hideModal;
+            // Setup Confirm/Cancel buttons
+            const cancelButton = document.createElement('button');
+            cancelButton.id = 'modal-cancel';
+            cancelButton.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
+            cancelButton.textContent = 'Batal';
+            cancelButton.onclick = hideModal;
+
+            const confirmButton = document.createElement('button');
+            confirmButton.id = 'modal-confirm';
+            confirmButton.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 transition';
+            confirmButton.textContent = 'Konfirmasi';
+            confirmButton.onclick = () => { onConfirm(); hideModal(); };
+            
+            modalActions.appendChild(cancelButton);
+            modalActions.appendChild(confirmButton);
         } else {
-            modalActions.classList.add('hidden');
-            // For simple alerts, we add a single button to close
+            // Setup Close button for simple alert
             const closeBtn = document.createElement('button');
             closeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition';
             closeBtn.textContent = 'Tutup';
             closeBtn.onclick = hideModal;
-            modalActions.classList.add('flex', 'justify-end');
             modalActions.appendChild(closeBtn);
         }
-
-        modalContainer.classList.remove('hidden', 'items-center', 'justify-center');
-        modalContainer.classList.add('flex', 'items-center', 'justify-center');
+        
+        modalActions.classList.add('flex', 'justify-end', 'space-x-3');
+        modalContainer.classList.remove('hidden');
+        modalContainer.classList.add('flex');
         setTimeout(() => {
             modal.classList.remove('scale-95', 'opacity-0');
             modal.classList.add('scale-100', 'opacity-100');
@@ -272,16 +305,10 @@
     const hideModal = () => {
         const modalContainer = document.getElementById('modal-container');
         const modal = document.getElementById('custom-modal');
-        // Clean up simple alert button if it exists
-        const modalActions = document.getElementById('modal-actions');
-        if (modalActions.lastElementChild && modalActions.lastElementChild.textContent === 'Tutup') {
-             modalActions.lastElementChild.remove();
-        }
-
         modal.classList.remove('scale-100', 'opacity-100');
         modal.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
-            modalContainer.classList.remove('flex', 'items-center', 'justify-center');
+            modalContainer.classList.remove('flex');
             modalContainer.classList.add('hidden');
         }, 300);
     };
@@ -309,18 +336,18 @@
             authModal.classList.remove('hidden');
             isAuthReady = false;
             // Clear data list when logged out
-            jariyahList.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data.</td></tr>';
+            jariyahList.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data.</td></tr>';
             totalJumlahElement.textContent = formatRupiah(0);
         }
     });
 
-    // Handle Login/Register Form Submission
+    // Handle Login/Register Form Submission (Default is Login)
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const email = authEmail.value;
         const password = authPassword.value;
 
-        // The default action is login, triggered by the submit button
+        authMessage.textContent = 'Memproses Login...';
         try {
             await signInWithEmailAndPassword(auth, email, password);
             authMessage.textContent = '';
@@ -441,24 +468,53 @@
 
         unsubscribe = onSnapshot(q, (snapshot) => {
             let records = [];
-            let totalJumlah = 0;
+            let totalJumlahGlobal = 0;
             
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 records.push({ id: doc.id, ...data });
-                totalJumlah += data.jumlah || 0;
+                totalJumlahGlobal += data.jumlah || 0;
             });
 
-            // Sort data locally by timestamp descending (newest first)
+            // 1. Sort data locally by timestamp descending (newest first)
             records.sort((a, b) => {
                 const timeA = a.timestamp?.toMillis() || 0;
                 const timeB = b.timestamp?.toMillis() || 0;
                 return timeB - timeA;
             });
 
+            // 2. Reverse the array to calculate the running total correctly (from oldest to newest)
+            records.reverse(); 
+            
+            let runningTotal = 0;
+            
+            // 3. Iterate to calculate Running Total and Percentage Splits
+            records = records.map(record => {
+                const jariyah = record.jumlah || 0;
+                
+                // Calculate running total
+                runningTotal += jariyah;
+                
+                // Calculate percentages (using Math.round to match common financial display)
+                const perawatanMakam = Math.round(jariyah * 0.15);
+                const ongkosPanitia = Math.round(jariyah * 0.15);
+                const biayaHaul = Math.round(jariyah * 0.70);
+
+                return {
+                    ...record,
+                    runningTotal: runningTotal, 
+                    perawatanMakam: perawatanMakam,
+                    ongkosPanitia: ongkosPanitia,
+                    biayaHaul: biayaHaul
+                };
+            });
+            
+            // 4. Reverse back to descending order (newest first) for display as per image
+            records.reverse();
+
             // Update UI
             renderJariyahList(records);
-            totalJumlahElement.textContent = formatRupiah(totalJumlah);
+            totalJumlahElement.textContent = formatRupiah(totalJumlahGlobal);
         }, (error) => {
             console.error("Error listening to Firestore: ", error);
             showModal("Kesalahan Database", "Gagal memuat data real-time.");
@@ -471,7 +527,7 @@
         if (records.length === 0) {
             jariyahList.innerHTML = `
                 <tr>
-                    <td colspan="6" class="p-4 text-center text-gray-500 italic">Belum ada catatan jariyah. Silakan tambahkan data baru.</td>
+                    <td colspan="10" class="p-4 text-center text-gray-500 italic">Belum ada catatan jariyah. Silakan tambahkan data baru.</td>
                 </tr>
             `;
             return;
@@ -481,25 +537,40 @@
             const row = document.createElement('tr');
             row.className = 'data-row hover:bg-indigo-50 transition duration-150';
 
-            const formattedDate = record.tanggal ? new Date(record.tanggal).toLocaleDateString('id-ID', {
+            const formattedDate = record.tanggal ? new Date(record.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric'
             }) : '-';
             
-            const formattedJumlah = formatRupiah(record.jumlah);
-            
+            // Generate table cell (td) content
             row.innerHTML = `
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${formattedDate}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-900">${record.nama}</td>
                 <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-500">${record.alamat}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold text-green-600">${formattedJumlah}</td>
-                <td class="px-3 py-3 whitespace-nowrap text-center">
+                <td class="px-3 py-3 whitespace-nowrap text-sm font-semibold text-indigo-600 border-r border-gray-200">${formatRupiah(record.jumlah)}</td>
+                
+                <!-- COLUMN: TOTAL JARIYAH (Running Total) -->
+                <td class="px-3 py-3 whitespace-nowrap text-sm running-total-cell border-r border-gray-200">${formatRupiah(record.runningTotal)}</td>
+
+                <!-- COLUMN: PERAWATAN MAKAM (15%) -->
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.perawatanMakam)}</td>
+                
+                <!-- COLUMN: ONGOS PANITIA (15%) -->
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.ongkosPanitia)}</td>
+                
+                <!-- COLUMN: BIAYA HAUL (70%) -->
+                <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-800">${formatRupiah(record.biayaHaul)}</td>
+
+                <td class="px-3 py-3 whitespace-nowrap text-center text-sm">
+                    <!-- Edit Placeholder -->
+                    <button class="edit-btn text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-100 transition mr-1" title="Edit Catatan (Non-aktif)">
+                        Edit
+                    </button>
+                    <!-- Delete Button -->
                     <button class="delete-btn text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-100 transition" data-id="${record.id}" title="Hapus Catatan">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 6h6v10H7V6z" clip-rule="evenodd" />
-                        </svg>
+                        Hapus
                     </button>
                 </td>
             `;
@@ -524,7 +595,6 @@
                 }
                 await signOut(auth);
                 console.log("User logged out.");
-                // onAuthStateChanged handles the rest
             } catch (error) {
                 console.error("Error signing out: ", error);
                 showModal("Gagal Log Out", "Terjadi kesalahan saat keluar. Coba lagi.");
