@@ -3,761 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembukuan Online Keuangan Haul</title>
-    <!-- Memuat Tailwind CSS untuk styling modern dan responsif -->
+    <title>Urutan Data Tanggal Otomatis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Mengatur font utama menjadi Inter -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        /* Custom style untuk header tabel publik agar mirip gambar yang diunggah */
-        #public-donors-table thead th {
-            background-color: #4a5568; /* Abu-abu gelap/Ungu */
-            color: white;
-        }
-        /* Style untuk kolom Total Jariyah (Total Akumulasi) */
-        .total-jariyah-cell {
-            background-color: #10b981; /* Hijau Emerald */
-            color: white;
-            font-weight: 600;
-        }
-        /* Style untuk baris Total Keseluruhan Donasi */
-        .overall-total-row td {
-            background-color: #4a5568;
-            color: white;
-            font-weight: bold;
-            text-align: right;
-            border-top: 2px solid #374151;
-        }
+        /* Menggunakan Font Inter */
+        body { font-family: 'Inter', sans-serif; background-color: #f7f7f7; }
+        .container { max-width: 800px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body>
 
-    <!-- Area Konten Utama (Terproteksi, akan ditampilkan setelah login) -->
-    <div id="app-content" class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full flex-grow hidden">
-        <!-- Header Utama -->
-        <header class="bg-white shadow-md rounded-lg p-6 mb-6 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">Pembukuan Keuangan Jariyah (Dashboard Admin)</h1>
-                <p class="text-gray-500 mt-1">Kelola catatan pemasukan dan pengeluaran secara real-time.</p>
-                <div id="user-info" class="mt-3 text-sm text-gray-600">
-                    <!-- Email Pengguna akan ditampilkan di sini -->
-                </div>
-            </div>
-        </header>
-
-        <!-- Tampilan Data Pembukuan PRIBADI (Sudah Lengkap dengan Aksi) -->
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-semibold text-gray-700 mb-2">Daftar Catatan Keuangan PRIBADI (Admin)</h2>
-            <p class="text-xs text-gray-500 mb-4">Data diurutkan berdasarkan Tanggal (Terbaru di atas).</p>
-            
-            <div id="data-loading" class="text-center py-4 text-gray-500 hidden">
-                <div class="flex justify-center items-center space-x-2">
-                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>Memuat data...</span>
-                </div>
-            </div>
-
-            <div class="overflow-x-auto rounded-lg border border-gray-200">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama/Deskripsi</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategori (Alamat)</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal (Jariyah)</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactions-list" class="bg-white divide-y divide-gray-200">
-                        <!-- Data pribadi akan dimasukkan di sini oleh JavaScript -->
-                    </tbody>
-                    <tfoot class="bg-gray-100">
-                        <tr>
-                            <td colspan="4" class="px-4 py-3 text-right font-bold text-sm text-gray-700">Total Saldo</td>
-                            <td id="total-balance" class="px-4 py-3 text-right font-bold text-sm">Rp 0</td>
-                            <td class="px-4 py-3"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <div id="no-data" class="text-center py-8 text-gray-500 hidden">
-                Belum ada catatan transaksi pribadi.
-            </div>
-            
-            <div id="error-message-data" class="text-center py-4 text-red-600 hidden">
-                <!-- Pesan error data pribadi akan ditampilkan di sini -->
-            </div>
-        </div>
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">Pengurutan Data Berdasarkan Tanggal</h1>
         
-        <!-- Kontrol di Atas Formulir Input -->
-        <div class="flex justify-between items-center mb-4">
-             <!-- Tombol Reset Data (Rata Kiri) -->
-            <button id="reset-data-button" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-150 shadow-md">
-                Reset Data (Form)
-            </button>
-            <!-- Tombol Logout (Rata Kanan) -->
-            <button id="logout-button" class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-150 shadow-md">
-                Logout
-            </button>
-        </div>
-
-        <!-- Formulir Input Data -->
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6 border-t-4 border-blue-600">
-            <h2 class="text-xl font-semibold text-gray-700 mb-4" id="form-title">Tambah Catatan Baru</h2>
-            <!-- Diubah ke 4 kolom: Tanggal, Nama, Alamat, Nominal -->
-            <form id="transaction-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                <input type="hidden" id="transaction-id">
-                
-                <!-- 1. Tanggal -->
-                <div>
-                    <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
-                    <input type="date" id="tanggal" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- 2. Nama/Deskripsi -->
-                <div>
-                    <label for="nama" class="block text-sm font-medium text-gray-700 mb-1">Deskripsi/Nama Item</label>
-                    <input type="text" id="nama" placeholder="Contoh: Donasi dari Bpk. Budi" required class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-
-                <!-- 3. Alamat (Input Teks) -->
-                <div>
-                    <label for="alamat" class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                    <input type="text" id="alamat" placeholder="Contoh: Ngablak (Opsional)" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- 4. Jariyah/Nominal -->
-                <div>
-                    <label for="jariyah" class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
-                    <input type="number" id="jariyah" placeholder="Contoh: 500000" required min="0" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- Tombol Aksi (Tetap 1 baris di bawah) -->
-                <div class="col-span-1 sm:col-span-2 lg:col-span-4 flex justify-end space-x-3 mt-2">
-                    <button type="button" id="cancel-edit" class="hidden px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-150 shadow-md">Batal Edit</button>
-                    <button type="submit" id="submit-button" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">Simpan Catatan</button>
-                </div>
-            </form>
-        </div>
-        <!-- AKHIR DARI FORMULIR INPUT DATA -->
-
-    </div>
-
-    <!-- Halaman Login dan Daftar Publik -->
-    <div id="login-screen" class="flex flex-col items-center justify-center flex-grow p-4 space-y-6">
-
-        <!-- 1. Daftar Donatur Publik -->
-        <div class="w-full max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 transform transition-all duration-300">
-            <h2 class="text-2xl font-bold text-green-700 text-center mb-2">Daftar Donasi Publik Terbaru</h2>
-            <p class="text-sm text-gray-500 text-center mb-4">Informasi umum pemasukan (jariyah) terbaru, diurutkan Tanggal terbaru di atas. Untuk Edit/Hapus, silakan Login.</p>
+        <!-- Kartu Input Data -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <h2 class="text-xl font-semibold text-indigo-600 mb-4">Input Data Baru</h2>
+            <div id="auth-status" class="text-xs text-gray-500 mb-4"></div>
             
-            <div id="public-data-loading" class="text-center py-4 text-gray-500">
-                Memuat daftar donatur...
-            </div>
-
-            <div class="overflow-x-auto rounded-lg border border-gray-200">
-                <table id="public-donors-table" class="min-w-full divide-y divide-gray-200">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-1/12">No</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Tanggal</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-4/12">Nama Donatur</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider w-2/12">Alamat</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider w-3/12">Jariyah (Rp)</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider w-3/12 total-jariyah-cell">Total Jariyah (Rp)</th> 
-                        </tr>
-                    </thead>
-                    <tbody id="public-donors-list" class="bg-white divide-y divide-gray-200">
-                        <!-- Data publik akan dimasukkan di sini oleh JavaScript -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="public-no-data" class="text-center py-4 text-gray-500 hidden">
-                Belum ada data donasi publik.
-            </div>
-
-            <!-- Baris Total Keseluruhan Donasi diletakkan di luar tabel, namun distyling agar menyatu -->
-            <div id="public-overall-total" class="w-full">
-                <div class="overall-total-row">
-                    <table class="min-w-full">
-                        <tr class="overall-total-row">
-                            <td colspan="5" class="px-4 py-3 text-right text-sm">
-                                **TOTAL KESELURUHAN DONASI:**
-                            </td>
-                            <td id="public-total-jariyah" class="px-4 py-3 text-right text-sm total-jariyah-cell">
-                                Rp 0
-                            </td>
-                        </tr>
-                    </table>
+            <form id="dataForm" class="space-y-4">
+                <div>
+                    <label for="tanggalInput" class="block text-sm font-medium text-gray-700">Tanggal:</label>
+                    <!-- Tipe input date akan memastikan format yang konsisten -->
+                    <input type="date" id="tanggalInput" required 
+                           class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
-            </div>
-            
-        </div>
-
-        <!-- 2. Formulir Login -->
-        <div class="w-full max-w-md bg-white shadow-xl rounded-xl p-8 transform transition-all duration-300">
-            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Login Keuangan Haul (Admin)</h2>
-            <form id="login-form">
-                <div class="mb-4">
-                    <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="login-email" placeholder="Masukkan Email Anda" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                <div>
+                    <label for="deskripsiInput" class="block text-sm font-medium text-gray-700">Deskripsi/Keterangan:</label>
+                    <textarea id="deskripsiInput" rows="3" required 
+                              class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm p-3 border focus:border-indigo-500 focus:ring-indigo-500"></textarea>
                 </div>
-                <div class="mb-6">
-                    <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi</label>
-                    <input type="password" id="login-password" placeholder="Masukkan Kata Sandi Anda" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <button type="submit" id="login-button" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 shadow-lg">Masuk</button>
-                <p id="login-error-message" class="text-red-500 text-sm mt-3 text-center hidden">Pesan Error Login</p>
+                <button type="submit" id="submitButton"
+                        class="w-full py-3 px-4 border border-transparent rounded-lg shadow-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                    Simpan Data
+                </button>
             </form>
+            <p id="message" class="mt-4 text-sm text-center font-medium"></p>
+        </div>
+
+        <!-- Daftar Data Terurut -->
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Daftar Data (Terurut: Tanggal Terlama di Atas)</h2>
+        <div id="dataList" class="space-y-4">
+            <p class="text-gray-500 text-center py-8" id="loadingMessage">Memuat data...</p>
         </div>
     </div>
 
-    <!-- Modal Konfirmasi Hapus -->
-    <div id="delete-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 hidden">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 class="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
-            <div class="mt-2 px-7 py-3">
-                <p class="text-sm text-gray-600">Apakah Anda yakin ingin menghapus catatan ini?</p>
-            </div>
-            <div class="items-center px-4 py-3 flex justify-end space-x-3">
-                <button id="cancel-delete" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                    Batal
-                </button>
-                <button id="confirm-delete" data-doc-id="" class="px-4 py-2 bg-red-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    Hapus
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Script Firebase SDK -->
+    <!-- Script Firebase dan Logika Aplikasi -->
     <script type="module">
-        // Import modul-modul Firebase yang dibutuhkan
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            setDoc, 
-            doc, 
-            deleteDoc, 
-            query, 
-            onSnapshot, 
-            serverTimestamp,
-            setLogLevel,
-            getDoc,
+            getFirestore, collection, addDoc, onSnapshot, query, orderBy, 
+            doc, deleteDoc, setDoc, serverTimestamp, setLogLevel 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase (Gunakan konfigurasi standar)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
-            authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
-        };
+        // setLogLevel('Debug'); // Opsional: Aktifkan untuk melihat log detail di konsol
 
-        // Variabel global dari Canvas
+        // 1. Inisialisasi Firebase & Variabel Global (Wajib Ada)
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-        // Inisialisasi Firebase
-        let app;
-        let db;
-        let auth;
-        let userId = null;
-        
-        // Setel level log untuk debugging
-        setLogLevel('Debug');
+        let app, db, auth, userId = null;
+        let isAuthReady = false;
 
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            
-            // --- Elemen UI ---
-            const appContent = document.getElementById('app-content');
-            const loginScreen = document.getElementById('login-screen');
-            const loginForm = document.getElementById('login-form');
-            const logoutButton = document.getElementById('logout-button'); 
-            const resetButton = document.getElementById('reset-data-button'); 
-            const form = document.getElementById('transaction-form');
-            const list = document.getElementById('transactions-list');
-            const formTitle = document.getElementById('form-title');
-            const submitButton = document.getElementById('submit-button');
-            const cancelButton = document.getElementById('cancel-edit');
-            const loadingIndicator = document.getElementById('data-loading');
-            const noDataMessage = document.getElementById('no-data');
-            const userInfo = document.getElementById('user-info');
-            const totalBalanceEl = document.getElementById('total-balance');
-            const inputTanggal = document.getElementById('tanggal');
-            const inputNama = document.getElementById('nama');
-            const inputAlamat = document.getElementById('alamat');
-            const inputJariyah = document.getElementById('jariyah');
-            const publicDonorsList = document.getElementById('public-donors-list');
-            const publicLoadingIndicator = document.getElementById('public-data-loading');
-            const publicNoDataMessage = document.getElementById('public-no-data');
-            const publicOverallTotalDiv = document.getElementById('public-overall-total');
-            const publicTotalJariyahEl = document.getElementById('public-total-jariyah');
-            const deleteModal = document.getElementById('delete-modal');
-            const confirmDeleteButton = document.getElementById('confirm-delete');
-            const cancelDeleteButton = document.getElementById('cancel-delete');
-            const errorMessageData = document.getElementById('error-message-data');
+        const authStatusEl = document.getElementById('auth-status');
+        const dataListEl = document.getElementById('dataList');
+        const loadingMessageEl = document.getElementById('loadingMessage');
+        const messageEl = document.getElementById('message');
+        const dataForm = document.getElementById('dataForm');
 
-            /**
-             * Fungsi pengurutan ganda: Tanggal (Terbaru) > Timestamp (Waktu dibuat)
-             * Menggunakan perbandingan string tanggal YYYY-MM-DD, yang lebih aman 
-             * daripada mengandalkan objek Date dan perbedaan zona waktu.
-             * @param {Array} transactions - Array data transaksi.
-             */
-            function sortTransactions(transactions) {
-                transactions.sort((a, b) => {
-                    const dateA = a.tanggal || '';
-                    const dateB = b.tanggal || '';
-                    const timestampA = a.timestamp?.toMillis() || 0;
-                    const timestampB = b.timestamp?.toMillis() || 0;
-
-                    // 1. Urutan Utama: Tanggal (Menurun/Terbaru di atas)
-                    // Karena formatnya YYYY-MM-DD, perbandingan string ini akan benar
-                    if (dateA > dateB) return -1; // Tanggal A lebih baru (di atas)
-                    if (dateA < dateB) return 1;  // Tanggal B lebih baru (di atas)
-                    
-                    // 2. Urutan Kedua (Fallback): Timestamp (Menurun/Terbaru di atas)
-                    // Jika tanggal sama, urutkan berdasarkan waktu entri (terbaru di atas)
-                    return timestampB - timestampA;
-                });
-                return transactions;
-            }
-
-            // --- A. Setup Listener Publik (Berjalan TANPA Login) ---
-            const publicCollectionPath = `artifacts/${appId}/public/data/recent_donations`;
-
-            function setupPublicDonorsListener() {
-                publicLoadingIndicator.classList.remove('hidden');
-                publicOverallTotalDiv.classList.add('hidden');
-                
-                const q = query(collection(db, publicCollectionPath));
-
-                onSnapshot(q, (snapshot) => {
-                    let publicTransactions = [];
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        
-                        // HANYA ambil jika alamat/kategori adalah 'Pemasukan'
-                        if (data.nama && data.jariyah) { // Cek minimal ada nama dan nominal
-                             publicTransactions.push({ id: doc.id, ...data });
-                        }
-                    });
-
-                    // Terapkan pengurutan ganda
-                    const sortedTransactions = sortTransactions(publicTransactions);
-
-                    // Hitung akumulasi total (Harus dihitung dari yang paling lama/paling bawah)
-                    // Jadi, kita balik data yang sudah diurutkan (terbaru di atas) menjadi (terlama di atas)
-                    const reversedForAccumulation = [...sortedTransactions].reverse();
-                    
-                    let accumulatedTotal = 0;
-                    reversedForAccumulation.forEach(t => {
-                        // Accumulated dihitung dari yang paling lama hingga yang paling baru
-                        accumulatedTotal += t.jariyah || 0;
-                        t.accumulated = accumulatedTotal;
-                    });
-                    const overallTotal = accumulatedTotal; // Total keseluruhan adalah nilai akumulasi terakhir
-
-                    // Kembalikan ke urutan terbaru di atas untuk ditampilkan
-                    const finalDisplayList = reversedForAccumulation.reverse();
-                    
-                    renderPublicDonors(finalDisplayList, overallTotal);
-                    
-                    publicLoadingIndicator.classList.add('hidden');
-                    publicNoDataMessage.classList.toggle('hidden', finalDisplayList.length > 0);
-                    
-                }, (error) => {
-                    console.warn("Gagal mengambil data publik:", error.message);
-                    publicLoadingIndicator.textContent = "Gagal memuat data publik. Periksa koneksi atau Firestore Rules.";
-                });
-            }
-
-            function renderPublicDonors(transactions, overallTotal) {
-                publicDonorsList.innerHTML = '';
-                
-                // Update Total Keseluruhan di Div bawah tabel
-                publicTotalJariyahEl.textContent = formatRupiah(overallTotal);
-                publicOverallTotalDiv.classList.remove('hidden');
-
-                // Hanya tampilkan 10 data teratas di daftar (sesuai permintaan user sebelumnya)
-                transactions.slice(0, 10).forEach((t, index) => {
-                    const row = document.createElement('tr');
-                    
-                    const description = t.nama || 'Donatur Anonim';
-                    const alamatText = t.alamat || '-';
-                    const nominalText = formatRupiah(t.jariyah || 0);
-                    const accumulatedText = formatRupiah(t.accumulated || 0);
-                    
-                    row.className = 'hover:bg-gray-50 transition duration-100';
-                    
-                    row.innerHTML = `
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${formatDate(t.tanggal, true)}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${description}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">${alamatText}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-green-600 font-medium text-right">${nominalText}</td>
-                        <td class="px-4 py-2 whitespace-nowrap text-sm text-right total-jariyah-cell">${accumulatedText}</td>
-                    `;
-                    publicDonorsList.appendChild(row);
-                });
-            }
-            
-            // Panggil listener publik segera
-            setupPublicDonorsListener();
-
-
-            // --- 1. Otentikasi dan Listener State (Seperti sebelumnya) ---
-            onAuthStateChanged(auth, (user) => {
-                const loginEmailInput = document.getElementById('login-email');
-                const loginPasswordInput = document.getElementById('login-password');
-                const loginErrorMessage = document.getElementById('login-error-message');
-
-                loadingIndicator.classList.add('hidden');
-
-                if (user) {
-                    // Pengguna telah login
-                    userId = user.uid;
-                    userInfo.innerHTML = `**Status:** Terhubung | **Email:** ${user.email || 'N/A'} | **ID Pengguna:** ${userId.substring(0, 8)}...`;
-                    loginScreen.classList.add('hidden');
-                    appContent.classList.remove('hidden');
-                    setupPrivateDataListener();
-                } else {
-                    // Pengguna belum login
-                    userId = null;
-                    appContent.classList.add('hidden');
-                    loginScreen.classList.remove('hidden');
-                    list.innerHTML = '';
-                    totalBalanceEl.textContent = 'Rp 0';
-                }
-            });
-            
-            // --- 2. Handle Login Form Submission ---
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-                const loginErrorMessage = document.getElementById('login-error-message');
-                
-                loginErrorMessage.classList.add('hidden');
-                document.getElementById('login-button').textContent = 'Memuat...';
-                document.getElementById('login-button').disabled = true;
-
-                try {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } catch (error) {
-                    console.error("Gagal Login:", error);
-                    let displayMessage = "Gagal masuk. Pastikan email dan kata sandi benar.";
-                    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                        displayMessage = "Email atau Kata Sandi salah.";
-                    }
-                    loginErrorMessage.textContent = displayMessage;
-                    loginErrorMessage.classList.remove('hidden');
-                } finally {
-                    document.getElementById('login-button').textContent = 'Masuk';
-                    document.getElementById('login-button').disabled = false;
-                }
-            });
-
-            // --- 3. Handle Logout ---
-            logoutButton.addEventListener('click', async () => {
-                try {
-                    await signOut(auth);
-                    console.log('Anda telah berhasil keluar.');
-                } catch (error) {
-                    console.error("Gagal Logout:", error);
-                }
-            });
-
-            // --- 4. Handle Reset Form ---
-            resetButton.addEventListener('click', resetForm);
-
-
-            // --- 5. Setup Listener Data PRIBADI (Pengurutan Tanggal Terbaru) ---
-            function setupPrivateDataListener() {
-                if (!db || !userId) return;
-
-                loadingIndicator.classList.remove('hidden');
-                errorMessageData.classList.add('hidden');
-
-                // Path Collection: /artifacts/{appId}/users/{userId}/transactions (PRIVATE)
-                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                const q = query(collection(db, privateCollectionPath));
-
-                onSnapshot(q, (snapshot) => {
-                    const transactions = [];
-                    let totalBalance = 0;
-                    
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        transactions.push({ id: doc.id, ...data });
-                        
-                        // Hitung saldo: Hanya 'Pemasukan' yang menambah saldo.
-                        const nominal = data.jariyah || 0;
-                        if (data.alamat === 'Pemasukan') { // 'alamat' di sini menyimpan Kategori 'Pemasukan'
-                            totalBalance += nominal;
-                        } 
-                    });
-
-                    // Terapkan pengurutan ganda: Tanggal (Terbaru) > Timestamp
-                    const sortedTransactions = sortTransactions(transactions);
-                    
-                    renderPrivateTransactions(sortedTransactions);
-                    updateTotalBalance(totalBalance);
-                    loadingIndicator.classList.add('hidden');
-
-                    noDataMessage.classList.toggle('hidden', sortedTransactions.length > 0);
-                    
-                }, (error) => {
-                    console.error("Error mengambil data pribadi:", error);
-                    errorMessageData.textContent = `Error Data Pribadi: ${error.message}.`;
-                    errorMessageData.classList.remove('hidden');
-                    loadingIndicator.classList.add('hidden');
-                });
-            }
-
-            // --- 6. Fungsi Render Data ke Tabel Pribadi ---
-            function renderPrivateTransactions(transactions) {
-                list.innerHTML = ''; 
-                transactions.forEach((t, index) => {
-                    const nominalText = formatRupiah(t.jariyah || 0);
-                    const row = document.createElement('tr');
-                    
-                    let rowClass = 'hover:bg-gray-50 transition duration-100';
-                    let nominalColor = 'text-gray-800';
-                    
-                    if (t.alamat === 'Pemasukan') {
-                        nominalColor = 'text-green-600 font-medium';
-                    } else if (t.alamat === 'Pengeluaran') {
-                        nominalColor = 'text-red-600 font-medium';
-                    }
-
-                    row.className = rowClass;
-                    row.innerHTML = `
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${index + 1}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${formatDate(t.tanggal)}</td>
-                        <td class="px-4 py-3 whitespace-pre-wrap text-sm text-gray-900">${t.nama || '-'}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">${t.alamat || '-'}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-sm ${nominalColor} text-right">${nominalText}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                            <button data-id="${t.id}" class="edit-btn text-blue-600 hover:text-blue-900 mr-2 p-1 rounded-md hover:bg-blue-100 transition">Edit</button>
-                            <button data-id="${t.id}" class="delete-btn text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-100 transition">Hapus</button>
-                        </td>
-                    `;
-                    list.appendChild(row);
-                });
-
-                // Tambahkan event listener untuk tombol Edit dan Hapus
-                list.querySelectorAll('.edit-btn').forEach(button => {
-                    button.addEventListener('click', (e) => editTransaction(e.target.dataset.id));
-                });
-                list.querySelectorAll('.delete-btn').forEach(button => {
-                    button.addEventListener('click', (e) => showDeleteModal(e.target.dataset.id));
-                });
-            }
-
-            // --- 7. Update Tampilan Total Saldo ---
-            function updateTotalBalance(balance) {
-                const text = formatRupiah(balance);
-                totalBalanceEl.textContent = text;
-                if (balance >= 0) { 
-                    totalBalanceEl.classList.remove('text-red-600');
-                    totalBalanceEl.classList.add('text-green-600');
-                } else {
-                    totalBalanceEl.classList.remove('text-green-600');
-                    totalBalanceEl.classList.add('text-red-600');
-                }
-            }
-            
-            // --- 8. Fungsi Submit Form (Tambah atau Update) ---
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                if (!userId) {
-                    return;
-                }
-
-                const transactionId = document.getElementById('transaction-id').value;
-                const tanggal = inputTanggal.value; // Format YYYY-MM-DD
-                const nama = inputNama.value.trim();
-                const alamatDonatur = inputAlamat.value.trim(); 
-                const jariyah = parseFloat(inputJariyah.value);
-                
-                // KATEGORI DITETAPKAN SECARA OTOMATIS SEBAGAI PEMASUKAN JARIYAH
-                const kategori = 'Pemasukan'; 
-
-                if (!tanggal || !nama || isNaN(jariyah) || jariyah < 0) {
-                    return;
-                }
-
-                const transactionData = {
-                    tanggal: tanggal, 
-                    nama: nama,
-                    alamat: kategori, // Simpan kategori 'Pemasukan' ke field 'alamat' di data pribadi
-                    jariyah: jariyah,
-                    timestamp: serverTimestamp() 
-                };
-                
-                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                const publicCollectionPath = `artifacts/${appId}/public/data/recent_donations`;
-
-
-                try {
-                    let privateDocRef;
-
-                    if (transactionId) {
-                        // UPDATE (Edit) Data Pribadi
-                        privateDocRef = doc(db, privateCollectionPath, transactionId);
-                        await setDoc(privateDocRef, transactionData, { merge: true });
-                        console.log('Catatan pribadi berhasil diperbarui!');
-                        // NOTE: Karena data publik tidak memiliki ID yang sama dengan pribadi, 
-                        // update data publik diabaikan agar tidak menyebabkan masalah konsistensi data.
-
-                    } else {
-                        // CREATE (Tambah Baru) Data Pribadi
-                        privateDocRef = await addDoc(collection(db, privateCollectionPath), transactionData);
-                        console.log('Catatan pribadi berhasil ditambahkan!');
-                    
-                        // Tambahkan ke Public List
-                        if (kategori === 'Pemasukan') {
-                             const publicData = {
-                                tanggal: tanggal, 
-                                nama: nama,
-                                alamat: alamatDonatur || '-', // Alamat Donatur di field 'alamat' publik
-                                jariyah: jariyah,
-                                timestamp: serverTimestamp()
-                             };
-                             await addDoc(collection(db, publicCollectionPath), publicData);
-                             console.log('Catatan Pemasukan (Donasi) ditambahkan ke daftar publik.');
-                        }
-                    }
-                    
-                    resetForm();
-                    
-                } catch (error) {
-                    console.error("Error saat menyimpan data:", error);
-                }
-            });
-
-            // --- 9. Fungsi Edit, Reset, dan Hapus ---
-            async function editTransaction(id) {
-                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                const docRef = doc(db, privateCollectionPath, id);
-                
-                try {
-                    const docSnap = await getDoc(docRef);
-                    if (docSnap.exists()) {
-                        const transaction = docSnap.data();
-                        
-                        document.getElementById('transaction-id').value = id;
-                        inputTanggal.value = transaction.tanggal || ''; // Format YYYY-MM-DD
-                        
-                        inputNama.value = transaction.nama || '';
-                        inputJariyah.value = transaction.jariyah || 0;
-                        inputAlamat.value = ''; // Input Alamat Donatur di form pribadi saat ini tidak terhubung ke data yang tersimpan
-                        
-                        formTitle.textContent = 'Edit Catatan';
-                        submitButton.textContent = 'Update Catatan';
-                        submitButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                        submitButton.classList.add('bg-green-600', 'hover:bg-green-700');
-                        cancelButton.classList.remove('hidden');
-                        
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }
-                } catch (error) {
-                    console.error("Error fetching doc for edit:", error);
-                }
-            }
-
-            function resetForm() {
-                document.getElementById('transaction-id').value = '';
-                form.reset();
-                formTitle.textContent = 'Tambah Catatan Baru';
-                submitButton.textContent = 'Simpan Catatan';
-                submitButton.classList.remove('bg-green-600', 'hover:bg-green-700');
-                submitButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                cancelButton.classList.add('hidden');
-            }
-
-            cancelButton.addEventListener('click', resetForm);
-
-            function showDeleteModal(id) {
-                confirmDeleteButton.dataset.docId = id;
-                deleteModal.classList.remove('hidden');
-            }
-
-            cancelDeleteButton.addEventListener('click', () => {
-                deleteModal.classList.add('hidden');
-            });
-
-            confirmDeleteButton.addEventListener('click', async (e) => {
-                const id = e.target.dataset.docId;
-                if (!id || !userId) return;
-
-                const privateCollectionPath = `artifacts/${appId}/users/${userId}/transactions`;
-                
-                try {
-                    await deleteDoc(doc(db, privateCollectionPath, id));
-                    deleteModal.classList.add('hidden');
-                    console.log('Catatan pribadi berhasil dihapus!');
-                } catch (error) {
-                    console.error("Error saat menghapus data:", error);
-                    deleteModal.classList.add('hidden');
-                }
-            });
-
-            // --- 10. Utility Function ---
-            function formatRupiah(number) {
-                return new Intl.NumberFormat('id-ID', {
-                    style: 'currency',
-                    currency: 'IDR',
-                    minimumFractionDigits: 0
-                }).format(number);
-            }
-
-            function formatDate(dateString, simple = false) {
-                if (!dateString) return '-';
-
-                // Membuat objek Date dari string YYYY-MM-DD. 
-                // Menggunakan waktu UTC untuk menghindari masalah zona waktu lokal
-                const parts = dateString.split('-');
-                if (parts.length !== 3) return dateString;
-
-                const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
-
-                if (isNaN(d.getTime())) return dateString;
-                
-                const options = simple ? 
-                    { year: 'numeric', month: 'numeric', day: 'numeric' } :
-                    { year: 'numeric', month: 'long', day: 'numeric' };
-
-                return d.toLocaleDateString('id-ID', options);
-            }
-
-
-        } catch (e) {
-            console.error("Error Inisialisasi Aplikasi:", e);
-            document.getElementById('login-error-message').textContent = `Terjadi kesalahan fatal saat inisialisasi: ${e.message}`;
-            document.getElementById('login-error-message').classList.remove('hidden');
+        // Helper untuk menampilkan pesan singkat
+        function showMessage(text, isError = false) {
+            messageEl.textContent = text;
+            messageEl.className = `mt-4 text-sm text-center font-medium ${isError ? 'text-red-600' : 'text-green-600'}`;
+            setTimeout(() => { messageEl.textContent = ''; }, 3000);
         }
 
+        // 2. Setup Firebase dan Otentikasi
+        async function setupFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase Config tidak ditemukan.");
+                    authStatusEl.textContent = "Error: Konfigurasi Firebase hilang.";
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        authStatusEl.textContent = `User ID (Publik): ${userId}`;
+                    } else {
+                        userId = 'anon-' + crypto.randomUUID(); // Fallback ID jika anonim
+                        authStatusEl.textContent = `Belum terotentikasi. ID Anonim: ${userId}`;
+                    }
+                    isAuthReady = true;
+                    // Setelah otentikasi siap, mulai mendengarkan data
+                    if (db && isAuthReady) {
+                        listenForData();
+                    }
+                });
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+            } catch (error) {
+                console.error("Kesalahan inisialisasi atau otentikasi Firebase:", error);
+                showMessage(`Gagal inisialisasi: ${error.message}`, true);
+            }
+        }
+
+        // 3. Fungsi untuk Menyimpan Data
+        async function saveData(tanggal, deskripsi) {
+            if (!db) return showMessage("Database belum siap.", true);
+
+            const collectionPath = `/artifacts/${appId}/public/data/urutan_data`;
+            const dataToSave = {
+                tanggal: tanggal, // Tanggal dalam format YYYY-MM-DD (String)
+                deskripsi: deskripsi,
+                createdAt: serverTimestamp(), // Timestamp untuk urutan sekunder (jika tanggal sama)
+                userId: userId
+            };
+
+            try {
+                await addDoc(collection(db, collectionPath), dataToSave);
+                showMessage("Data berhasil disimpan!", false);
+            } catch (e) {
+                console.error("Error menambahkan dokumen: ", e);
+                showMessage(`Gagal menyimpan data: ${e.message}`, true);
+            }
+        }
+
+        // 4. Fungsi untuk Mendengarkan dan Menampilkan Data
+        function listenForData() {
+            if (!db || !isAuthReady) return;
+
+            const collectionPath = `/artifacts/${appId}/public/data/urutan_data`;
+            
+            // --- INI PERUBAHAN UTAMA UNTUK SORTING ---
+            // Kita mengurutkan query berdasarkan field 'tanggal' secara Ascending (terlama ke terbaru)
+            const dataQuery = query(
+                collection(db, collectionPath),
+                orderBy('tanggal', 'asc') 
+            );
+            // ------------------------------------------
+
+            onSnapshot(dataQuery, (snapshot) => {
+                loadingMessageEl.style.display = 'none';
+                dataListEl.innerHTML = ''; // Kosongkan daftar data lama
+
+                if (snapshot.empty) {
+                    dataListEl.innerHTML = '<p class="text-gray-500 p-4 bg-yellow-50 rounded-lg">Belum ada data yang tersimpan.</p>';
+                    return;
+                }
+
+                snapshot.docs.forEach((doc) => {
+                    const data = doc.data();
+                    const docId = doc.id;
+                    
+                    // Format tanggal agar lebih mudah dibaca (opsional)
+                    // Karena Firestore menyimpan string 'YYYY-MM-DD', kita bisa langsung memakainya atau memformatnya
+                    const formattedDate = new Date(data.tanggal + 'T00:00:00').toLocaleDateString('id-ID', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+
+                    const itemHtml = `
+                        <div class="bg-white p-4 rounded-xl shadow border-l-4 ${data.tanggal === new Date().toISOString().slice(0, 10) ? 'border-indigo-500' : 'border-gray-200'} flex justify-between items-start">
+                            <div class="flex-grow">
+                                <p class="text-sm font-light text-gray-500 mb-1">Tanggal: <span class="font-medium text-gray-800">${formattedDate}</span></p>
+                                <p class="text-gray-900">${data.deskripsi}</p>
+                            </div>
+                            <!-- Tombol Hapus (Contoh interaksi) -->
+                            <button data-id="${docId}" class="delete-btn text-red-500 hover:text-red-700 ml-4 p-1 rounded-full hover:bg-red-50 transition duration-150">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+                    dataListEl.insertAdjacentHTML('beforeend', itemHtml);
+                });
+
+                // Tambahkan listener ke tombol hapus setelah rendering
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', handleDelete);
+                });
+
+            }, (error) => {
+                console.error("Error mendengarkan data:", error);
+                loadingMessageEl.textContent = `Gagal memuat data: ${error.message}`;
+            });
+        }
+
+        // 5. Fungsi Hapus Data (Contoh Interaksi)
+        async function handleDelete(event) {
+            const docId = event.currentTarget.dataset.id;
+            if (!db || !docId) return;
+
+            // Gunakan konfirmasi modal kustom jika ini adalah aplikasi produksi
+            if (!confirm("Apakah Anda yakin ingin menghapus data ini?")) return; 
+
+            const docRef = doc(db, `/artifacts/${appId}/public/data/urutan_data`, docId);
+            try {
+                await deleteDoc(docRef);
+                showMessage("Data berhasil dihapus.", false);
+            } catch (e) {
+                console.error("Error menghapus dokumen: ", e);
+                showMessage(`Gagal menghapus data: ${e.message}`, true);
+            }
+        }
+
+        // 6. Event Listener untuk Form Submission
+        dataForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const tanggal = document.getElementById('tanggalInput').value;
+            const deskripsi = document.getElementById('deskripsiInput').value;
+            
+            if (tanggal && deskripsi) {
+                saveData(tanggal, deskripsi);
+                dataForm.reset(); // Kosongkan form setelah submit
+            } else {
+                showMessage("Mohon lengkapi semua field.", true);
+            }
+        });
+
+        // Mulai aplikasi
+        setupFirebase();
     </script>
 </body>
 </html>
