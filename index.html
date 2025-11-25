@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Pelacak Keuangan Sederhana</title>
+    <title>Laporan List Donatur Jariyah</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Heroicons untuk ikon -->
-    <script src="https://unpkg.com/heroicons@2.1.1/24/outline/index.js"></script>
     <style>
         /* Menggunakan font Inter secara default */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
@@ -22,6 +20,12 @@
         }
         .animate-fade-in-down {
             animation: fadeInDown 0.3s ease-out forwards;
+        }
+        /* Styling untuk baris total */
+        .total-row {
+            background-color: #166534; /* Dark Green */
+            color: white;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -43,8 +47,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, query, addDoc, onSnapshot, doc, updateDoc, deleteDoc, Timestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Mengatur level log Firebase ke Debug untuk diagnosa
-        // setLogLevel('debug'); 
+        // setLogLevel('debug'); // Uncomment untuk debugging Firebase
 
         // --- Konfigurasi dan Global Variables ---
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -56,31 +59,37 @@
         let auth;
         let userId = null;
         let isAuthReady = false;
-        let transactions = [];
+        let donations = []; // Mengganti transactions menjadi donations
         let isLoading = true;
         let error = null;
         let isModalOpen = false;
-        let editingTransaction = null;
+        let editingDonation = null;
         let isConfirmModalOpen = false;
-        let transactionToDelete = null;
+        let donationToDelete = null;
         let formData = {
             tanggal: new Date().toISOString().substring(0, 10),
-            deskripsi: '',
-            nominal: '',
-            jenis: 'pemasukan',
+            namaDonatur: '',
+            alamat: '',
+            nominalJariyah: '',
         };
+
+        // --- Konstanta Pembagian Persentase ---
+        const P_MAKAM = 0.15; // 15%
+        const P_PANITIA = 0.15; // 15%
+        const P_HAUL = 0.70; // 70%
 
         // --- Fungsi Utilitas ---
 
         // Fungsi untuk memformat nominal ke Rupiah
         const formatRupiah = (number) => {
-            if (number === null || number === undefined || isNaN(number)) return 'Rp 0';
+            const num = Number(number);
+            if (isNaN(num)) return 'Rp 0';
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
                 currency: 'IDR',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-            }).format(Number(number));
+            }).format(num);
         };
 
         // Fungsi untuk memformat tanggal ke format lokal
@@ -97,40 +106,44 @@
         // Path Collection Firestore
         const getCollectionPath = (currentUserId) => {
             if (!currentUserId) return null;
-            return `artifacts/${appId}/users/${currentUserId}/transactions`;
+            return `artifacts/${appId}/users/${currentUserId}/jariyah_donations`;
         };
         
+        // Fungsi untuk menghitung pembagian
+        const calculateDistribution = (nominal) => {
+            const n = Number(nominal);
+            return {
+                makam: Math.round(n * P_MAKAM),
+                panitia: Math.round(n * P_PANITIA),
+                haul: Math.round(n * P_HAUL),
+            };
+        };
+
         // --- State Management dan Render Ulang UI ---
         const renderApp = () => {
             const appDiv = document.getElementById('app');
             if (!appDiv) return;
 
-            // Perhitungan Saldo & Ringkasan (diulang di setiap render)
-            let totalPemasukan = 0;
-            let totalPengeluaran = 0;
-            transactions.forEach(t => {
-                if (t.jenis === 'pemasukan') {
-                    totalPemasukan += t.nominal;
-                } else if (t.jenis === 'pengeluaran') {
-                    totalPengeluaran += t.nominal;
-                }
-            });
-            const saldoAkhir = totalPemasukan - totalPengeluaran;
+            // Perhitungan Total Donasi
+            const totalJariyahKumulatif = donations.reduce((sum, d) => sum + Number(d.nominalJariyah || 0), 0);
+            
+            // Perhitungan Total Pembagian
+            const totalDistribusi = calculateDistribution(totalJariyahKumulatif);
 
             // Template UI menggunakan string literal
             appDiv.innerHTML = `
                 <header class="flex justify-between items-center mb-6">
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-700">
-                        <span class="block text-sm font-medium text-indigo-500">Aplikasi Pelacak</span>
-                        Laporan Keuangan
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-green-700">
+                        <span class="block text-sm font-medium text-green-500">2. Laporan List</span>
+                        Donatur Jariyah
                     </h1>
                     <div class="flex space-x-2">
-                        <button id="add-transaction-btn" 
-                            class="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 transform hover:scale-[1.02]">
+                        <button id="add-donation-btn" 
+                            class="flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg shadow-md hover:bg-green-700 transition duration-150 transform hover:scale-[1.02]">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 mr-1">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                             </svg>
-                            <span class="hidden sm:inline">Tambah Transaksi</span>
+                            <span class="hidden sm:inline">Tambah Donasi</span>
                             <span class="sm:hidden">Tambah</span>
                         </button>
                         <button id="sign-out-btn" title="Keluar / Sign Out"
@@ -142,17 +155,25 @@
                     </div>
                 </header>
                 
-                <!-- Tampilkan UID -->
+                <!-- Keterangan Pembagian & UID -->
+                <p class="text-sm text-gray-700 mb-2">
+                    Total jariyah akan dibagi secara otomatis: Perawatan Makam (15%), Ongkos Panitia (15%), Biaya Haul (70%).
+                </p>
                 <p class="text-xs text-gray-500 mb-4">
-                    ID Pengguna (UID): <span class="font-mono text-indigo-500">${userId || 'Menunggu Autentikasi...'}</span>
+                    ID Pengguna (UID): <span class="font-mono text-green-500">${userId || 'Menunggu Autentikasi...'}</span>
                 </p>
 
-                <!-- Ringkasan Keuangan -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    ${SummaryCard('SALDO AKHIR', saldoAkhir, saldoAkhir >= 0 ? 'text-indigo-600' : 'text-red-600', 'bg-white', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"> <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818L6.477 14.28a3.001 3.001 0 0 0 1.296 4.707M9 12h.008v.008H9V12Zm2.5-6H15.63a4.5 4.5 0 1 1 0 9H12m2.818 2.818L17.523 9.72a3 3 0 0 0-1.296-4.707M15 12h.008v.008H15V12Z" /> </svg>')}
-                    ${SummaryCard('TOTAL PEMASUKAN', totalPemasukan, 'text-green-600', 'bg-green-50', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.306 4.305a11.233 11.233 0 0 1 6.323-2.145H17.25m-4.686-2.522 1.57-2.739 1.754-.007a11.272 11.272 0 0 0 5.418 2.39M15.75 6.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z" /></svg>')}
-                    ${SummaryCard('TOTAL PENGELUARAN', totalPengeluaran, 'text-red-600', 'bg-red-50', '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l5.485 5.485m-5.485-5.485h17.565m-2.25 0l-5.485 5.485m5.485-5.485h-17.565m17.565 0l-5.485-5.485m5.485 5.485H6.435" /></svg>')}
+                <!-- Ringkasan Global (Mirip Tampilan Gambar) -->
+                <div class="mb-8 p-5 bg-white rounded-xl shadow-lg border-b-4 border-green-600">
+                    <p class="text-lg font-semibold text-gray-800 mb-2">Total Akumulasi Jariyah Saat Ini</p>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        ${SummaryValue('Total Jariyah', totalJariyahKumulatif, 'text-green-800', 'bg-green-50')}
+                        ${SummaryValue('Perawatan Makam (15%)', totalDistribusi.makam, 'text-gray-700', 'bg-yellow-50')}
+                        ${SummaryValue('Ongkos Panitia (15%)', totalDistribusi.panitia, 'text-gray-700', 'bg-yellow-50')}
+                        ${SummaryValue('Biaya Haul (70%)', totalDistribusi.haul, 'text-gray-700', 'bg-yellow-50')}
+                    </div>
                 </div>
+
 
                 <!-- Pesan Error Global -->
                 ${error ? `<div class="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
@@ -162,9 +183,9 @@
                     ${error}
                 </div>` : ''}
 
-                <!-- Tabel Data Transaksi -->
-                <h2 class="text-xl font-bold text-gray-800 mb-4">Daftar Transaksi (${transactions.length} Data)</h2>
-                ${TransactionTable(transactions)}
+                <!-- Tabel Data Donasi -->
+                <h2 class="text-xl font-bold text-gray-800 mb-4">List Donatur (${donations.length} Data)</h2>
+                ${DonationTable(donations, totalJariyahKumulatif)}
 
                 <!-- Modals -->
                 ${isModalOpen ? InputModal() : ''}
@@ -176,17 +197,17 @@
         };
 
         const setupEventListeners = () => {
-            const addBtn = document.getElementById('add-transaction-btn');
+            const addBtn = document.getElementById('add-donation-btn');
             if (addBtn) {
                 addBtn.onclick = () => {
                     // Reset form state dan buka modal
                     formData = {
                         tanggal: new Date().toISOString().substring(0, 10),
-                        deskripsi: '',
-                        nominal: '',
-                        jenis: 'pemasukan',
+                        namaDonatur: '',
+                        alamat: '',
+                        nominalJariyah: '',
                     };
-                    editingTransaction = null;
+                    editingDonation = null;
                     error = null;
                     isModalOpen = true;
                     renderApp();
@@ -218,20 +239,20 @@
                 modalCloseBtn.onclick = handleModalClose;
             }
 
-            const nominalInput = document.getElementById('nominal');
+            const nominalInput = document.getElementById('nominalJariyah');
             if (nominalInput) {
                 nominalInput.oninput = handleNominalChange;
             }
             
             // Event Listeners Aksi Tabel (Edit/Delete)
-            transactions.forEach(t => {
-                const editBtn = document.getElementById(`edit-btn-${t.id}`);
-                const deleteBtn = document.getElementById(`delete-btn-${t.id}`);
+            donations.forEach(d => {
+                const editBtn = document.getElementById(`edit-btn-${d.id}`);
+                const deleteBtn = document.getElementById(`delete-btn-${d.id}`);
                 if (editBtn) {
-                    editBtn.onclick = () => handleEdit(t);
+                    editBtn.onclick = () => handleEdit(d);
                 }
                 if (deleteBtn) {
-                    deleteBtn.onclick = () => handleDelete(t);
+                    deleteBtn.onclick = () => handleDelete(d);
                 }
             });
             
@@ -244,7 +265,7 @@
             if (cancelDeleteBtn) {
                 cancelDeleteBtn.onclick = () => {
                     isConfirmModalOpen = false;
-                    transactionToDelete = null;
+                    donationToDelete = null;
                     renderApp();
                 };
             }
@@ -252,132 +273,145 @@
 
         // --- Komponen UI Pembantu (sebagai fungsi yang mengembalikan string HTML) ---
         
-        const SummaryCard = (title, value, valueColor, bgColor, iconSvg) => `
-            <div class="p-5 rounded-xl shadow-lg flex items-center justify-between ${bgColor} transform transition duration-200 hover:scale-[1.02] border-b-4 border-opacity-50">
-                <div class="flex items-center">
-                    <div class="w-6 h-6 mr-3 ${valueColor}">
-                        ${iconSvg}
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-700">${title}</p>
-                        <h2 class="text-xl font-bold ${valueColor} mt-1">
-                            ${formatRupiah(value)}
-                        </h2>
-                    </div>
-                </div>
+        const SummaryValue = (title, value, valueColor, bgColor) => `
+            <div class="p-3 rounded-lg shadow-sm ${bgColor} border border-gray-200">
+                <p class="text-xs font-semibold text-gray-500">${title}</p>
+                <h3 class="text-lg font-bold ${valueColor} mt-1">
+                    ${formatRupiah(value)}
+                </h3>
             </div>
         `;
 
-        const TransactionTable = (data) => `
-            <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Tanggal</th>
-                            <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider w-3/6">Deskripsi</th>
-                            <th class="px-4 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-1/6">Nominal</th>
-                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">Jenis</th>
-                            <th class="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider w-1/12">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        ${data.length === 0 ? `
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    ${isLoading ? 'Memuat data...' : 'Belum ada data transaksi. Silakan input transaksi baru.'}
-                                </td>
-                            </tr>
-                        ` : data.map((item) => {
-                            const isIncome = item.jenis === 'pemasukan';
-                            const nominalColor = isIncome ? 'text-green-600' : 'text-red-600';
-                            const iconSvg = isIncome 
-                                ? '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5 12 3m0 0 7.5 7.5M12 3v18" /></svg>'
-                                : '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 13.5 12 21m0 0-7.5-7.5M12 21V3" /></svg>';
+        const DonationTable = (data, totalKumulatif) => {
+            let runningTotal = 0;
+            const rows = data.map((item, index) => {
+                const nominal = Number(item.nominalJariyah || 0);
+                const distribution = calculateDistribution(nominal);
+                
+                runningTotal += nominal;
 
-                            return `
-                                <tr class="hover:bg-gray-50 transition duration-100">
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formatDate(item.tanggal)}</td>
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${item.deskripsi}</td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-mono text-right ${nominalColor}">
-                                        ${formatRupiah(item.nominal)}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-xs font-semibold text-center">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                                            ${iconSvg}
-                                            <span class="ml-1 hidden sm:inline">${isIncome ? 'Pemasukan' : 'Pengeluaran'}</span>
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                                        <div class="flex justify-center space-x-2">
-                                            <button id="edit-btn-${item.id}"
-                                                class="text-indigo-600 hover:text-indigo-900 p-1 rounded-full hover:bg-indigo-100 transition"
-                                                title="Edit Transaksi">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 17.159a2.25 2.25 0 0 1-1.006.58l-1.677.368a2.25 2.25 0 0 1-2.07-.48l-.001-.001-.002-.002-.002-.002.002.002a2.25 2.25 0 0 1 .48-.823l.368-1.677a2.25 2.25 0 0 1 .58-1.006l6.657-6.657Z" /></svg>
-                                            </button>
-                                            <button id="delete-btn-${item.id}"
-                                                class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100 transition"
-                                                title="Hapus Transaksi">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.764-1.99a2.25 2.25 0 0 0-2.25-2.25H15m0 0V4.75A.75.75 0 0 0 14.25 4h-4.5A.75.75 0 0 0 9 4.75V7H5.25A2.25 2.25 0 0 0 3 9.25v2.5A.75.75 0 0 0 3.75 12h16.5A.75.75 0 0 0 21 11.75v-2.5A2.25 2.25 0 0 0 18.75 7z" /></svg>
-                                            </button>
-                                        </div>
+                return `
+                    <tr class="hover:bg-green-50 transition duration-100">
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 w-12 text-center">${index + 1}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm text-gray-700 w-24">${formatDate(item.tanggal)}</td>
+                        <td class="px-3 py-3 text-sm font-medium text-gray-900 w-48">${item.namaDonatur}</td>
+                        <td class="px-3 py-3 text-sm font-medium text-gray-900 w-48">${item.alamat}</td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-mono text-right text-purple-700 bg-purple-100 w-32">
+                            ${formatRupiah(nominal)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-mono text-right text-white bg-green-700 w-32">
+                            ${formatRupiah(runningTotal)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-mono text-right text-gray-700 w-32">
+                            ${formatRupiah(distribution.makam)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-mono text-right text-gray-700 w-32">
+                            ${formatRupiah(distribution.panitia)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-mono text-right text-gray-700 w-32">
+                            ${formatRupiah(distribution.haul)}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-sm font-medium w-24 text-center">
+                            <div class="flex justify-center space-x-2">
+                                <button id="edit-btn-${item.id}"
+                                    class="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-100 transition text-xs"
+                                    title="Edit">
+                                    Edit
+                                </button>
+                                <button id="delete-btn-${item.id}"
+                                    class="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-100 transition text-xs"
+                                    title="Hapus">
+                                    Hapus
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr class="bg-gray-200">
+                                <th rowspan="2" class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-12">No</th>
+                                <th rowspan="2" class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-24">Tanggal</th>
+                                <th rowspan="2" class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Nama Donatur</th>
+                                <th rowspan="2" class="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-48">Alamat</th>
+                                <th rowspan="2" class="px-3 py-3 text-right text-xs font-bold text-white uppercase tracking-wider bg-purple-600 w-32">Jariyah (RP)</th>
+                                <th rowspan="2" class="px-3 py-3 text-right text-xs font-bold text-white uppercase tracking-wider bg-green-700 w-32">TOTAL JARIYAH (RP)</th>
+                                <th colspan="3" class="px-3 py-2 text-center text-xs font-bold text-white uppercase tracking-wider bg-yellow-800 border-b border-gray-300">PRESENTASE DONASI</th>
+                                <th rowspan="2" class="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-24">Aksi</th>
+                            </tr>
+                            <tr class="bg-yellow-800">
+                                <th class="px-3 py-2 text-right text-xs font-bold text-white uppercase tracking-wider w-32">Perawatan Makam (15%)</th>
+                                <th class="px-3 py-2 text-right text-xs font-bold text-white uppercase tracking-wider w-32">Ongkos Panitia (15%)</th>
+                                <th class="px-3 py-2 text-right text-xs font-bold text-white uppercase tracking-wider w-32">Biaya Haul (70%)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${data.length === 0 ? `
+                                <tr>
+                                    <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500">
+                                        ${isLoading ? 'Memuat data...' : 'Belum ada data donatur. Silakan input donasi baru.'}
                                     </td>
                                 </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-                ${isLoading ? `
-                    <div class="p-4 text-center text-indigo-500 flex items-center justify-center">
-                        <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0 0 13.84 2.805l.3-.2" />
-                        </svg>
-                        Memuat data...
-                    </div>
-                ` : ''}
-            </div>
-        `;
+                            ` : rows}
+                        </tbody>
+                        <!-- Total Baris (Opsional, sudah ada di atas, tapi bisa ditambah untuk visual) -->
+                        <tfoot class="total-row">
+                            <tr>
+                                <td colspan="5" class="px-3 py-3 text-right text-sm">TOTAL KUMULATIF AKHIR</td>
+                                <td class="px-3 py-3 text-right text-lg font-extrabold text-yellow-300">${formatRupiah(totalKumulatif)}</td>
+                                <td class="px-3 py-3 text-right text-sm">${formatRupiah(calculateDistribution(totalKumulatif).makam)}</td>
+                                <td class="px-3 py-3 text-right text-sm">${formatRupiah(calculateDistribution(totalKumulatif).panitia)}</td>
+                                <td class="px-3 py-3 text-right text-sm">${formatRupiah(calculateDistribution(totalKumulatif).haul)}</td>
+                                <td class="px-3 py-3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        };
 
         const InputModal = () => `
             <div class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
                 <div class="relative p-6 border w-full max-w-lg shadow-lg rounded-xl bg-white animate-fade-in-down">
                     <h3 class="text-xl font-bold text-gray-900 mb-4 border-b pb-2">
-                        ${editingTransaction ? 'Edit Transaksi' : 'Input Transaksi Baru'}
+                        ${editingDonation ? 'Edit Data Donasi' : 'Input Donasi Jariyah Baru'}
                     </h3>
                     ${error ? `<div class="p-3 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline mr-1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.021 3.375 1.77 3.375h14.714c1.749 0 2.635-1.875 1.77-3.375l-7.385-12.285a1.875 1.875 0 0 0-3.232 0l-7.385 12.285Z" /></svg>
                         ${error}
                     </div>` : ''}
                     <form id="modal-form" class="space-y-4">
-                        <!-- Bidang Jenis Transaksi -->
-                        <div>
-                            <label for="jenis" class="block text-sm font-medium text-gray-700">Jenis Transaksi *</label>
-                            <select name="jenis" id="jenis" required onchange="handleInputChange(event)"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
-                                <option value="pemasukan" ${formData.jenis === 'pemasukan' ? 'selected' : ''}>Pemasukan (Income)</option>
-                                <option value="pengeluaran" ${formData.jenis === 'pengeluaran' ? 'selected' : ''}>Pengeluaran (Expense)</option>
-                            </select>
-                        </div>
                         <!-- Bidang Tanggal -->
                         <div>
-                            <label for="tanggal" class="block text-sm font-medium text-gray-700">Tanggal *</label>
+                            <label for="tanggal" class="block text-sm font-medium text-gray-700">Tanggal Donasi *</label>
                             <input type="date" name="tanggal" id="tanggal" required value="${formData.tanggal}" onchange="handleInputChange(event)"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"/>
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 p-2 border"/>
                         </div>
-                        <!-- Bidang Deskripsi -->
+                        <!-- Bidang Nama Donatur -->
                         <div>
-                            <label for="deskripsi" class="block text-sm font-medium text-gray-700">Deskripsi *</label>
-                            <input type="text" name="deskripsi" id="deskripsi" required placeholder="Contoh: Gaji Bulanan, Beli Bahan Makanan" value="${formData.deskripsi}" onchange="handleInputChange(event)"
-                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"/>
+                            <label for="namaDonatur" class="block text-sm font-medium text-gray-700">Nama Donatur *</label>
+                            <input type="text" name="namaDonatur" id="namaDonatur" required placeholder="Contoh: Bpk. Sarpin" value="${formData.namaDonatur}" onchange="handleInputChange(event)"
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 p-2 border"/>
                         </div>
-                        <!-- Bidang Nominal -->
+                        <!-- Bidang Alamat -->
                         <div>
-                            <label for="nominal" class="block text-sm font-medium text-gray-700">Nominal (Rp) *</label>
+                            <label for="alamat" class="block text-sm font-medium text-gray-700">Alamat</label>
+                            <input type="text" name="alamat" id="alamat" placeholder="Contoh: Ngablak" value="${formData.alamat}" onchange="handleInputChange(event)"
+                                class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 p-2 border"/>
+                        </div>
+                        <!-- Bidang Nominal Jariyah -->
+                        <div>
+                            <label for="nominalJariyah" class="block text-sm font-medium text-gray-700">Nominal Jariyah (Rp) *</label>
                             <div class="mt-1 relative rounded-lg shadow-sm">
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 sm:text-sm">Rp</span>
                                 </div>
-                                <input type="text" name="nominal" id="nominal" required placeholder="Masukkan angka saja" value="${formData.nominal}"
-                                    class="block w-full rounded-lg pl-10 pr-3 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 p-2 border text-right font-mono text-lg"/>
+                                <input type="text" name="nominalJariyah" id="nominalJariyah" required placeholder="Masukkan angka donasi saja" value="${formData.nominalJariyah}"
+                                    class="block w-full rounded-lg pl-10 pr-3 border-gray-300 focus:border-green-500 focus:ring-green-500 p-2 border text-right font-mono text-lg"/>
                             </div>
                         </div>
 
@@ -387,8 +421,8 @@
                                 Batal
                             </button>
                             <button type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
-                                ${editingTransaction ? 'Simpan Perubahan' : 'Tambah Transaksi'}
+                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition">
+                                ${editingDonation ? 'Simpan Perubahan' : 'Tambah Donasi'}
                             </button>
                         </div>
                     </form>
@@ -401,7 +435,7 @@
                 <div class="relative p-6 border w-full max-w-sm shadow-xl rounded-xl bg-white transform transition-all animate-fade-in-down">
                     <h3 class="text-lg font-bold text-red-700 mb-3">Konfirmasi Penghapusan</h3>
                     <p class="text-sm text-gray-600 mb-4">
-                        Apakah Anda yakin ingin menghapus transaksi <strong>${transactionToDelete?.deskripsi || ''}</strong> sebesar <span class="font-semibold">${formatRupiah(transactionToDelete?.nominal)}</span>? Aksi ini tidak dapat dibatalkan.
+                        Apakah Anda yakin ingin menghapus donasi dari <strong>${donationToDelete?.namaDonatur || ''}</strong> sebesar <span class="font-semibold">${formatRupiah(donationToDelete?.nominalJariyah)}</span>? Aksi ini tidak dapat dibatalkan.
                     </p>
                     <div class="flex justify-end space-x-3">
                         <button type="button" id="cancel-delete-btn"
@@ -425,14 +459,14 @@
         };
 
         const handleNominalChange = (e) => {
-            const rawValue = e.target.value.replace(/\D/g, '');
-            formData = { ...formData, nominal: rawValue };
-            renderApp(); // Render ulang untuk menampilkan nilai yang sudah dibersihkan di input
+            const rawValue = e.target.value.replace(/\D/g, ''); // Hanya angka
+            formData = { ...formData, nominalJariyah: rawValue };
+            renderApp(); // Render ulang untuk memastikan nilai input yang bersih
         };
 
         const handleModalClose = () => {
             isModalOpen = false;
-            editingTransaction = null;
+            editingDonation = null;
             error = null;
             renderApp();
         };
@@ -448,9 +482,9 @@
                 return;
             }
 
-            const nominalValue = parseInt(formData.nominal || '0', 10);
+            const nominalValue = parseInt(formData.nominalJariyah || '0', 10);
             if (nominalValue <= 0) {
-                error = "Nominal transaksi harus lebih dari 0.";
+                error = "Nominal jariyah harus lebih dari Rp 0.";
                 renderApp();
                 return;
             }
@@ -464,9 +498,9 @@
             
             const dataToSave = {
                 tanggal: Timestamp.fromDate(dateObject), 
-                deskripsi: formData.deskripsi.trim() || 'Tanpa Deskripsi',
-                nominal: nominalValue,
-                jenis: formData.jenis, 
+                namaDonatur: formData.namaDonatur.trim() || 'Anonim',
+                alamat: formData.alamat.trim() || '-',
+                nominalJariyah: nominalValue,
                 userId: userId, 
             };
 
@@ -474,9 +508,9 @@
                 const path = getCollectionPath(userId);
                 if (!path) return;
                 
-                if (editingTransaction) {
+                if (editingDonation) {
                     // Mode Edit
-                    const docRef = doc(db, path, editingTransaction.id); 
+                    const docRef = doc(db, path, editingDonation.id); 
                     await updateDoc(docRef, dataToSave);
                 } else {
                     // Mode Tambah Baru
@@ -486,12 +520,12 @@
                 // Reset state
                 formData = {
                     tanggal: new Date().toISOString().substring(0, 10),
-                    deskripsi: '',
-                    nominal: '',
-                    jenis: 'pemasukan',
+                    namaDonatur: '',
+                    alamat: '',
+                    nominalJariyah: '',
                 };
                 isModalOpen = false;
-                editingTransaction = null;
+                editingDonation = null;
                 error = null;
                 renderApp();
             } catch (e) {
@@ -501,51 +535,51 @@
             }
         };
 
-        const handleEdit = (transaction) => {
-            editingTransaction = transaction;
+        const handleEdit = (donation) => {
+            editingDonation = donation;
             
             let dateStr;
-            if (transaction.tanggal.toDate) {
-                dateStr = transaction.tanggal.toDate().toISOString().substring(0, 10);
+            if (donation.tanggal.toDate) {
+                dateStr = donation.tanggal.toDate().toISOString().substring(0, 10);
             } else {
-                dateStr = new Date(transaction.tanggal).toISOString().substring(0, 10);
+                dateStr = new Date(donation.tanggal).toISOString().substring(0, 10);
             }
 
             formData = {
                 tanggal: dateStr,
-                deskripsi: transaction.deskripsi,
-                nominal: String(transaction.nominal),
-                jenis: transaction.jenis,
+                namaDonatur: donation.namaDonatur,
+                alamat: donation.alamat,
+                nominalJariyah: String(donation.nominalJariyah),
             };
             error = null;
             isModalOpen = true;
             renderApp();
         };
 
-        const handleDelete = (transaction) => {
-            transactionToDelete = transaction;
+        const handleDelete = (donation) => {
+            donationToDelete = donation;
             isConfirmModalOpen = true;
             renderApp();
         };
 
         const confirmDelete = async () => {
-            if (!transactionToDelete || !db || !userId) return;
+            if (!donationToDelete || !db || !userId) return;
 
             try {
                 const path = getCollectionPath(userId);
                 if (!path) return;
                 
-                const docRef = doc(db, path, transactionToDelete.id); 
+                const docRef = doc(db, path, donationToDelete.id); 
                 await deleteDoc(docRef);
                 
                 isConfirmModalOpen = false;
-                transactionToDelete = null;
+                donationToDelete = null;
                 renderApp();
             } catch (e) {
                 console.error("Kesalahan saat menghapus data:", e);
                 error = `Kesalahan saat menghapus data: ${e.message}`;
                 isConfirmModalOpen = false;
-                transactionToDelete = null;
+                donationToDelete = null;
                 renderApp();
             }
         };
@@ -600,7 +634,7 @@
             performInitialSignIn();
         };
         
-        // --- Listener Data Transaksi (Real-time) ---
+        // --- Listener Data Donasi (Real-time) ---
         let unsubscribeSnapshot = null;
         const setupDataListener = () => {
             // Hentikan listener lama jika ada
@@ -626,24 +660,25 @@
             renderApp();
 
             unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                const newTransactions = [];
+                const newDonations = [];
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    newTransactions.push({
+                    newDonations.push({
                         id: doc.id,
                         ...data,
-                        nominal: Number(data.nominal || 0),
+                        // Pastikan nominalJariyah adalah angka
+                        nominalJariyah: Number(data.nominalJariyah || 0),
                     });
                 });
 
                 // Urutkan berdasarkan tanggal (descending, terbaru di atas)
-                newTransactions.sort((a, b) => {
+                newDonations.sort((a, b) => {
                     const dateA = a.tanggal?.toMillis ? a.tanggal.toMillis() : new Date(a.tanggal).getTime();
                     const dateB = b.tanggal?.toMillis ? b.tanggal.toMillis() : new Date(b.tanggal).getTime();
                     return dateB - dateA; 
                 });
 
-                transactions = newTransactions;
+                donations = newDonations;
                 isLoading = false;
                 error = null;
                 renderApp(); // Render ulang dengan data baru
