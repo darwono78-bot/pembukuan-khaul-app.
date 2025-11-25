@@ -277,10 +277,10 @@
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-lite.js";
 
-    // IMPORTANT: Use the global variables provided by the environment
+    // PENTING: Gunakan variabel global yang disediakan oleh lingkungan
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     
-    // Firebase Config (using placeholder values as per previous instruction)
+    // Firebase Config (menggunakan nilai placeholder)
     const firebaseConfig = {
         apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
         authDomain: "catatan-keuangan-haul.firebaseapp.com",
@@ -290,7 +290,7 @@
         appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
     };
 
-    // 1. Initialize Firebase
+    // 1. Inisialisasi Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
@@ -299,10 +299,10 @@
 
     let userId = null;
     let isAuthReady = false;
-    let currentTab = 'jariyah'; // State for current active tab
-    let globalTotalJariyah = 0; // NEW: Global variable to store total Jariyah
+    let currentTab = 'jariyah'; // State untuk tab aktif saat ini
+    let globalTotalJariyah = 0; // Variabel global untuk menyimpan total Jariyah
 
-    // --- DOM elements ---
+    // --- Elemen DOM ---
     const appContent = document.getElementById('app-content');
     const authModal = document.getElementById('auth-modal');
     const authForm = document.getElementById('auth-form');
@@ -318,24 +318,24 @@
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
 
-    // Jariyah Elements
+    // Elemen Jariyah
     const jariyahForm = document.getElementById('jariyah-form');
     const jariyahList = document.getElementById('jariyah-list');
     const totalJumlahJariyahElement = document.getElementById('total-jumlah-jariyah');
     
-    // Kas Umum Elements
+    // Elemen Kas Umum
     const kasumumForm = document.getElementById('kasumum-form');
     const kasumumList = document.getElementById('kasumum-list');
     const totalSaldoKasUmumElement = document.getElementById('total-saldo-kasumum');
-    const kasumumKategoriSelect = document.getElementById('kasumum-kategori'); // NEW
-    const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); // NEW
+    const kasumumKategoriSelect = document.getElementById('kasumum-kategori'); 
+    const kasumumJumlahInput = document.getElementById('kasumum-jumlah'); 
 
-    // --- Configuration ---
+    // --- Konfigurasi ---
     const KATEGORI_MASUK = ['Donatur', 'Usaha'];
     const KATEGORI_KELUAR = ['Bisyaroh Kiai', 'Ongkos persewaan', 'Ongkos konsumsi', 'Ongkos pekerja', 'Bisyaroh khataman', 'Lain-Lain'];
 
 
-    // Helper functions for UI (Modal/Notification)
+    // Fungsi pembantu untuk UI (Modal/Notifikasi)
     const formatRupiah = (number) => {
         const roundedNumber = Math.round(number);
         return new Intl.NumberFormat('id-ID', {
@@ -358,7 +358,7 @@
         modalMessage.textContent = message;
         
         if (isConfirm) {
-            // Setup Confirm/Cancel buttons
+            // Setup Tombol Konfirmasi/Batal
             const cancelButton = document.createElement('button');
             cancelButton.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition';
             cancelButton.textContent = 'Batal';
@@ -372,7 +372,7 @@
             modalActions.appendChild(cancelButton);
             modalActions.appendChild(confirmButton);
         } else {
-            // Setup Close button for simple alert
+            // Setup Tombol Tutup untuk peringatan sederhana
             const closeBtn = document.createElement('button');
             closeBtn.className = 'px-4 py-2 text-sm font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition';
             closeBtn.textContent = 'Tutup';
@@ -400,7 +400,7 @@
         }, 300);
     };
 
-    // --- Tab Switching Logic ---
+    // --- Logika Pergantian Tab ---
     const switchTab = (targetId) => {
         currentTab = targetId.replace('content-', '');
         
@@ -416,32 +416,31 @@
                 button.classList.remove('tab-active');
             }
         });
-        
-        // Ensure the correct listener is active/inactive
-        // Since both listeners run constantly, we just need to ensure they are set up once logged in
     }
 
     tabButtons.forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.target));
     });
     
-    // LOGIC BARU: Mengisi Jumlah Kas Umum secara otomatis saat Kategori = Donatur
+    // LOGIKA PENTING: Mengisi Jumlah Kas Umum secara otomatis saat Kategori = Donatur
     kasumumKategoriSelect.addEventListener('change', (e) => {
         if (e.target.value === 'Donatur') {
             // Otomatis isi dengan total Jariyah Global
             kasumumJumlahInput.value = globalTotalJariyah;
             kasumumJumlahInput.readOnly = true;
             kasumumJumlahInput.title = 'Terisi otomatis dari Total Akhir Semua Jariyah';
+            kasumumJumlahInput.classList.add('bg-gray-100'); // Tambahkan gaya visual read-only
         } else {
             // Kosongkan dan izinkan pengeditan untuk kategori lain
             kasumumJumlahInput.value = '';
             kasumumJumlahInput.readOnly = false;
             kasumumJumlahInput.title = 'Jumlah Uang';
+            kasumumJumlahInput.classList.remove('bg-gray-100');
         }
     });
 
 
-    // --- 2. Authentication Flow ---
+    // --- 2. Alur Otentikasi ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             userId = user.uid;
@@ -452,7 +451,7 @@
             isAuthReady = true;
             console.log('User signed in with UID:', userId);
             
-            // Setup listeners for both collections when logged in
+            // Setup listeners untuk kedua koleksi saat login
             setupRealtimeListener('jariyah');
             setupRealtimeListener('kasumum');
             
@@ -462,8 +461,8 @@
             appContent.classList.add('hidden');
             authModal.classList.remove('hidden');
             isAuthReady = false;
-            // Clear UI and global state
-            globalTotalJariyah = 0; // Reset global total on logout
+            // Bersihkan UI dan state global
+            globalTotalJariyah = 0; // Reset total global saat logout
             jariyahList.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Jariyah.</td></tr>';
             totalJumlahJariyahElement.textContent = formatRupiah(0);
             kasumumList.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-500 italic">Silakan masuk untuk melihat data Kas Umum.</td></tr>';
@@ -511,9 +510,9 @@
     });
 
 
-    // --- 3. Firestore Functions ---
+    // --- 3. Fungsi Firestore ---
 
-    // Get the collection reference
+    // Dapatkan referensi koleksi
     const getCollectionRef = (collectionName) => {
         if (!userId) {
             console.error("Error: User ID is not defined (Not logged in).");
@@ -523,7 +522,7 @@
         return collection(db, `artifacts/${appId}/users/${userId}/${collectionName}`);
     };
 
-    // --- Jariyah Handlers ---
+    // --- Handler Jariyah ---
     jariyahForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
@@ -550,7 +549,7 @@
         }
     });
     
-    // --- Kas Umum Handlers ---
+    // --- Handler Kas Umum ---
     kasumumForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthReady || !userId) {
@@ -577,11 +576,12 @@
             await addDoc(ref, data);
             kasumumForm.reset();
             document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
-            // Reset input readOnly and value after successful submission
+            // Reset input readOnly dan value setelah submit berhasil
             kasumumJumlahInput.value = '';
             kasumumJumlahInput.readOnly = false;
             kasumumJumlahInput.title = 'Jumlah Uang';
-            kasumumKategoriSelect.value = ''; // Reset select to default
+            kasumumJumlahInput.classList.remove('bg-gray-100');
+            kasumumKategoriSelect.value = ''; // Reset select ke default
             
         } catch (e) {
             console.error("Error adding kas umum document: ", e);
@@ -616,7 +616,7 @@
         const ref = getCollectionRef(collectionName);
         if (!ref) return;
 
-        // Clean up previous listener (optional for this simple case, but good practice)
+        // Bersihkan listener sebelumnya
         if (type === 'jariyah' && unsubscribeJariyah) { unsubscribeJariyah(); }
         if (type === 'kasumum' && unsubscribeKasUmum) { unsubscribeKasUmum(); }
 
@@ -628,7 +628,7 @@
                 records.push({ id: doc.id, ...doc.data() });
             });
 
-            // Sort by timestamp for running balance/total calculation (oldest first)
+            // Urutkan berdasarkan timestamp untuk perhitungan saldo/total (terlama dulu)
             records.sort((a, b) => {
                 const timeA = a.timestamp?.toMillis() || 0;
                 const timeB = b.timestamp?.toMillis() || 0;
@@ -649,7 +649,7 @@
         if (type === 'kasumum') { unsubscribeKasUmum = unsubscribe; }
     };
     
-    // --- Jariyah Rendering Logic ---
+    // --- Logika Rendering Jariyah ---
     const calculateAndRenderJariyah = (records) => {
         let runningTotal = 0;
         let totalJumlahGlobal = 0;
@@ -672,16 +672,16 @@
             };
         });
         
-        // NEW: Update global total variable
+        // PENTING: Update variabel total global
         globalTotalJariyah = totalJumlahGlobal;
         
-        // Cek jika Kas Umum sedang dalam mode 'Donatur' saat ini, update angkanya.
+        // PENTING: Cek jika Kas Umum sedang dalam mode 'Donatur' saat ini, update angkanya
         if (kasumumKategoriSelect.value === 'Donatur') {
              kasumumJumlahInput.value = globalTotalJariyah;
         }
 
 
-        // Reverse back to descending order (newest first) for display
+        // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
         records.reverse();
 
         totalJumlahJariyahElement.textContent = formatRupiah(totalJumlahGlobal);
@@ -727,7 +727,7 @@
         });
     };
     
-    // --- Kas Umum Rendering Logic ---
+    // --- Logika Rendering Kas Umum ---
     const calculateAndRenderKasUmum = (records) => {
         let saldo = 0;
         
@@ -749,7 +749,7 @@
             };
         });
         
-        // Reverse back to descending order (newest first) for display
+        // Balikkan urutan ke descending (terbaru dulu) untuk ditampilkan
         records.reverse();
 
         totalSaldoKasUmumElement.textContent = formatRupiah(saldo);
@@ -794,7 +794,7 @@
     };
 
 
-    // --- 4. Control Panel Actions ---
+    // --- 4. Aksi Panel Kontrol ---
     logoutButton.addEventListener('click', async () => {
         showModal("Konfirmasi Log Out", "Apakah Anda yakin ingin keluar?", true, async () => {
             try {
@@ -842,11 +842,11 @@
         });
     });
     
-    // Set default dates on load
+    // Set tanggal default saat dimuat
     document.getElementById('jariyah-tanggal').valueAsDate = new Date(); 
     document.getElementById('kasumum-tanggal').valueAsDate = new Date(); 
 
-    // Initialize with Jariyah tab active
+    // Inisialisasi dengan tab Jariyah aktif
     switchTab('content-jariyah');
 
 </script>
