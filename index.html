@@ -215,301 +215,305 @@
 
     </main>
     
-    <script>
-        // --- BAGIAN 1: KONFIGURASI FIREBASE ---
-        const firebaseConfig = {
-                apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
-                authDomain: "catatan-keuangan-haul.firebaseapp.com",
-                projectId: "catatan-keuangan-haul",
-                storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-                messagingSenderId: "955355049778",
-                appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+   <script>
+    // --- BAGIAN 1: KONFIGURASI FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w", 
+        authDomain: "catatan-keuangan-haul.firebaseapp.com",
+        // URL DATABASE YANG KITA SIMPULKAN DARI PESAN WARNING AWAL ANDA:
+        databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app", 
+        projectId: "catatan-keuangan-haul",
+        storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+        messagingSenderId: "955355049778",
+        appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+    };
+
+    // Inisialisasi Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = app.auth();
+    const db = app.database(); 
+    
+    // ... (Sisa kode JS, termasuk fungsi displayMessage, sudah benar dan tidak diubah) ...
+    // ... (Semua event listeners sudah benar) ...
+    
+    let currentUserId = null; 
+    let isEditMode = false; 
+    let currentTransactionData = {}; 
+
+    const PUBLIC_DATA_PATH = 'transaksi_publik'; 
+    
+    // --- BAGIAN 2: ELEMEN DOM (HTML) ---
+    const authContainer = document.getElementById('auth-container');
+    const loginSection = document.getElementById('login-section');
+    const inputSection = document.getElementById('input-section');
+    const loginForm = document.getElementById('login-form');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const registerBtn = document.getElementById('register-btn');
+    const authMessage = document.getElementById('auth-message');
+    const userDisplay = document.getElementById('user-display');
+    const loggedInStatus = document.getElementById('logged-in-status');
+    const authNav = document.getElementById('auth-nav');
+    
+    // Elemen Transaksi
+    const transaksiForm = document.getElementById('transaksi-form');
+    const formTitle = document.getElementById('form-title');
+    const inputTanggal = document.getElementById('input-tanggal');
+    const inputNama = document.getElementById('input-nama');
+    const inputAlamat = document.getElementById('input-alamat');
+    const inputNominal = document.getElementById('input-nominal');
+    const editId = document.getElementById('edit-id');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelEditBtn = document.getElementById('cancel-edit-btn');
+    const transaksiMessage = document.getElementById('transaksi-message');
+    const transaksiList = document.getElementById('transaksi-list');
+    const aksiHeader = document.getElementById('aksi-header');
+
+
+    // --- BAGIAN 3: FUNGSI UTILITY (Dideklarasikan di sini agar Global) ---
+    
+    function displayMessage(element, message, isError = false) {
+        element.textContent = message;
+        element.style.color = isError ? 'red' : 'green';
+    }
+
+    function formatRupiah(number) {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(number);
+    }
+    
+    function resetForm() {
+        transaksiForm.reset();
+        isEditMode = false;
+        editId.value = '';
+        formTitle.textContent = 'Input Transaksi Baru';
+        submitBtn.textContent = 'Simpan Transaksi';
+        cancelEditBtn.classList.add('hidden');
+        transaksiMessage.textContent = '';
+    }
+
+    // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CRUD) ---
+
+    function deleteTransaksi(id) {
+        if (!currentUserId) {
+            alert("Anda harus login sebagai admin untuk menghapus data.");
+            return;
+        }
+        if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
+            const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
+            itemRef.remove()
+                .then(() => {
+                    console.log("Transaksi berhasil dihapus.");
+                })
+                .catch((error) => {
+                    alert(`Gagal menghapus: ${error.message}`);
+                });
+        }
+    }
+
+    function editTransaksi(id, data) {
+        const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
+        itemRef.update(data)
+            .then(() => {
+                displayMessage(transaksiMessage, 'Transaksi berhasil diperbarui!', false);
+                resetForm();
+            })
+            .catch((error) => {
+                displayMessage(transaksiMessage, `Gagal memperbarui: ${error.message}`, true);
+            });
+    }
+    
+    function addTransaksi(data) {
+         db.ref(PUBLIC_DATA_PATH).push(data)
+            .then(() => {
+                displayMessage(transaksiMessage, 'Transaksi berhasil disimpan!', false);
+                transaksiForm.reset(); 
+            })
+            .catch((error) => {
+                displayMessage(transaksiMessage, `Gagal menyimpan: ${error.message}`, true);
+            });
+    }
+
+    function handleTransaksiSubmit(e) {
+        e.preventDefault();
+        
+        if (!currentUserId) {
+            displayMessage(transaksiMessage, 'Error: Anda harus login untuk input data.', true);
+            return;
+        }
+        
+        const dataToSave = {
+            tanggal: inputTanggal.value,
+            nama: inputNama.value,
+            alamat: inputAlamat.value,
+            nominal: parseInt(inputNominal.value) || 0,
         };
 
-        // Inisialisasi Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = app.auth();
-        const db = app.database(); 
-        
-        let currentUserId = null; 
-        let isEditMode = false; 
-        let currentTransactionData = {}; 
-
-        // --- PENTING! PATH DATA PUBLIK ---
-        const PUBLIC_DATA_PATH = 'transaksi_publik'; 
-        
-        // --- BAGIAN 2: ELEMEN DOM (HTML) ---
-        const authContainer = document.getElementById('auth-container');
-        const loginSection = document.getElementById('login-section');
-        const inputSection = document.getElementById('input-section');
-        const loginForm = document.getElementById('login-form');
-        const authEmail = document.getElementById('auth-email');
-        const authPassword = document.getElementById('auth-password');
-        const registerBtn = document.getElementById('register-btn');
-        const authMessage = document.getElementById('auth-message');
-        const userDisplay = document.getElementById('user-display');
-        const loggedInStatus = document.getElementById('logged-in-status');
-        const authNav = document.getElementById('auth-nav');
-        
-        // Elemen Transaksi
-        const transaksiForm = document.getElementById('transaksi-form');
-        const formTitle = document.getElementById('form-title');
-        const inputTanggal = document.getElementById('input-tanggal');
-        const inputNama = document.getElementById('input-nama');
-        const inputAlamat = document.getElementById('input-alamat');
-        const inputNominal = document.getElementById('input-nominal');
-        const editId = document.getElementById('edit-id');
-        const submitBtn = document.getElementById('submit-btn');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
-        const transaksiMessage = document.getElementById('transaksi-message');
-        const transaksiList = document.getElementById('transaksi-list');
-        const aksiHeader = document.getElementById('aksi-header');
-
-
-        // --- BAGIAN 3: FUNGSI UTILITY (Dideklarasikan di sini agar Global) ---
-        
-        function displayMessage(element, message, isError = false) {
-            element.textContent = message;
-            element.style.color = isError ? 'red' : 'green';
+        if (isEditMode) {
+            editTransaksi(editId.value, dataToSave);
+        } else {
+            dataToSave.createdAt = firebase.database.ServerValue.TIMESTAMP;
+            addTransaksi(dataToSave);
         }
-
-        function formatRupiah(number) {
-            return new Intl.NumberFormat('id-ID', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0
-            }).format(number);
-        }
+    }
+    
+    function populateEditForm(id, data) {
+        isEditMode = true;
+        editId.value = id;
+        inputTanggal.value = data.tanggal;
+        inputNama.value = data.nama;
+        inputAlamat.value = data.alamat;
+        inputNominal.value = data.nominal;
         
-        // Mengubah form ke mode Input Baru
-        function resetForm() {
-            transaksiForm.reset();
-            isEditMode = false;
-            editId.value = '';
-            formTitle.textContent = 'Input Transaksi Baru';
-            submitBtn.textContent = 'Simpan Transaksi';
-            cancelEditBtn.classList.add('hidden');
-            transaksiMessage.textContent = '';
-        }
+        formTitle.textContent = 'Edit Transaksi';
+        submitBtn.textContent = 'Simpan Perubahan';
+        cancelEditBtn.classList.remove('hidden');
+        transaksiMessage.textContent = 'Mode Edit Aktif. Isi form di atas dan tekan tombol Simpan Perubahan.';
+        
+        inputSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function loadTransaksi(isLoggedIn) {
+        db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
+            transaksiList.innerHTML = ''; 
+            currentTransactionData = {}; 
+            let data = snapshot.val();
+            let rows = [];
+            let no = 1;
 
-        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CRUD) ---
-
-        function deleteTransaksi(id) {
-            if (!currentUserId) {
-                alert("Anda harus login sebagai admin untuk menghapus data.");
-                return;
-            }
-            if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
-                const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
-                itemRef.remove()
-                    .then(() => {
-                        console.log("Transaksi berhasil dihapus.");
-                    })
-                    .catch((error) => {
-                        alert(`Gagal menghapus: ${error.message}`);
-                    });
-            }
-        }
-
-        function editTransaksi(id, data) {
-            const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
-            itemRef.update(data)
-                .then(() => {
-                    displayMessage(transaksiMessage, 'Transaksi berhasil diperbarui!', false);
-                    resetForm();
-                })
-                .catch((error) => {
-                    displayMessage(transaksiMessage, `Gagal memperbarui: ${error.message}`, true);
+            if (data) {
+                Object.keys(data).forEach(key => {
+                    const item = { id: key, ...data[key] };
+                    rows.push(item);
+                    currentTransactionData[key] = item; 
                 });
-        }
-        
-        function addTransaksi(data) {
-             db.ref(PUBLIC_DATA_PATH).push(data)
-                .then(() => {
-                    displayMessage(transaksiMessage, 'Transaksi berhasil disimpan!', false);
-                    transaksiForm.reset(); 
-                })
-                .catch((error) => {
-                    displayMessage(transaksiMessage, `Gagal menyimpan: ${error.message}`, true);
-                });
-        }
+                
+                rows.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
-        function handleTransaksiSubmit(e) {
-            e.preventDefault();
-            
-            if (!currentUserId) {
-                displayMessage(transaksiMessage, 'Error: Anda harus login untuk input data.', true);
-                return;
-            }
-            
-            const dataToSave = {
-                tanggal: inputTanggal.value,
-                nama: inputNama.value,
-                alamat: inputAlamat.value,
-                nominal: parseInt(inputNominal.value) || 0,
-            };
-
-            if (isEditMode) {
-                editTransaksi(editId.value, dataToSave);
-            } else {
-                dataToSave.createdAt = firebase.database.ServerValue.TIMESTAMP;
-                addTransaksi(dataToSave);
-            }
-        }
-        
-        function populateEditForm(id, data) {
-            isEditMode = true;
-            editId.value = id;
-            inputTanggal.value = data.tanggal;
-            inputNama.value = data.nama;
-            inputAlamat.value = data.alamat;
-            inputNominal.value = data.nominal;
-            
-            formTitle.textContent = 'Edit Transaksi';
-            submitBtn.textContent = 'Simpan Perubahan';
-            cancelEditBtn.classList.remove('hidden');
-            transaksiMessage.textContent = 'Mode Edit Aktif. Isi form di atas dan tekan tombol Simpan Perubahan.';
-            
-            inputSection.scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        function loadTransaksi(isLoggedIn) {
-            db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
-                transaksiList.innerHTML = ''; 
-                currentTransactionData = {}; 
-                let data = snapshot.val();
-                let rows = [];
-                let no = 1;
-
-                if (data) {
-                    Object.keys(data).forEach(key => {
-                        const item = { id: key, ...data[key] };
-                        rows.push(item);
-                        currentTransactionData[key] = item; 
-                    });
+                rows.forEach(item => {
+                    const row = transaksiList.insertRow();
                     
-                    rows.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
-
-                    rows.forEach(item => {
-                        const row = transaksiList.insertRow();
-                        
-                        row.innerHTML = `
-                            <td>${no++}</td>
-                            <td>${item.tanggal}</td>
-                            <td>${item.nama}</td>
-                            <td>${item.alamat}</td>
-                            <td>${formatRupiah(item.nominal)}</td>
-                            ${isLoggedIn ? 
-                                `<td>
-                                    <button class="aksi-btn edit-btn" data-id="${item.id}">Edit</button>
-                                    <button class="aksi-btn delete-btn" data-id="${item.id}">Hapus</button>
-                                </td>` : 
-                                ''
-                            }
-                        `;
-                    });
-                } else {
-                    transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data transaksi.</td></tr>';
-                }
-            }, (error) => {
-                transaksiList.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${error.message}</td></tr>`;
-            });
-        }
-
-        // --- BAGIAN 5: AUTENTIKASI ---
-
-        function updateAdminView(user) {
-            if (user) {
-                currentUserId = user.uid;
-                userDisplay.textContent = user.email;
-                loggedInStatus.classList.remove('hidden');
-                loginSection.classList.add('hidden');
-                inputSection.classList.remove('hidden');
-                authContainer.classList.add('logged-in'); 
-                resetForm(); 
-
-                aksiHeader.classList.remove('hidden');
-                authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
-                document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
-                loadTransaksi(true); 
+                    row.innerHTML = `
+                        <td>${no++}</td>
+                        <td>${item.tanggal}</td>
+                        <td>${item.nama}</td>
+                        <td>${item.alamat}</td>
+                        <td>${formatRupiah(item.nominal)}</td>
+                        ${isLoggedIn ? 
+                            `<td>
+                                <button class="aksi-btn edit-btn" data-id="${item.id}">Edit</button>
+                                <button class="aksi-btn delete-btn" data-id="${item.id}">Hapus</button>
+                            </td>` : 
+                            ''
+                        }
+                    `;
+                });
             } else {
-                currentUserId = null;
-                userDisplay.textContent = '';
-                loggedInStatus.classList.add('hidden');
-                loginSection.classList.remove('hidden');
-                inputSection.classList.add('hidden');
-                authContainer.classList.remove('logged-in');
+                transaksiList.innerHTML = '<tr><td colspan="6" style="text-align:center;">Belum ada data transaksi.</td></tr>';
+            }
+        }, (error) => {
+            transaksiList.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${error.message}</td></tr>`;
+        });
+    }
 
-                aksiHeader.classList.add('hidden');
-                authNav.innerHTML = ''; 
-                loadTransaksi(false); 
+    // --- BAGIAN 5: AUTENTIKASI ---
+
+    function updateAdminView(user) {
+        if (user) {
+            currentUserId = user.uid;
+            userDisplay.textContent = user.email;
+            loggedInStatus.classList.remove('hidden');
+            loginSection.classList.add('hidden');
+            inputSection.classList.remove('hidden');
+            authContainer.classList.add('logged-in'); 
+            resetForm(); 
+
+            aksiHeader.classList.remove('hidden');
+            authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
+            document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
+            loadTransaksi(true); 
+        } else {
+            currentUserId = null;
+            userDisplay.textContent = '';
+            loggedInStatus.classList.add('hidden');
+            loginSection.classList.remove('hidden');
+            inputSection.classList.add('hidden');
+            authContainer.classList.remove('logged-in');
+
+            aksiHeader.classList.add('hidden');
+            authNav.innerHTML = ''; 
+            loadTransaksi(false); 
+        }
+    }
+    
+    function handleLogin(e) {
+        e.preventDefault();
+        const email = authEmail.value;
+        const password = authPassword.value;
+        displayMessage(authMessage, 'Sedang memproses...'); 
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then(() => {
+                displayMessage(authMessage, 'Login berhasil!', false);
+                authEmail.value = ''; 
+                authPassword.value = '';
+            })
+            .catch((error) => {
+                displayMessage(authMessage, `Login Gagal: ${error.message}`, true);
+            });
+    }
+
+    function handleRegister() {
+        const email = authEmail.value;
+        const password = authPassword.value;
+        displayMessage(authMessage, 'Sedang mendaftarkan pengguna...');
+
+        auth.createUserWithEmailAndPassword(email, password)
+            .then(() => {
+                displayMessage(authMessage, 'Pendaftaran berhasil! Silakan masuk.', false);
+            })
+            .catch((error) => {
+                displayMessage(authMessage, `Pendaftaran Gagal: ${error.message}`, true);
+            });
+    }
+
+    function handleLogout() {
+        auth.signOut()
+            .catch((error) => {
+                displayMessage(authMessage, `Logout Gagal: ${error.message}`, true);
+            });
+    }
+
+    // State Listener
+    auth.onAuthStateChanged((user) => {
+        updateAdminView(user);
+    });
+
+    // --- BAGIAN 6: EVENT LISTENERS & INICIALISASI ---
+    loginForm.addEventListener('submit', handleLogin);
+    registerBtn.addEventListener('click', handleRegister);
+    transaksiForm.addEventListener('submit', handleTransaksiSubmit);
+    cancelEditBtn.addEventListener('click', resetForm);
+
+    // Event Listener untuk tombol Edit dan Delete di tabel
+    transaksiList.addEventListener('click', (e) => {
+        const id = e.target.dataset.id;
+        
+        if (e.target.classList.contains('delete-btn')) {
+            deleteTransaksi(id);
+        } else if (e.target.classList.contains('edit-btn')) {
+            if (currentTransactionData[id]) {
+                populateEditForm(id, currentTransactionData[id]);
+            } else {
+                alert('Data transaksi tidak ditemukan.');
             }
         }
-        
-        function handleLogin(e) {
-            e.preventDefault();
-            const email = authEmail.value;
-            const password = authPassword.value;
-            displayMessage(authMessage, 'Sedang memproses...'); 
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    displayMessage(authMessage, 'Login berhasil!', false);
-                    authEmail.value = ''; 
-                    authPassword.value = '';
-                })
-                .catch((error) => {
-                    displayMessage(authMessage, `Login Gagal: ${error.message}`, true);
-                });
-        }
-
-        function handleRegister() {
-            const email = authEmail.value;
-            const password = authPassword.value;
-            displayMessage(authMessage, 'Sedang mendaftarkan pengguna...');
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    displayMessage(authMessage, 'Pendaftaran berhasil! Silakan masuk.', false);
-                })
-                .catch((error) => {
-                    displayMessage(authMessage, `Pendaftaran Gagal: ${error.message}`, true);
-                });
-        }
-
-        function handleLogout() {
-            auth.signOut()
-                .catch((error) => {
-                    displayMessage(authMessage, `Logout Gagal: ${error.message}`, true);
-                });
-        }
-
-        // State Listener
-        auth.onAuthStateChanged((user) => {
-            updateAdminView(user);
-        });
-
-        // --- BAGIAN 6: EVENT LISTENERS & INICIALISASI ---
-        loginForm.addEventListener('submit', handleLogin);
-        registerBtn.addEventListener('click', handleRegister);
-        transaksiForm.addEventListener('submit', handleTransaksiSubmit);
-        cancelEditBtn.addEventListener('click', resetForm);
-
-        // Event Listener untuk tombol Edit dan Delete di tabel
-        transaksiList.addEventListener('click', (e) => {
-            const id = e.target.dataset.id;
-            
-            if (e.target.classList.contains('delete-btn')) {
-                deleteTransaksi(id);
-            } else if (e.target.classList.contains('edit-btn')) {
-                if (currentTransactionData[id]) {
-                    populateEditForm(id, currentTransactionData[id]);
-                } else {
-                    alert('Data transaksi tidak ditemukan.');
-                }
-            }
-        });
-        
-    </script>
+    });
+    
+</script>
 </body>
 </html>
+
