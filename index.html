@@ -45,26 +45,33 @@
             font-size: 16px;
         }
 
-        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan float) */
-        #transaksi-form input, 
-        #transaksi-form select {
-            width: calc(24.5% - 5px); 
-            margin-right: 5px; 
-            float: left; 
+        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan FLEXBOX yang efisien) */
+        #input-fields-container {
+            display: flex;
+            flex-wrap: wrap; 
+            gap: 10px; 
             margin-bottom: 10px;
+            width: 100%;
         }
 
-        /* Clearfix untuk memastikan tombol di bawahnya tidak terganggu float */
-        #transaksi-form::after {
-            content: "";
-            display: table;
-            clear: both;
+        #input-fields-container input, 
+        #input-fields-container select {
+            flex-grow: 1; 
+            min-width: 150px; 
+            width: auto; 
+            margin: 0; 
         }
 
+        /* Tombol dan input yang bukan di dalam flex container tetap 100% */
         #transaksi-form button {
             width: 100%;
             clear: both;
             margin-top: 5px; 
+        }
+
+        /* Input form di luar flex container (Login/Logout) tetap seperti biasa */
+        #transaksi-form input:not(#input-fields-container input) {
+            width: 100%;
         }
 
         input {
@@ -191,11 +198,13 @@
                 <form id="transaksi-form">
                     <input type="hidden" id="edit-id" value=""> 
                     
-                    <input type="date" id="input-tanggal" required>
-                    <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
-                    <input type="text" id="input-alamat" placeholder="Alamat" required>
-                    <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
-                    
+                    <div id="input-fields-container"> 
+                        <input type="date" id="input-tanggal" required>
+                        <input type="text" id="input-nama" placeholder="Nama Pelanggan/Pemasok" required>
+                        <input type="text" id="input-alamat" placeholder="Alamat" required>
+                        <input type="number" id="input-nominal" placeholder="Nominal (Contoh: 150000)" required>
+                    </div>
+
                     <button type="submit" id="submit-btn">Simpan Transaksi</button>
                     <button type="button" id="cancel-edit-btn" class="hidden">Batal Edit</button>
                     <p id="transaksi-message" class="error-message"></p>
