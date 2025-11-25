@@ -6,7 +6,6 @@
     <title>Aplikasi Pembukuan Transparansi Publik</title>
     
     <style>
-        /* ... (CSS Anda di sini, tidak ada perubahan) ... */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -219,14 +218,12 @@
     <script>
         // --- BAGIAN 1: KONFIGURASI FIREBASE ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w", 
-            authDomain: "catatan-keuangan-haul.firebaseapp.com",
-            // PENTING: GANTI DENGAN URL DATABASE ANDA YANG BENAR
-            databaseURL: "URL_DATABASE_ANDA_YANG_BENAR", 
-            projectId: "catatan-keuangan-haul",
-            storageBucket: "catatan-keuangan-haul.firebasestorage.app",
-            messagingSenderId: "955355049778",
-            appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
+                apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
+                authDomain: "catatan-keuangan-haul.firebaseapp.com",
+                projectId: "catatan-keuangan-haul",
+                storageBucket: "catatan-keuangan-haul.firebasestorage.app",
+                messagingSenderId: "955355049778",
+                appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
         };
 
         // Inisialisasi Firebase
@@ -268,8 +265,14 @@
         const transaksiList = document.getElementById('transaksi-list');
         const aksiHeader = document.getElementById('aksi-header');
 
-        // --- BAGIAN 3: FUNGSI UTILITY ---
+
+        // --- BAGIAN 3: FUNGSI UTILITY (Dideklarasikan di sini agar Global) ---
         
+        function displayMessage(element, message, isError = false) {
+            element.textContent = message;
+            element.style.color = isError ? 'red' : 'green';
+        }
+
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -277,15 +280,9 @@
                 minimumFractionDigits: 0
             }).format(number);
         }
-
-        // FUNGSI INI DIPINDAHKAN KE ATAS (GLOBAL SCOPE) UNTUK MENGATASI REFERENCE ERROR
-        function displayMessage(element, message, isError = false) {
-            element.textContent = message;
-            element.style.color = isError ? 'red' : 'green';
-        }
         
         // Mengubah form ke mode Input Baru
-        const resetForm = () => {
+        function resetForm() {
             transaksiForm.reset();
             isEditMode = false;
             editId.value = '';
@@ -293,12 +290,11 @@
             submitBtn.textContent = 'Simpan Transaksi';
             cancelEditBtn.classList.add('hidden');
             transaksiMessage.textContent = '';
-        };
+        }
 
-        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CREATE, UPDATE, READ, DELETE) ---
+        // --- BAGIAN 4: LOGIKA DATA TRANSAKSI (CRUD) ---
 
-        // Fungsi Delete Transaksi
-        const deleteTransaksi = (id) => {
+        function deleteTransaksi(id) {
             if (!currentUserId) {
                 alert("Anda harus login sebagai admin untuk menghapus data.");
                 return;
@@ -313,10 +309,9 @@
                         alert(`Gagal menghapus: ${error.message}`);
                     });
             }
-        };
+        }
 
-        // Fungsi Update/Edit Transaksi
-        const editTransaksi = (id, data) => {
+        function editTransaksi(id, data) {
             const itemRef = db.ref(`${PUBLIC_DATA_PATH}/${id}`);
             itemRef.update(data)
                 .then(() => {
@@ -326,10 +321,9 @@
                 .catch((error) => {
                     displayMessage(transaksiMessage, `Gagal memperbarui: ${error.message}`, true);
                 });
-        };
+        }
         
-        // Fungsi Tambah/Simpan Transaksi Baru
-        const addTransaksi = (data) => {
+        function addTransaksi(data) {
              db.ref(PUBLIC_DATA_PATH).push(data)
                 .then(() => {
                     displayMessage(transaksiMessage, 'Transaksi berhasil disimpan!', false);
@@ -340,8 +334,7 @@
                 });
         }
 
-        // Handler saat Form di-submit (untuk Tambah atau Edit)
-        const handleTransaksiSubmit = (e) => {
+        function handleTransaksiSubmit(e) {
             e.preventDefault();
             
             if (!currentUserId) {
@@ -357,17 +350,14 @@
             };
 
             if (isEditMode) {
-                // Mode Edit
                 editTransaksi(editId.value, dataToSave);
             } else {
-                // Mode Tambah
                 dataToSave.createdAt = firebase.database.ServerValue.TIMESTAMP;
                 addTransaksi(dataToSave);
             }
-        };
+        }
         
-        // Mengisi Form dengan data transaksi untuk di-edit
-        const populateEditForm = (id, data) => {
+        function populateEditForm(id, data) {
             isEditMode = true;
             editId.value = id;
             inputTanggal.value = data.tanggal;
@@ -380,13 +370,10 @@
             cancelEditBtn.classList.remove('hidden');
             transaksiMessage.textContent = 'Mode Edit Aktif. Isi form di atas dan tekan tombol Simpan Perubahan.';
             
-            // Scroll ke Form Input
             inputSection.scrollIntoView({ behavior: 'smooth' });
-        };
+        }
         
-        // Memuat dan Menampilkan data transaksi (PUBLIK)
-        const loadTransaksi = (isLoggedIn) => {
-            // Listener untuk mengambil data secara real-time dari path publik
+        function loadTransaksi(isLoggedIn) {
             db.ref(PUBLIC_DATA_PATH).on('value', (snapshot) => {
                 transaksiList.innerHTML = ''; 
                 currentTransactionData = {}; 
@@ -401,10 +388,8 @@
                         currentTransactionData[key] = item; 
                     });
                     
-                    // Urutkan berdasarkan tanggal
                     rows.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
-                    // Tampilkan data ke tabel
                     rows.forEach(item => {
                         const row = transaksiList.insertRow();
                         
@@ -429,14 +414,12 @@
             }, (error) => {
                 transaksiList.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red;">Gagal memuat data: ${error.message}</td></tr>`;
             });
-        };
+        }
 
         // --- BAGIAN 5: AUTENTIKASI ---
 
-        // Fungsi untuk menyesuaikan tampilan dashboard (Input/Login Form)
         function updateAdminView(user) {
             if (user) {
-                // Admin Login
                 currentUserId = user.uid;
                 userDisplay.textContent = user.email;
                 loggedInStatus.classList.remove('hidden');
@@ -445,13 +428,11 @@
                 authContainer.classList.add('logged-in'); 
                 resetForm(); 
 
-                // Tampilkan kolom Aksi dan muat ulang tabel dengan tombol Aksi
                 aksiHeader.classList.remove('hidden');
                 authNav.innerHTML = `<button type="button" id="logout-btn-header">Keluar</button>`;
                 document.getElementById('logout-btn-header').addEventListener('click', handleLogout);
                 loadTransaksi(true); 
             } else {
-                // Admin Logout
                 currentUserId = null;
                 userDisplay.textContent = '';
                 loggedInStatus.classList.add('hidden');
@@ -459,19 +440,16 @@
                 inputSection.classList.add('hidden');
                 authContainer.classList.remove('logged-in');
 
-                // Sembunyikan kolom Aksi dan muat ulang tabel tanpa tombol Aksi
                 aksiHeader.classList.add('hidden');
                 authNav.innerHTML = ''; 
                 loadTransaksi(false); 
             }
         }
         
-        // Fungsi Login
-        const handleLogin = (e) => {
+        function handleLogin(e) {
             e.preventDefault();
             const email = authEmail.value;
             const password = authPassword.value;
-            // FUNGSI displayMessage SEKARANG SUDAH DIDEFINISIKAN DI GLOBAL SCOPE
             displayMessage(authMessage, 'Sedang memproses...'); 
 
             auth.signInWithEmailAndPassword(email, password)
@@ -483,9 +461,9 @@
                 .catch((error) => {
                     displayMessage(authMessage, `Login Gagal: ${error.message}`, true);
                 });
-        };
+        }
 
-        const handleRegister = () => {
+        function handleRegister() {
             const email = authEmail.value;
             const password = authPassword.value;
             displayMessage(authMessage, 'Sedang mendaftarkan pengguna...');
@@ -497,14 +475,14 @@
                 .catch((error) => {
                     displayMessage(authMessage, `Pendaftaran Gagal: ${error.message}`, true);
                 });
-        };
+        }
 
-        const handleLogout = () => {
+        function handleLogout() {
             auth.signOut()
                 .catch((error) => {
                     displayMessage(authMessage, `Logout Gagal: ${error.message}`, true);
                 });
-        };
+        }
 
         // State Listener
         auth.onAuthStateChanged((user) => {
