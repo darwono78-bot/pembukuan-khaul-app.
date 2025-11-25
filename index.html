@@ -312,7 +312,8 @@
         // ====================================================================================
         // !!! GANTI DENGAN KONFIGURASI PROYEK FIREBASE ANDA !!!
         // ====================================================================================
-        const firebaseConfig = { 
+        const firebaseConfig = {
+          // HARUS DIGANTI DENGAN DATA PROYEK FIREBASE KAKAK
             apiKey: "AIzaSyAHIO0RZgoq6eyjeERTpjOugzJLzqG2S-w",
             authDomain: "catatan-keuangan-haul.firebaseapp.com",
             databaseURL: "https://catatan-keuangan-haul-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -320,28 +321,25 @@
             storageBucket: "catatan-keuangan-haul.firebasestorage.app",
             messagingSenderId: "955355049778",
             appId: "1:955355049778:web:0b844b27b82a88cc0cf12b"
-                };
+        };
         // ====================================================================================
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth(); // INISIALISASI FIREBASE AUTH
+        const auth = firebase.auth(); 
 
         // Data Utama (Untuk menampung data yang diambil dari Firebase)
-        let allTransactions = []; // Data Donatur
-        let jurnalTransactions = []; // Data Jurnal Kas Umum
+        let allTransactions = []; 
+        let jurnalTransactions = []; 
         
-        // --- ADMIN CONFIG ---
-        // Status login sekarang dikelola oleh Firebase Auth
         let isAdminLoggedIn = false; 
         
-        // --- PAGINATION CONFIG ---
         const ITEMS_PER_PAGE = 10;
         let currentDonaturPage = 1;
         let currentJurnalPage = 1;
 
         // --------------------------------------------------------------------------------
-        // HELPER FUNCTIONS (Sama seperti sebelumnya)
+        // HELPER FUNCTIONS 
         // --------------------------------------------------------------------------------
         
         const formatRupiah = (angka) => {
@@ -362,10 +360,11 @@
         };
 
         // ********************************************************************************
-        // FUNGSI LOAD DATA (Sama seperti sebelumnya, mengambil data dari Firestore)
+        // FUNGSI LOAD DATA (Mengambil data dari Firestore)
         // ********************************************************************************
         const loadTransactions = async () => {
             try {
+                // READ OPERATION. Jika Rules tidak mengizinkan, maka akan muncul error merah.
                 const donaturRef = db.collection('donaturHaulData').orderBy('timestamp', 'asc');
                 const donaturSnapshot = await donaturRef.get();
                 allTransactions = donaturSnapshot.docs.map(doc => ({
@@ -383,15 +382,15 @@
                 }));
                 
             } catch (error) {
+                // Error ini yang muncul jika Rules Firestore belum di set "allow read"
                 console.error("Error saat memuat data dari Firebase: ", error);
                 // Biarkan data kosong jika gagal, alert hanya pada CRUD
             }
         };
 
-        const saveTransactions = () => { /* Ditinggalkan */ };
         
         // --------------------------------------------------------------------------------
-        // PAGINATION LOGIC (Sama seperti sebelumnya)
+        // PAGINATION LOGIC 
         // --------------------------------------------------------------------------------
         
         window.changePage = (tableType, page) => {
@@ -413,8 +412,6 @@
 
             const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
             
-            // ... (Kode pagination) ...
-
             // Tombol "<<"
             const prevBtn = document.createElement('button');
             prevBtn.textContent = '<<';
@@ -471,7 +468,7 @@
         
         
         // --------------------------------------------------------------------------------
-        // 2. AUTENTIKASI DAN GLOBAL RENDER CONTROL (BARU: MENGGUNAKAN FIREBASE AUTH)
+        // 2. AUTENTIKASI DAN GLOBAL RENDER CONTROL 
         // --------------------------------------------------------------------------------
         
         const updateAdminView = () => {
@@ -529,12 +526,10 @@
             renderAllTables();
         };
 
-        // Fungsi ini dipanggil setiap kali status login berubah (dari listener di bawah)
         const handleAuthStateChange = (user) => {
-            isAdminLoggedIn = !!user; // true jika user ada (sudah login), false jika null (belum/sudah logout)
+            isAdminLoggedIn = !!user; 
             updateAdminView();
             if (isAdminLoggedIn) {
-                 // Pindahkan scroll ke input jika baru login
                  window.scrollTo({ top: document.getElementById('jurnal-input-container').offsetTop - 50, behavior: 'smooth' });
             }
         };
@@ -552,9 +547,7 @@
             }
 
             try {
-                // Gunakan Firebase Authentication
                 await auth.signInWithEmailAndPassword(email, password);
-                // Jika berhasil, handleAuthStateChange akan dipanggil secara otomatis
                 alert('Login Admin Berhasil!');
                 passwordInput.value = ''; 
                 emailInput.value = '';
@@ -567,9 +560,7 @@
         window.adminLogout = async () => {
             if (confirm('Anda yakin ingin keluar dari mode Admin?')) {
                 try {
-                    // Gunakan Firebase Authentication untuk sign out
                     await auth.signOut();
-                    // Jika berhasil, handleAuthStateChange akan dipanggil secara otomatis
                     alert('Logout Admin Berhasil!');
                     window.scrollTo({ top: document.getElementById('login-form-container').offsetTop - 50, behavior: 'smooth' });
                 } catch (error) {
@@ -580,7 +571,6 @@
         };
         
         window.confirmResetData = async () => {
-            // Cek isAdminLoggedIn yang dikelola oleh Firebase Auth
             if (!isAdminLoggedIn) return; 
             
             if (confirm('PERINGATAN! Anda yakin ingin MENGHAPUS SEMUA data Donasi dan Jurnal dari Firebase? Tindakan ini tidak bisa dibatalkan.')) {
@@ -594,11 +584,9 @@
                         const jurnalBatch = db.batch();
                         jurnalDocs.forEach(doc => jurnalBatch.delete(doc.ref));
                         
-                        // Jalankan kedua batch penghapusan
                         await donaturBatch.commit();
                         await jurnalBatch.commit();
                         
-                        // Reset variabel lokal dan status
                         allTransactions = [];
                         jurnalTransactions = [];
                         
@@ -606,7 +594,6 @@
                         renderAllTables();
                         alert('Semua data berhasil direset (dihapus dari Firebase).');
                         
-                        // LOGOUT ADMIN setelah reset
                         await auth.signOut(); 
                         
                     } catch (error) {
@@ -617,7 +604,7 @@
         };
 
         // --------------------------------------------------------------------------------
-        // 3. DONATUR LOGIC (Sama seperti sebelumnya, CRUD menggunakan Firestore)
+        // 3. DONATUR LOGIC 
         // --------------------------------------------------------------------------------
 
         const resetDonasiForm = () => {
@@ -631,7 +618,6 @@
 
         document.getElementById('form-donasi').addEventListener('submit', async function(e) {
             e.preventDefault();
-            // Cek isAdminLoggedIn dari Firebase Auth
             if (!isAdminLoggedIn) return alert('Akses Ditolak. Silakan login sebagai Admin untuk menginput data.');
             
             const tanggal = document.getElementById('tanggal-input-donasi').value;
@@ -815,7 +801,7 @@
         };
 
         // --------------------------------------------------------------------------------
-        // 4. JURNAL LOGIC (Sama seperti sebelumnya, CRUD menggunakan Firestore)
+        // 4. JURNAL LOGIC 
         // --------------------------------------------------------------------------------
 
         const resetJurnalForm = () => {
@@ -1037,7 +1023,7 @@
         };
 
         // --------------------------------------------------------------------------------
-        // 5. PDF EXPORT FUNCTIONS (Sama seperti sebelumnya)
+        // 5. PDF EXPORT FUNCTIONS 
         // --------------------------------------------------------------------------------
         
         const addSignatures = (doc, yPos) => {
