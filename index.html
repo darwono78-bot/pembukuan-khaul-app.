@@ -45,46 +45,41 @@
             font-size: 16px;
         }
 
-        /* Styling Form Transaksi BARU (4 kolom, 1 baris menggunakan DISPLAY: TABLE) */
-        
-        /* Container utama bertingkah sebagai baris tabel */
+        /* Styling Form Transaksi (SOLUSI AKHIR 1 BARIS, 4 KOLOM KETAT) */
+
         #input-fields-container {
-            display: table; /* Ubah container menjadi tabel */
-            width: 100%; 
-            border-collapse: separate;
-            border-spacing: 5px; /* Jarak antar kolom 5px */
+            display: flex;
+            flex-wrap: nowrap; /* PENTING: Mencegah elemen pindah ke baris baru */
+            gap: 0; /* Hapus gap/jarak antar kolom */
             margin-bottom: 10px;
-            table-layout: fixed; /* PENTING: Memastikan kolom dibagi rata */
+            width: 100%;
         }
 
-        /* Setiap input bertingkah sebagai sel tabel */
+        /* Setiap input diatur tepat 25% */
         #input-fields-container input, 
         #input-fields-container select {
-            display: table-cell; /* Ubah input menjadi sel tabel */
-            /* width: 25% Dihapus, biarkan table-layout: fixed yang membagi rata */
+            width: 25%; /* Memaksa setiap item mengambil 1/4 dari lebar */
+            flex-grow: 0; /* Mencegah mereka tumbuh melebihi 25% */
+            flex-shrink: 0; /* Mencegah mereka menyusut */
+            box-sizing: border-box; /* PENTING: Padding dihitung di dalam 25% */
+            margin: 0 2px; /* BERI JARAK MINIMAL: Jarak 2px di kiri dan kanan */
             padding: 10px;
-            box-sizing: border-box;
-            margin: 0; 
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        /* Tombol dan input yang bukan di dalam table container tetap 100% */
+        /* Tombol dan input yang bukan di dalam container input tetap 100% */
         #transaksi-form button {
             width: 100%;
             clear: both;
             margin-top: 5px; 
         }
 
-        /* Input form di luar table container (Login/Logout) tetap seperti biasa */
+        /* Input form di luar container input (Login/Logout) tetap 100% */
         #transaksi-form input:not(#input-fields-container input) {
             width: 100%;
         }
 
-        /* Aturan input umum (diambil dari body input) */
-        input {
-            /* Pastikan border hanya ada di input di dalam table-cell */
-        }
         
         button {
             background-color: #007bff;
