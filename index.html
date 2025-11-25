@@ -49,16 +49,16 @@
         #input-fields-container {
             display: flex;
             flex-wrap: wrap; 
-            gap: 10px; 
+            gap: 5px; /* DIUBAH: Mengurangi gap menjadi 5px */
             margin-bottom: 10px;
             width: 100%;
         }
 
         #input-fields-container input, 
         #input-fields-container select {
-            /* Perbaikan: Atur lebar dasar menjadi 25% dikurangi gap untuk memastikan 4 kolom muat */
-            width: calc(25% - 10px); 
-            flex-grow: 1; /* Biarkan mereka tumbuh merata */
+            /* DIUBAH: Menyesuaikan kalkulasi lebar dengan gap 5px */
+            width: calc(25% - 5px); 
+            flex-grow: 1; 
             min-width: 150px; 
             margin: 0; 
         }
@@ -183,7 +183,7 @@
                     </tr>
                 </thead>
                 <tbody id="transaksi-list">
-                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Memuat data...</td></td></tr>
                 </tbody>
             </table>
             
