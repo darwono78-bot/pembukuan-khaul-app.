@@ -125,8 +125,9 @@
     <!-- Halaman Login dan Daftar Publik -->
     <div id="login-screen" class="flex flex-col items-center justify-center flex-grow p-4 space-y-6">
 
-        <!-- 1. Daftar Donatur Publik (Diperbarui kolomnya) -->
-        <div class="w-full max-w-xl bg-white shadow-xl rounded-xl p-6 transform transition-all duration-300">
+        <!-- 1. Daftar Donatur Publik (Lebar Diperluas ke max-w-4xl) -->
+        <!-- Perubahan di sini: max-w-xl diubah menjadi max-w-4xl dan margin auto untuk centering -->
+        <div class="w-full max-w-4xl mx-auto bg-white shadow-xl rounded-xl p-6 transform transition-all duration-300">
             <h2 class="text-2xl font-bold text-green-700 text-center mb-4">Daftar Donasi Publik Terbaru</h2>
             <p class="text-sm text-gray-500 text-center mb-4">Informasi umum pemasukan (jariyah) terbaru. Untuk Edit/Hapus, silakan Login.</p>
             
@@ -138,17 +139,23 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama/Deskripsi</th>
-                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alamat/Kategori</th>
-                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Jariyah (Nominal)</th>
-                            <!-- Kolom Aksi dihilangkan di sini untuk keamanan -->
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">No</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Tanggal</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-4/12">Nama/Deskripsi</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Alamat/Kategori</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Jariyah (Nominal)</th>
                         </tr>
                     </thead>
                     <tbody id="public-donors-list" class="bg-white divide-y divide-gray-200">
                         <!-- Data publik akan dimasukkan di sini oleh JavaScript -->
                     </tbody>
+                    <tfoot class="bg-gray-100">
+                        <tr>
+                            <!-- Total Jariyah Publik ditambahkan di sini -->
+                            <td colspan="4" class="px-4 py-3 text-right font-bold text-sm text-gray-700">TOTAL KESELURUHAN DONASI</td>
+                            <td id="public-total-jariyah" class="px-4 py-3 text-right font-bold text-sm text-green-700">Rp 0</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             <div id="public-no-data" class="text-center py-4 text-gray-500 hidden">
@@ -265,6 +272,7 @@
             const publicDonorsList = document.getElementById('public-donors-list');
             const publicLoadingIndicator = document.getElementById('public-data-loading');
             const publicNoDataMessage = document.getElementById('public-no-data');
+            const publicTotalJariyahEl = document.getElementById('public-total-jariyah'); // Elemen Total Jariyah Publik
 
             // Elemen Modal
             const deleteModal = document.getElementById('delete-modal');
@@ -277,24 +285,32 @@
             function setupPublicDonorsListener() {
                 publicLoadingIndicator.classList.remove('hidden');
                 
-                // Query untuk 10 donasi terbaru
+                // Query untuk 100 donasi terbaru (ditingkatkan untuk total)
                 const q = query(
                     collection(db, publicCollectionPath),
-                    // Hanya batasi 10 data terbaru
-                    limit(10)
+                    limit(100) // Batasi 100 data untuk perhitungan total yang lebih akurat
                 );
 
                 onSnapshot(q, (snapshot) => {
                     const publicTransactions = [];
+                    let totalJariyah = 0;
+
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        publicTransactions.push({ id: doc.id, ...data });
+                        
+                        // Hanya hitung jika alamat/kategori adalah 'Pemasukan'
+                        if (data.alamat === 'Pemasukan') {
+                            publicTransactions.push({ id: doc.id, ...data });
+                            totalJariyah += data.jariyah || 0;
+                        }
                     });
 
                     // Sortir berdasarkan timestamp (terbaru di atas)
                     publicTransactions.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
 
                     renderPublicDonors(publicTransactions);
+                    publicTotalJariyahEl.textContent = formatRupiah(totalJariyah); // Update Total Jariyah
+                    
                     publicLoadingIndicator.classList.add('hidden');
                     publicNoDataMessage.classList.toggle('hidden', publicTransactions.length > 0);
                     
@@ -306,7 +322,8 @@
 
             function renderPublicDonors(transactions) {
                 publicDonorsList.innerHTML = '';
-                transactions.forEach((t, index) => {
+                // Hanya tampilkan 10 data teratas di daftar (karena query sudah 100)
+                transactions.slice(0, 10).forEach((t, index) => {
                     const row = document.createElement('tr');
                     row.className = 'hover:bg-gray-50 transition duration-100';
                     
@@ -487,14 +504,12 @@
             function updateTotalBalance(balance) {
                 const text = formatRupiah(balance);
                 totalBalanceEl.textContent = text;
-                if (balance > 0) {
+                if (balance >= 0) { // Ubah >= 0 agar saldo 0 juga hijau/standar
                     totalBalanceEl.classList.remove('text-red-600');
                     totalBalanceEl.classList.add('text-green-600');
-                } else if (balance < 0) {
+                } else {
                     totalBalanceEl.classList.remove('text-green-600');
                     totalBalanceEl.classList.add('text-red-600');
-                } else {
-                    totalBalanceEl.classList.remove('text-green-600', 'text-red-600');
                 }
             }
             
@@ -543,8 +558,6 @@
                     
                     // Update/Add to Public List jika itu Pemasukan
                     if (alamat === 'Pemasukan') {
-                         // Catatan: Dalam aplikasi nyata yang lebih kompleks, kita akan menggunakan Cloud Functions
-                         // untuk sinkronisasi. Di sini, kita simpan secara manual ke koleksi publik.
                          await addDoc(collection(db, publicCollectionPath), transactionData);
                          console.log('Catatan Pemasukan (Donasi) ditambahkan ke daftar publik.');
                     }
