@@ -551,8 +551,8 @@
             document.getElementById('th-jurnal-aksi').classList.toggle('hidden', !isLogged);
             
             // Update colspan total jurnal (Footer)
-           const tdTotal = document.getElementById('td-jurnal-total-col');
-           tdTotal.setAttribute('colspan', isLogged ? '4' : '3');
+           document.getElementById('td-jurnal-total-col')
+           .setAttribute('colspan', isLogged ? '3' : '4');
             document.getElementById('td-jurnal-total-aksi').classList.toggle('hidden', !isLogged);
             
             // Tampilkan/Sembunyikan Input Jurnal hanya jika di tab Jurnal
@@ -1384,6 +1384,7 @@
 
 </body>
 </html>
+
 
 
 
